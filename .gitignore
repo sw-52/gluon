@@ -1,0 +1,5 @@
+
+/.idea/
+shaders/include/sky/clouds - Copy.glsl.old
+shaders/include/sky/test.glsl
+*.bak

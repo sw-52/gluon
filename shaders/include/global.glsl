@@ -46,9 +46,13 @@ float cube(float x) { return x * x * x; }
 float max_of(vec2 v) { return max(v.x, v.y); }
 float max_of(vec3 v) { return max(v.x, max(v.y, v.z)); }
 float max_of(vec4 v) { return max(v.x, max(v.y, max(v.z, v.w))); }
+float max_of(vec4 v, float a) { return max(max_of(v), a); }
+uint  max_of(uint a, uint b, uint c, uint d) { return max(a, max(b, max(c, d))); }
 float min_of(vec2 v) { return min(v.x, v.y); }
 float min_of(vec3 v) { return min(v.x, min(v.y, v.z)); }
 float min_of(vec4 v) { return min(v.x, min(v.y, min(v.z, v.w))); }
+float min_of(vec4 v, float a) { return min(min_of(v), a); }
+uint  min_of(uint a, uint b, uint c, uint d) { return min(a, min(b, min(c, d))); }
 
 float length_squared(vec2 v) { return dot(v, v); }
 float length_squared(vec3 v) { return dot(v, v); }
@@ -56,8 +60,8 @@ float length_squared(vec3 v) { return dot(v, v); }
 vec2 normalize_safe(vec2 v) { return v == vec2(0.0) ? v : normalize(v); }
 vec3 normalize_safe(vec3 v) { return v == vec3(0.0) ? v : normalize(v); }
 
-float sdiv(float a, float b) { return b == 0.0 ? 0.0 : a/b; }
-vec3  sdiv(vec3 a, float b)  { return b == 0.0 ? vec3(0.0) : a/b; }
+float sdiv(float a, float b) { return abs(b) < eps ? 0.0 : a/b; }
+vec3  sdiv(vec3 a, float b)  { return abs(b) < eps ? vec3(0.0) : a/b; }
 vec3  sdiv(vec3 a, vec3 b)   { return vec3(sdiv(a.x, b.x), sdiv(a.y, b.y), sdiv(a.z, b.z)); }
 
 // Remapping functions

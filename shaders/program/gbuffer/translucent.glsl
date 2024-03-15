@@ -88,6 +88,10 @@ uniform int blockEntityId;
 uniform int currentRenderedItemId;
 #endif
 
+#if defined (PHYSICS_MOD_OCEAN) && defined (PHYSICS_OCEAN)
+#include "/include/misc/oceans.glsl"
+#endif
+
 #include "/include/utility/space_conversion.glsl"
 #include "/include/vertex/displacement.glsl"
 #include "/include/vertex/utility.glsl"
@@ -108,7 +112,23 @@ void main() {
 
 	bool is_top_vertex = uv.y < mc_midTexCoord.y;
 
-	scene_pos = transform(gl_ModelViewMatrix, gl_Vertex.xyz);                            // To view space
+	vec4 vert2 = gl_Vertex;
+
+#if defined (PHYSICS_MOD_OCEAN) && defined (PHYSICS_OCEAN)
+	if(physics_iterationsNormal >= 1.0 && material_mask == 1) {
+		// basic texture to determine how shallow/far away from the shore the water is
+		physics_localWaviness = texelFetch(physics_waviness, ivec2(gl_Vertex.xz) - physics_textureOffset, 0).r;
+		// transform gl_Vertex (since it is the raw mesh, i.e. not transformed yet)
+		vec4 finalPosition = vec4(gl_Vertex.x, gl_Vertex.y + physics_waveHeight(gl_Vertex.xz, PHYSICS_ITERATIONS_OFFSET, physics_localWaviness, physics_gameTime), gl_Vertex.z, gl_Vertex.w);
+		// pass this to the fragment shader to fetch the texture there for per fragment normals
+		physics_localPosition = finalPosition.xyz;
+
+		// now use finalPosition instead of gl_Vertex
+		vert2.xyz = finalPosition.xyz;
+	}
+#endif
+
+	scene_pos = transform(gl_ModelViewMatrix, vert2.xyz);                                // To view space
 	scene_pos = view_to_scene_space(scene_pos);                                          // To scene space
 	scene_pos = scene_pos + cameraPosition;                                              // To world space
 	scene_pos = animate_vertex(scene_pos, is_top_vertex, light_levels.y, material_mask); // Apply vertex animations
@@ -326,6 +346,10 @@ uniform vec4 entityColor;
 #include "/include/light/cloud_shadows.glsl"
 #endif
 
+#if defined (PHYSICS_MOD_OCEAN) && defined (PHYSICS_OCEAN)
+#include "/include/misc/oceans.glsl"
+#endif
+
 const float lod_bias = log2(taau_render_scale);
 
 #if   TEXTURE_FORMAT == TEXTURE_FORMAT_LAB
@@ -422,6 +446,13 @@ void main() {
 
 	vec2 adjusted_light_levels = light_levels;
 
+#if defined (PHYSICS_MOD_OCEAN) && defined (PHYSICS_OCEAN)
+	WavePixelData wave;
+#endif
+
+	vec3 biome_water_color;
+	vec3 absorption_coeff;
+
 	//------------------------------------------------------------------------//
 	if (is_water) {
 		material = water_material;
@@ -437,6 +468,25 @@ void main() {
 #elif WATER_TEXTURE == WATER_TEXTURE_VANILLA
 		base_color = texture(gtexture, uv, lod_bias) * tint;
 		material.albedo = srgb_eotf_inv(base_color.rgb * base_color.a) * rec709_to_working_color;
+#endif
+
+		// Water absorption
+		biome_water_color = srgb_eotf_inv(tint.rgb) * rec709_to_working_color;
+		absorption_coeff = biome_water_coeff(biome_water_color);
+
+#if defined (PHYSICS_MOD_OCEAN) && defined (PHYSICS_OCEAN)
+		if(physics_iterationsNormal >= 1.0) {
+			// Initialize wave
+			wave = physics_wavePixel(physics_localPosition.xz, physics_localWaviness, physics_iterationsNormal, physics_gameTime);
+			vec3 foam_color = (1.0 - absorption_coeff);// (1.0 - vec3(WATER_ABSORPTION_R, WATER_ABSORPTION_G, WATER_ABSORPTION_B))
+			//foam_color = mix(foam_color, vec3(1.0), rainStrength);//mix(material.albedo, material.albedo + vec3(0.75), wave.foam);
+			//material.albedo = mix(material.albedo, foam_color, wave.foam);
+			material.albedo += mix(foam_color, vec3(1.0), max0(physics_foamOpacity - 1.0)) * wave.foam * physics_foamOpacity;
+			material.roughness += wave.foam;
+			//material.albedo += mix(foam_color, vec3(1.0), rainStrength) * wave.foam;
+			//material.albedo += vec3(sqrt(physics_localWaviness), sqr(physics_localWaviness), 0.0);
+			//material.albedo += vec3(cube(physics_localWaviness), 0.0, 0.0);
+		}
 #endif
 
 #ifdef WATER_FOAM
@@ -589,10 +639,6 @@ void main() {
 	float alpha;
 
 	if (is_water) {
-		// Water absorption
-
-		vec3 biome_water_color = srgb_eotf_inv(tint.rgb) * rec709_to_working_color;
-		vec3 absorption_coeff = biome_water_coeff(biome_water_color);
 
 		mat2x3 water_fog = water_fog_simple(
 			light_color,

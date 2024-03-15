@@ -16,6 +16,7 @@ screen.water                           = Water
 screen.post                            = Post-Processing
 screen.misc                            = Misc
 screen.box                             = Box
+screen.compatibility                   = Compatibility
 
 screen.colored_lights                  = Colored Lights Settings
 screen.rp_settings                     = Resource Pack Settings
@@ -697,6 +698,7 @@ option.WATER_FOAM                      = Water Foam
 option.WATER_FOAM.comment              = White highlights where water meets terrain. Helps to make water more easily visible in some cases
 option.SNELLS_WINDOW                   = Snell's Window
 option.SNELLS_WINDOW.comment           = Total internal reflection underwater
+option.SNELLS_WINDOW_INTENSITY         = Snell's Window Intensity
 option.WATER_TEXTURE                   = Water Texture
 option.WATER_TEXTURE.comment           = How to use the vanilla water texture.\n\nOff - no water texture.\nHighlights: water texture adds highlights to the water, like how it works in Bedrock RTX.\nVanilla: water texture is used like any other texture
 option.BIOME_WATER_COLOR               = Biome-Colored Water
@@ -718,6 +720,10 @@ option.WATER_WAVE_SPEED_STILL          = Speed (Still)
 option.WATER_WAVE_SPEED_FLOWING        = Speed (Flowing)
 option.WATER_WAVE_PERSISTENCE          = Persistence
 option.WATER_WAVE_LACUNARITY           = Lacunarity
+option.WATER_WAVE_ANGLE                = Angle
+option.WATER_NOISE_FREQUENCY           = Noise Frequency
+option.WATER_NOISE_STRENGTH            = Noise Strength
+option.WATER_NOISE_FADE                = Noise Fade
 option.WATER_PARALLAX                  = Water Parallax
 option.WATER_PARALLAX.comment          = Makes water waves appear 3D
 option.WATER_DISPLACEMENT              = Water Displacement
@@ -732,6 +738,8 @@ option.WATER_ABSORPTION_R_UNDERWATER   = Red Absorption - Underwater
 option.WATER_ABSORPTION_G_UNDERWATER   = Green Absorption - Underwater
 option.WATER_ABSORPTION_B_UNDERWATER   = Blue Absorption - Underwater
 option.WATER_SCATTERING_UNDERWATER     = Scattering - Underwater
+
+suffix.WATER_WAVE_ANGLE                = °
 
 # Post-processing settings
 
@@ -751,7 +759,8 @@ option.DOF_FOCUS.comment               = Focal distance for Depth of Field
 option.DOF_SIZE_X                      = Horizontal Size
 option.DOF_SIZE_Y                      = Vertical Size
 option.DOF_CA                          = Chromatic Aberration
-option.DOF_CA_INTENSITY                = Chromatic Aberration Intensity
+option.DOF_CA_INTENSITY                = CA Intensity
+option.DOF_CA_INTENSITY.comment        = Chromatic Aberration Intensity
 option.DOF_CA_R_OFFSET                 = Red Offset
 option.DOF_CA_G_OFFSET                 = Green Offset
 option.DOF_CA_B_OFFSET                 = Blue Offset
@@ -938,6 +947,9 @@ option.BOX_COLOR_B              = Blue
 option.BOX_EMISSION             = Emission
 option.BOX_EMISSION.comment     = Scales color past 1. Requires bloom.
 option.BOX_LINE_WIDTH           = Line Width
+
+# Compatibility
+option.PHYSICS_MOD_OCEAN        = Physics Mod Ocean
 
 # Daily Weather System
 

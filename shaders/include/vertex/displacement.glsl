@@ -26,7 +26,7 @@ float gerstner_wave(vec2 coord, vec2 wave_dir, float t, float noise, float wavel
 float get_water_displacement(vec3 world_pos, float skylight) {
 	const float wave_frequency = 0.3 * WATER_WAVE_FREQUENCY;
 	const float wave_speed     = 0.37 * WATER_WAVE_SPEED_STILL;
-	const float wave_angle     = 30.0 * degree;
+	const float wave_angle     = WATER_WAVE_ANGLE * degree;
 	const float wavelength     = 1.0;
 	const vec2  wave_dir       = vec2(cos(wave_angle), sin(wave_angle));
 

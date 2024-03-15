@@ -39,7 +39,6 @@ float get_water_height(vec2 coord, vec2 flow_dir, bool flowing_water) {
 	float amplitude = wave_amplitude;
 	float frequency = wave_frequency;
 
-	vec2 wave_dir = flowing_water ?  flow_dir : vec2(cos(wave_angle), sin(wave_angle));
 	mat2 wave_rot = flowing_water ? mat2(1.0) : mat2(cos(golden_angle), sin(golden_angle), -sin(golden_angle), cos(golden_angle));
 
 	for (uint i = 0u; i < gerstner_iterations; ++i) {

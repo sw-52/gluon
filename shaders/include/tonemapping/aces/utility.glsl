@@ -24,9 +24,9 @@ mat3 get_chromatic_adaptation_matrix(vec3 src_xyz, vec3 dst_xyz) {
 	return (bradford_cone_response * von_kries) * inverse(bradford_cone_response); // please invert at compile time
 }
 
-float log10(float x) {
+/*float log10(float x) {
 	return log(x) * rcp(log(10.0));
-}
+}*/
 
 vec3 y_to_lin_c_v(vec3 y, float y_max, float y_min) {
 	return (y - y_min) / (y_max - y_min);

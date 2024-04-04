@@ -1,4 +1,4 @@
-#if !defined INCLUDE_TONEMAPPING_ACES_MATRICES
+#ifndef INCLUDE_TONEMAPPING_ACES_MATRICES
 #define INCLUDE_TONEMAPPING_ACES_MATRICES
 
 #include "/include/utility/color.glsl"

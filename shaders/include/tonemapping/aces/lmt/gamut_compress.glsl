@@ -1,5 +1,5 @@
-#ifndef INCLUDE_TONEMAPPING_ACES_GAMUT_COMPRESS
-#define INCLUDE_TONEMAPPING_ACES_GAMUT_COMPRESS
+#ifndef INCLUDE_TONEMAPPING_ACES_LMT_GAMUT_COMPRESS
+#define INCLUDE_TONEMAPPING_ACES_LMT_GAMUT_COMPRESS
 
 //
 // Gamut compression algorithm to bring out-of-gamut scene-referred values into AP1
@@ -81,4 +81,4 @@ vec3 gamut_compress(vec3 ap0) {
     return ap0;
 }
 
-#endif //INCLUDE_TONEMAPPING_ACES_GAMUT_COMPRESS
+#endif //INCLUDE_TONEMAPPING_ACES_LMT_GAMUT_COMPRESS

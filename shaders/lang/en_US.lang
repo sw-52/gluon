@@ -31,6 +31,9 @@ screen.tonemap_settings                = Tonemap Specific Settings
 screen.dof_settings                    = DoF Settings
 
 screen.aces_settings                   = Academy Tonemap Settings
+screen.aces_pfe_settings               = Print Film Emulation LMT Settings
+screen.aces_pfe_hue_settings           = PFE Hue Settings
+screen.lottes_settings                 = Lottes Tonemap Settings
 screen.uncharted_2_settings            = Uncharted 2 Tonemap Settings
 screen.uchimura_settings               = Uchimura Tonemap Settings
 screen.agx_settings                    = AgX Tonemap Settings
@@ -844,11 +847,54 @@ option.PURKINJE_SHIFT_INTENSITY        = Purkinje Shift Intensity
 
 # Tonemap settings
 
-option.ACES_LMT                        = Academy LMT
-value.ACES_LMT.ACES_LMT_NONE           = None
-value.ACES_LMT.ACES_LMT_GAMUT_COMPRESS = Gamut Compress
-
 option.UNCHARTED_2_PARTIAL          = Uncharted 2 Partial Tonemap
+option.ACES_LMT1                        = Academy LMT 1
+option.ACES_LMT2                        = Academy LMT 2
+value.ACES_LMT1.ACES_LMT_NONE           = §fNone
+value.ACES_LMT1.ACES_LMT_GAMUT_COMPRESS = §aGamut Compress
+value.ACES_LMT1.ACES_LMT_BLUE_FIX       = §5Blue Light Fix
+value.ACES_LMT2.ACES_LMT_NONE           = §fNone
+value.ACES_LMT2.ACES_LMT_PFE            = §bPrint Film Emulation
+value.ACES_LMT2.ACES_LMT_BLEACH         = §eBleach Bypass
+
+option.ACES_PFE_PRESET   = PFE Preset
+value.ACES_PFE_PRESET.ACES_PFE_PRESET_CUSTOM  = §aCustom
+value.ACES_PFE_PRESET.ACES_PFE_PRESET_DEFAULT = §fDefault
+value.ACES_PFE_PRESET.ACES_PFE_PRESET_NATURAL = §eNatural
+
+option.ACES_PFE_SCALEC   = Scale Color
+option.ACES_PFE_SLOPE_R  = Slope Red
+option.ACES_PFE_SLOPE_G  = Slope Green
+option.ACES_PFE_SLOPE_B  = Slope Blue
+option.ACES_PFE_OFFSET_R = Offset Red
+option.ACES_PFE_OFFSET_G = Offset Green
+option.ACES_PFE_OFFSET_B = Offset Blue
+option.ACES_PFE_POWER_R  = Power Red
+option.ACES_PFE_POWER_G  = Power Green
+option.ACES_PFE_POWER_B  = Power Blue
+option.ACES_PFE_SAT      = Saturation
+option.ACES_PFE_GAMMA1   = Contrast
+option.ACES_PFE_GAMMA2   = Pivot
+
+option.ACES_PFE_BYPASS    = Disable Hue Adjustments
+option.ACES_PFE_ROTATEH11 = Hue 1
+option.ACES_PFE_ROTATEH12 = Range 1
+option.ACES_PFE_ROTATEH13 = Rotate 1
+option.ACES_PFE_ROTATEH21 = Hue 2
+option.ACES_PFE_ROTATEH22 = Range 2
+option.ACES_PFE_ROTATEH23 = Rotate 2
+option.ACES_PFE_ROTATEH31 = Hue 3
+option.ACES_PFE_ROTATEH32 = Range 3
+option.ACES_PFE_ROTATEH33 = Rotate 3
+option.ACES_PFE_SCALECH11 = Scale Color Hue 1
+option.ACES_PFE_SCALECH12 = Scale Color Range 1
+option.ACES_PFE_SCALECH13 = Scale Color 1
+option.ACES_PFE_ROTATEH41 = Hue 4
+option.ACES_PFE_ROTATEH42 = Range 4
+option.ACES_PFE_ROTATEH43 = Rotate 4
+option.ACES_PFE_SCALECH21 = Scale Color Hue 2
+option.ACES_PFE_SCALECH22 = Scale Color Range 2
+option.ACES_PFE_SCALECH23 = Scale Color 2
 
 option.UCHIMURA_MAX_BRIGHTNESS        = Maximum Brightness
 option.UCHIMURA_CONTRAST              = Contrast

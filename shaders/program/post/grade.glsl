@@ -73,7 +73,7 @@ vec3 get_bloom(out vec3 fog_bloom) {
 	float weight = 1.0;
 	float weight_sum = 0.0;
 
-#if defined BLOOMY_FOG || defined BLOOMY_RAIN
+#if defined (BLOOMY_FOG) || defined (BLOOMY_RAIN)
 	const float fog_bloom_radius = 1.5;
 
 	fog_bloom = vec3(0.0); // large-scale bloom for bloomy fog
@@ -96,7 +96,7 @@ vec3 get_bloom(out vec3 fog_bloom) {
 
 		weight *= radius;
 
-#if defined BLOOMY_FOG || defined BLOOMY_RAIN
+#if defined (BLOOMY_FOG) || defined (BLOOMY_RAIN)
 		fog_bloom += tile * fog_bloom_weight;
 
 		fog_bloom_weight_sum += fog_bloom_weight;
@@ -104,7 +104,7 @@ vec3 get_bloom(out vec3 fog_bloom) {
 #endif
 	}
 
-#if defined BLOOMY_FOG || defined BLOOMY_RAIN
+#if defined (BLOOMY_FOG) || defined (BLOOMY_RAIN)
 	fog_bloom /= fog_bloom_weight_sum;
 #endif
 

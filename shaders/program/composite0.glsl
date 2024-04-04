@@ -181,7 +181,7 @@ uniform float time_midnight;
 #include "/include/fog/air_fog_vl.glsl"
 #endif
 
-#if defined WORLD_END
+#if defined WORLD_END //|| defined WORLD_NETHER
 #include "/include/fog/end_fog_vl.glsl"
 #endif
 
@@ -223,9 +223,14 @@ void main() {
 			#if defined WORLD_OVERWORLD
 			mat2x3 fog = raymarch_air_fog(world_start_pos, world_end_pos, depth0 == 1.0, skylight, dither);
 			#elif defined WORLD_NETHER
+			//mat2x3 fog = mat2x3(vec3(1.0, 0.4, 0.0), vec3(0.2, 1.0, 1.0));
+			/*mat2x3 fog = raymarch_end_fog(world_start_pos, world_end_pos, depth0 == 1.0, dither);
+			fog[1] *= 1.0 - clamp01(length(fog[0])); //vec3(length(fog[0]), 0.0, 0.0);*/
 			mat2x3 fog = mat2x3(vec3(0.0), vec3(1.0));
 			#elif defined WORLD_END
 			mat2x3 fog = raymarch_end_fog(world_start_pos, world_end_pos, depth0 == 1.0, dither);
+			#else
+			mat2x3 fog = mat2x3(vec3(0.0), vec3(1.0));
 			#endif
 
 			fog_scattering    = fog[0];

@@ -22,6 +22,9 @@ float end_fog_density(vec3 world_pos) {
 }
 
 vec3 end_fog_emission(vec3 world_pos) {
+#ifdef WORLD_NETHER
+	return vec3(0.0);
+#else
 	const vec3 main_col = from_srgb(vec3(END_AMBIENT_R, END_AMBIENT_G, END_AMBIENT_B)) * END_AMBIENT_I;
 	const vec3 alt_col  = 0.5 * vec3(0.25, 1.0, 0.5);
 	const vec3 wind0    = vec3(1.0, 0.1, 0.5) * 0.01;
@@ -40,6 +43,7 @@ vec3 end_fog_emission(vec3 world_pos) {
 	float fade_height = exp2(-0.05 * (max0(cameraPosition.y - 120.0))) * linear_step(0.0, 64.0, world_pos.y);
 
 	return mix(main_col, alt_col, color_mix) * (density * fade_near * fade_far * fade_height);
+#endif
 }
 
 mat2x3 raymarch_end_fog(
@@ -54,7 +58,11 @@ mat2x3 raymarch_end_fog(
 	const float volume_bottom     = 0.0;
 	const float step_count_growth = 0.5;
 
+#ifdef WORLD_END
 	const vec3 end_color        = from_srgb(vec3(END_AMBIENT_R, END_AMBIENT_G, END_AMBIENT_B));
+#elif defined (WORLD_NETHER)
+	const vec3 end_color        = from_srgb(vec3(NETHER_R, NETHER_G, NETHER_B));
+#endif
 	const float density_scale   = 0.01;
 	const vec3 absorption_coeff = exp2(-end_color) * density_scale;
 	const vec3 scattering_coeff = vec3(1.0) * density_scale;
@@ -100,12 +108,13 @@ mat2x3 raymarch_end_fog(
 	vec3 world_pos = world_start_pos + world_dir * (distance_to_volume_start + step_length * dither);
 
 	// Space conversions
-
+#if defined SHADOW && !defined WORLD_NETHER
 	vec3 shadow_pos = transform(shadowModelView, world_pos - cameraPosition);
 	     shadow_pos = project_ortho(shadowProjection, shadow_pos);
 
 	vec3 shadow_step = mat3(shadowModelView) * world_step;
 	     shadow_step = diagonal(shadowProjection).xyz * shadow_step;
+#endif
 
 	// Calculations moved out of the loop
 
@@ -115,9 +124,8 @@ mat2x3 raymarch_end_fog(
 	vec3 transmittance = vec3(1.0);
 
 	for (int i = 0; i < step_count; ++i, world_pos += world_step, shadow_pos += shadow_step) {
+#if defined SHADOW && !defined WORLD_NETHER
 		vec3 shadow_screen_pos = distort_shadow_space(shadow_pos) * 0.5 + 0.5;
-
-#ifdef SHADOW
 	 	ivec2 shadow_texel = ivec2(shadow_screen_pos.xy * shadowMapResolution * MC_SHADOW_QUALITY);
 		float depth0 = texelFetch(shadowtex0, shadow_texel, 0).x;
 		float depth1 = texelFetch(shadowtex1, shadow_texel, 0).x;

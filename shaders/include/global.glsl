@@ -8,6 +8,10 @@
 	#define attribute in
 #endif
 
+#if defined(WORLD_MOON) || defined(WORLD_MARS) || defined(WORLD_VENUS) || defined(WORLD_MERCURY)
+	#define WORLD_SPACE
+#endif
+
 // Common constants
 
 const float eps          = 1e-6;
@@ -34,6 +38,7 @@ const float taau_render_scale = 1.0;
 #define max0(x) max(x, 0.0)
 #define max1(x) max(x, 1.0)
 #define min1(x) min(x, 1.0)
+#define log10(x) (log2(x) / log2(10.0))
 #define logx(x, y) (log2(x) / log2(y))
 
 float sqr(float x) { return x * x; }

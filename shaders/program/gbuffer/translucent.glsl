@@ -242,12 +242,7 @@ uniform sampler3D light_sampler_b;
 #endif
 
 #ifdef SHADOW
-#ifdef WORLD_OVERWORLD
-uniform sampler2D shadowtex0;
-uniform sampler2DShadow shadowtex1;
-#endif
-
-#ifdef WORLD_END
+#if defined WORLD_OVERWORLD || defined WORLD_END || defined WORLD_SPACE
 uniform sampler2D shadowtex0;
 uniform sampler2DShadow shadowtex1;
 #endif
@@ -587,7 +582,7 @@ void main() {
 	float NoH = (NoL + NoV) * halfway_norm;
 	float LoH = LoV * halfway_norm + halfway_norm;
 
-#if defined SHADOW && (defined WORLD_OVERWORLD || defined WORLD_END)
+#if defined SHADOW && (defined WORLD_OVERWORLD || defined WORLD_END || defined WORLD_SPACE)
 	float sss_depth;
 	float shadow_distance_fade;
 	vec3 shadows = calculate_shadows(scene_pos, tbn[2], adjusted_light_levels.y, material.sss_amount, shadow_distance_fade, sss_depth);
@@ -625,7 +620,7 @@ void main() {
 
 	// Specular highlight
 
-#if defined WORLD_OVERWORLD || defined WORLD_END
+#if defined WORLD_OVERWORLD || defined WORLD_END || defined WORLD_SPACE
 	#ifdef WATER_WAVES
 	if (!is_water) // Specular highlight on water must be applied in composite, after waves are calculated
 	#endif

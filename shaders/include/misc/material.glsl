@@ -161,7 +161,7 @@ Material material_from(vec3 albedo_srgb, uint material_mask, vec3 world_pos, ino
 					} else { // 6-8
 						if (material_mask == 6u) { // 6
 							#ifdef HARDCODED_SPECULAR
-							// Grass, stone, spruce and dark oak planks	#ifdef HARDCODED_SPECULAR
+							// Grass, stone, spruce and dark oak planks
 							float smoothness = 0.33 * smoothstep(0.2, 0.6, hsl.z);
 							material.roughness = sqr(1.0 - smoothness);
 							material.f0 = vec3(0.02);

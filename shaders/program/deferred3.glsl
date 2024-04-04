@@ -456,7 +456,7 @@ void main() {
 		float NoH = (NoL + NoV) * halfway_norm;
 		float LoH = LoV * halfway_norm + halfway_norm;
 
-#if defined SHADOW && (defined WORLD_OVERWORLD || defined WORLD_END)
+#if defined SHADOW && (defined WORLD_OVERWORLD || defined WORLD_END || defined WORLD_SPACE)
 		float sss_depth;
 		float shadow_distance_fade;
 		vec3 shadows = calculate_shadows(scene_pos, flat_normal, light_levels.y, material.sss_amount, shadow_distance_fade, sss_depth);
@@ -498,7 +498,7 @@ void main() {
 
 		// Specular highlight
 
-#if defined WORLD_OVERWORLD || defined WORLD_END
+#if defined WORLD_OVERWORLD || defined WORLD_END || defined WORLD_SPACE
 		scene_color += get_specular_highlight(material, NoL, NoV, NoH, LoV, LoH) * light_color * shadows * ao;
 #endif
 

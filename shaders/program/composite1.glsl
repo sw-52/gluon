@@ -202,12 +202,14 @@ void main() {
 
 	if (depth0 == 1.0) {
 		// Apply volumetric fog
-#if (defined WORLD_OVERWORLD || defined WORLD_END) && defined VL
+#if (defined WORLD_OVERWORLD || defined WORLD_END /*|| defined WORLD_NETHER*/) && defined VL
 		scene_color = scene_color * fog_transmittance + fog_scattering;
 		bloomy_fog = clamp01(dot(fog_transmittance, vec3(luminance_weights_rec2020)));
 		#if defined WORLD_END
 		bloomy_fog = bloomy_fog * 0.5 + 0.5;
 		#endif
+#elif defined WORLD_SPACE
+	bloomy_fog = 1.0;
 #endif
 
 #if defined WORLD_NETHER
@@ -399,7 +401,7 @@ void main() {
 
 	// Apply atmospheric fog
 
-#if (defined WORLD_OVERWORLD || defined WORLD_END) && defined VL
+#if (defined WORLD_OVERWORLD || defined WORLD_END /*|| defined WORLD_NETHER*/) && defined VL
 	scene_color = scene_color * fog_transmittance + fog_scattering;
 	bloomy_fog = clamp01(dot(fog_transmittance, vec3(luminance_weights_rec2020)));
 	bloomy_fog = isEyeInWater == 1.0 ? sqrt(bloomy_fog) : bloomy_fog;

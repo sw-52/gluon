@@ -26,7 +26,7 @@ float get_NoH_squared(
 	float radius_cos = cos(light_radius);
 	float radius_tan = tan(light_radius);
 
-	// Early out if R falls within the disc​
+	// Early out if R falls within the disc
 	float RoL = 2.0 * NoL * NoV - LoV;
 	if (RoL >= radius_cos) return 1.0;
 
@@ -34,10 +34,10 @@ float get_NoH_squared(
 	float not_r = r_over_length_t * (NoV - RoL * NoL);
 	float vot_r = r_over_length_t * (2.0 * NoV * NoV - 1.0 - RoL * LoV);
 
-	// Calculate dot(cross(N, L), V). This could already be calculated and available.​
+	// Calculate dot(cross(N, L), V). This could already be calculated and available.
 	float triple = sqrt(clamp01(1.0 - NoL * NoL - NoV * NoV - LoV * LoV + 2.0 * NoL * NoV * LoV));
 
-	// Do one Newton iteration to improve the bent light Direction​
+	// Do one Newton iteration to improve the bent light Direction
 	float NoB_r = r_over_length_t * triple, VoB_r = r_over_length_t * (2.0 * triple * NoV);
 	float NoL_vt_r = NoL * radius_cos + NoV + not_r, LoV_vt_r = LoV * radius_cos + 1.0 + vot_r;
 	float p = NoB_r * LoV_vt_r, q = NoL_vt_r * LoV_vt_r, s = VoB_r * NoL_vt_r;
@@ -47,10 +47,10 @@ float get_NoH_squared(
 	float two_x_1 = 2.0 * x_num / (x_denom * x_denom + x_num * x_num);
 	float sin_theta = two_x_1 * x_denom;
 	float cos_theta = 1.0 - two_x_1 * x_num;
-	not_r = cos_theta * not_r + sin_theta * NoB_r; // use new T to update not_r​
-	vot_r = cos_theta * vot_r + sin_theta * VoB_r; // use new T to update vot_r​
+	not_r = cos_theta * not_r + sin_theta * NoB_r; // use new T to update not_r
+	vot_r = cos_theta * vot_r + sin_theta * VoB_r; // use new T to update vot_r
 
-	// Calculate (N.H)^2 based on the bent light direction​
+	// Calculate (N.H)^2 based on the bent light direction
 	float new_NoL = NoL * radius_cos + not_r;
 	float new_LoV = LoV * radius_cos + vot_r;
 	float NoH = NoV + new_NoL;
@@ -76,6 +76,8 @@ vec3 get_specular_highlight(
 
 	// No specular highlight on a new moon
 	if (sunAngle > 0.5 && moonPhase == 4) return vec3(0.0);
+#elif defined WORLD_SPACE
+	const float light_radius = SUN_ANGULAR_RADIUS * 4.0 * degree;
 #else
 	const float light_radius = SUN_ANGULAR_RADIUS * degree;
 #endif

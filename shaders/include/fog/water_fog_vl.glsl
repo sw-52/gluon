@@ -66,7 +66,7 @@ mat2x3 raymarch_water_fog(
 	for (int i = 0; i < step_count; ++i, world_pos += world_step, shadow_pos += shadow_step, caustics_pos += caustics_step) {
 		vec3 shadow_screen_pos = distort_shadow_space(shadow_pos) * 0.5 + 0.5;
 
-#if defined SHADOW && (defined WORLD_OVERWORLD || defined WORLD_END)
+#if defined SHADOW && (defined WORLD_OVERWORLD || defined WORLD_END || defined WORLD_SPACE)
 	 	ivec2 shadow_texel = ivec2(shadow_screen_pos.xy * shadowMapResolution * MC_SHADOW_QUALITY);
 		float depth0 = texelFetch(shadowtex0, shadow_texel, 0).x;
 		float depth1 = texelFetch(shadowtex1, shadow_texel, 0).x;

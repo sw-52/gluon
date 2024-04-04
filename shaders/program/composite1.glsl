@@ -283,7 +283,7 @@ void main() {
 #if defined (PHYSICS_MOD_OCEAN) && defined (PHYSICS_OCEAN)
 			if(physics_iterationsNormal >= 1.0) {
 				WavePixelData wave = physics_wavePixel(physics_localPosition.xz, physics_localWaviness, physics_iterationsNormal, physics_gameTime);
-				normal = normalize(wave.normal /*+ mix(normal, vec3(0.0), clamp01(physics_localWaviness))*/);
+				//normal = normalize(wave.normal /*+ mix(normal, vec3(0.0), clamp01(physics_localWaviness))*/);
 			}
 #endif
 		}

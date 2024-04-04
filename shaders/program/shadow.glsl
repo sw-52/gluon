@@ -22,6 +22,10 @@ flat out vec3 tint;
 
 #ifdef WATER_CAUSTICS
 out vec3 scene_pos;
+
+#if defined (PHYSICS_MOD_OCEAN) && defined (PHYSICS_OCEAN)
+	#include "/include/misc/oceans.glsl"
+#endif
 #endif
 
 // --------------
@@ -87,7 +91,23 @@ void main() {
 
 	bool is_top_vertex = uv.y < mc_midTexCoord.y;
 
-	vec3 pos = transform(gl_ModelViewMatrix, gl_Vertex.xyz);
+	vec4 vert = gl_Vertex;
+
+#if defined (WATER_CAUSTICS) && defined (PHYSICS_MOD_OCEAN) && defined (PHYSICS_OCEAN)
+	if(physics_iterationsNormal >= 1.0 && material_mask == 1) {
+		// basic texture to determine how shallow/far away from the shore the water is
+		physics_localWaviness = texelFetch(physics_waviness, ivec2(gl_Vertex.xz) - physics_textureOffset, 0).r;
+		// transform gl_Vertex (since it is the raw mesh, i.e. not transformed yet)
+		vec4 finalPosition = vec4(gl_Vertex.x, gl_Vertex.y + physics_waveHeight(gl_Vertex.xz, PHYSICS_ITERATIONS_OFFSET, physics_localWaviness, physics_gameTime), gl_Vertex.z, gl_Vertex.w);
+		// pass this to the fragment shader to fetch the texture there for per fragment normals
+		physics_localPosition = finalPosition.xyz;
+
+		// now use finalPosition instead of gl_Vertex
+		vert.xyz = finalPosition.xyz;
+	}
+#endif
+
+	vec3 pos = transform(gl_ModelViewMatrix, vert.xyz);
 	     pos = transform(shadowModelViewInverse, pos);
 	     pos = pos + cameraPosition;
 	     pos = animate_vertex(pos, is_top_vertex, clamp01(rcp(240.0) * gl_MultiTexCoord1.y), material_mask);
@@ -157,6 +177,10 @@ uniform vec3 light_dir;
 
 #include "/include/misc/water_normal.glsl"
 #include "/include/utility/color.glsl"
+
+#if defined (PHYSICS_MOD_OCEAN) && defined (PHYSICS_OCEAN)
+#include "/include/misc/oceans.glsl"
+#endif
 
 const float air_n = 1.000293; // for 0°C and 1 atm
 const float water_n = 1.333;  // for 20°C
@@ -233,6 +257,15 @@ void main() {
 		vec3 absorption_coeff = biome_water_coeff(biome_water_color);
 
 		shadowcolor0_out = clamp01(0.25 * exp(-absorption_coeff * distance_through_water) * get_water_caustics());
+
+		#if defined (PHYSICS_MOD_OCEAN) && defined (PHYSICS_OCEAN)
+		if(physics_iterationsNormal >= 1.0) {
+			WavePixelData wave = physics_wavePixel(physics_localPosition.xz, physics_localWaviness, physics_iterationsNormal, physics_gameTime);
+			vec3 foam_color = (1.0 - absorption_coeff);
+			vec3 foam = mix(foam_color, vec3(1.0), max0(physics_foamOpacity - 1.0)) * physics_foamOpacity;
+			shadowcolor0_out *= clamp01(1.0 - foam * wave.foam);
+		}
+		#endif
 	} else {
 		vec4 base_color = textureLod(tex, uv, 0);
 		if (base_color.a < 0.1) discard;

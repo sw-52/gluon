@@ -112,7 +112,7 @@ void main() {
 
 	bool is_top_vertex = uv.y < mc_midTexCoord.y;
 
-	vec4 vert2 = gl_Vertex;
+	vec4 vert = gl_Vertex;
 
 #if defined (PHYSICS_MOD_OCEAN) && defined (PHYSICS_OCEAN)
 	if(physics_iterationsNormal >= 1.0 && material_mask == 1) {
@@ -124,11 +124,11 @@ void main() {
 		physics_localPosition = finalPosition.xyz;
 
 		// now use finalPosition instead of gl_Vertex
-		vert2.xyz = finalPosition.xyz;
+		vert.xyz = finalPosition.xyz;
 	}
 #endif
 
-	scene_pos = transform(gl_ModelViewMatrix, vert2.xyz);                                // To view space
+	scene_pos = transform(gl_ModelViewMatrix, vert.xyz);                                 // To view space
 	scene_pos = view_to_scene_space(scene_pos);                                          // To scene space
 	scene_pos = scene_pos + cameraPosition;                                              // To world space
 	scene_pos = animate_vertex(scene_pos, is_top_vertex, light_levels.y, material_mask); // Apply vertex animations
@@ -568,6 +568,12 @@ void main() {
 		normal = normalize(cross(dFdx(scene_pos), dFdy(scene_pos)));
 #endif
 	}
+
+#if defined (PHYSICS_MOD_OCEAN) && defined (PHYSICS_OCEAN)
+	if(is_water && physics_iterationsNormal >= 1.0) {
+		normal = normalize(wave.normal /*+ mix(normal, vec3(0.0), clamp01(physics_localWaviness))*/);
+	}
+#endif
 
 	// Shadows
 

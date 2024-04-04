@@ -67,10 +67,6 @@ float reverse_linear_depth(float linear_z) {
 	return (far + near) / (far - near) + (2.0 * far * near) / (linear_z * (far - near));
 }
 
-vec2 polar_to_cartesian(vec2 polar) {
-	return vec2(polar.x * cos(polar.y), polar.x * sin(polar.y));
-}
-
 void main() {
 	ivec2 texel = ivec2(gl_FragCoord.xy);
 
@@ -101,14 +97,11 @@ void main() {
 	caDist *= step(focus, depth) * 0.5 + 0.5;                      // Closer than focus point
 	caDist *= DOF_CA_INTENSITY * 0.01;                            // Adjust strength
 
-	mat3x2 ca = mat3x2(
-		vec2(DOF_CA_R_OFFSET, DOF_CA_R_ANGLE * degree),
-		vec2(DOF_CA_G_OFFSET, DOF_CA_G_ANGLE * degree),
-		vec2(DOF_CA_B_OFFSET, DOF_CA_B_ANGLE * degree)
+	const mat3x2 ca = mat3x2(
+		polar_to_cartesian2(DOF_CA_R_OFFSET, DOF_CA_R_ANGLE * degree),
+		polar_to_cartesian2(DOF_CA_G_OFFSET, DOF_CA_G_ANGLE * degree),
+		polar_to_cartesian2(DOF_CA_B_OFFSET, DOF_CA_B_ANGLE * degree)
 	);
-	ca[0] = polar_to_cartesian(ca[0]);
-	ca[1] = polar_to_cartesian(ca[1]);
-	ca[2] = polar_to_cartesian(ca[2]);
 #endif
 
 	vec2 m = vec2(1.0 - 2.0 * view_pixel_size * rcp(taau_render_scale));

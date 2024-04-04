@@ -17,6 +17,7 @@ screen.post                            = Post-Processing
 screen.misc                            = Misc
 screen.box                             = Box
 screen.compatibility                   = Compatibility
+screen.world_curvature                 = World Curvature Settings
 
 screen.colored_lights                  = Colored Lights Settings
 screen.rp_settings                     = Resource Pack Settings
@@ -128,6 +129,18 @@ option.DESERT_SANDSTORM                = Desert Sandstorm
 option.DESERT_SANDSTORM.comment        = Sandstorm during rain in desert biome
 option.END_GLOW                        = End Glow
 option.END_GLOW.comment                = Wavery glowing effect in the End. Requires Volumetric Lighting
+
+option.WORLD_CURVATURE          = World Curvature
+option.DISABLE_FRUSTUM_CULLING  = Disable Frustum Culling
+option.CURVATURE_MODE           = Curvature Mode
+option.CURVATURE_MODE.comment   = Squared Distance - Displaces Y position based on squared XZ distance (Parabola shape) \nBasic Spherical - Projects the surface to a sphere (Produces squished or elongated shapes) \nLog Spherical - Projects the surface to a sphere while maintaining the aspect ratio between sides (Changes scale by height)
+option.OVERWORLD_CURVATURE_SIZE = Overworld Curvature Size
+option.NETHER_CURVATURE_SIZE    = Nether Curvature Size
+option.END_CURVATURE_SIZE       = End Curvature Size
+
+value.CURVATURE_MODE.CURVATURE_MODE_SQUARED_DISTANCE = Squared Distance
+value.CURVATURE_MODE.CURVATURE_MODE_BASIC_SPHERICAL  = Basic Spherical
+value.CURVATURE_MODE.CURVATURE_MODE_LOG_SPHERICAL    = Log Spherical
 
 # Lighting settings
 
@@ -251,6 +264,7 @@ option.VANILLA_SUN                     = Vanilla Sun
 option.MOON_TYPE                       = Moon Type
 option.SUN_ANGULAR_RADIUS              = Sun Angular Radius
 option.MOON_ANGULAR_RADIUS             = Moon Angular Radius
+option.SUN_LUMINANCE                   = Sun Luminance
 option.SKY_GROUND                      = Sky Ground
 option.SKY_GROUND.comment              = Visible planet surface below the horizon
 option.STARS                           = Stars

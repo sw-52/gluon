@@ -187,3 +187,12 @@ vec3 project_and_divide(mat4 m, vec3 pos) {
 vec3 project_ortho(mat4 m, vec3 pos) {
     return diagonal(m).xyz * pos + m[3].xyz;
 }
+
+#define cartesian_to_polar(a) vec2(length(a), atan(a.y, a.x))
+
+#define polar_to_cartesian(polar) (polar.x * vec2(cos(polar.y), sin(polar.y)))
+#define polar_to_cartesian2(x, y) (x * vec2(cos(y), sin(y)))
+
+#define cartesian_to_log_polar(a) vec2(log(length(a)), atan(a.y, a.x))
+
+#define log_polar_to_cartesian(logp) (exp(logp.x) * vec2(cos(logp.y), sin(logp.y)))

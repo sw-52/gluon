@@ -128,6 +128,7 @@ void main() {
 	     pos = pos + cameraPosition;
 	     pos = animate_vertex(pos, is_top_vertex, light_levels.y, material_mask);
 	     pos = pos - cameraPosition;
+		 pos = world_curvature(pos);
 
 #if defined DIRECTIONAL_LIGHTMAPS
 	scene_pos = pos;

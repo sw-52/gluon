@@ -133,6 +133,7 @@ void main() {
 	scene_pos = scene_pos + cameraPosition;                                              // To world space
 	scene_pos = animate_vertex(scene_pos, is_top_vertex, light_levels.y, material_mask); // Apply vertex animations
 	scene_pos = scene_pos - cameraPosition;                                              // Back to scene space
+	scene_pos = world_curvature(scene_pos);                                              // Apply world curvature
 
 #if defined PROGRAM_GBUFFERS_WATER
 	tint.a = 1.0;

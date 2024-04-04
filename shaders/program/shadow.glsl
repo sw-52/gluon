@@ -112,6 +112,7 @@ void main() {
 	     pos = pos + cameraPosition;
 	     pos = animate_vertex(pos, is_top_vertex, clamp01(rcp(240.0) * gl_MultiTexCoord1.y), material_mask);
 		 pos = pos - cameraPosition;
+		 pos = world_curvature(pos);
 
 #ifdef WATER_CAUSTICS
 	scene_pos = pos;

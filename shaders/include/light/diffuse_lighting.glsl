@@ -202,8 +202,14 @@ vec3 get_diffuse_lighting(
 	// Cave lighting
 
 	lighting += 0.15 * CAVE_LIGHTING_I * directional_lighting * ao * (1.0 - light_levels.y * light_levels.y) * (1.0 - 0.7 * darknessFactor);
-	lighting += nightVision * night_vision_scale * directional_lighting * ao;
 #endif
+	if(nightVision > 0.0) {
+		float lum = dot(lighting, luminance_weights);
+		vec3 nv_color = vec3(0.1, 0.95, 0.2);
+		float nv_strength = nightVision * night_vision_scale * directional_lighting * ao * ao;
+		vec3 nv_lighting = nv_color * nv_strength;
+		lighting += nv_lighting * clamp01(1.0 - lum) * mix(1.0, 4.0, clamp01((0.25 - lum) * 4.0));
+	}
 
 	return max0(lighting) * material.albedo * rcp_pi * mix(1.0, metal_diffuse_amount, float(material.is_metal));
 }

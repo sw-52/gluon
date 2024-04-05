@@ -539,9 +539,29 @@ Material material_from(vec3 albedo_srgb, uint material_mask, vec3 world_pos, ino
 				}
 			}
 		}
-	}
+	} else if (material_mask < 264u) { // 64 - 264
+		if(material_mask == 80) { // 80
+			// Powered lightning rod
+			material.emission = vec3(1.0);
+		} /*else {
 
-	if (64u <= material_mask && material_mask < 80u) {
+		}*/
+	} else if (material_mask < 331u) { // 264 - 331
+		// Colored Candles
+		material.emission = vec3(0.2) * pow4(clamp01(block_pos.y * 2.0));
+	} /*else if (material_mask == PHYSICS_MOD_SNOW_ID) {
+		#ifdef HARDCODED_SPECULAR
+		material.f0 = vec3(0.02);
+		material.roughness = 0.5;
+		#endif
+
+		#ifdef HARDCODED_SSS
+		material.sss_amount = 1.0;
+		material.sheen_amount = 1.0;
+		#endif
+	}*/
+
+	if (164u <= material_mask && material_mask < 180u) {
 		// Stained glass, honey and slime
 		#ifdef HARDCODED_SPECULAR
 		material.f0 = vec3(0.04);

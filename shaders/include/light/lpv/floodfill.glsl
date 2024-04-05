@@ -1,14 +1,15 @@
-#if !defined INCLUDE_LIGHT_LPV_FLOODFILL
+#ifndef INCLUDE_LIGHT_LPV_FLOODFILL
 #define INCLUDE_LIGHT_LPV_FLOODFILL
 
 #include "voxelization.glsl"
+#include "/include/light/lpv/light_colors.glsl"
 
 bool is_emitter(uint block_id) {
 	return 32u <= block_id && block_id < 64u;
 }
 
 bool is_translucent(uint block_id) {
-	return 64u <= block_id && block_id < 80u;
+	return 164u <= block_id && block_id < 180u;
 }
 
 bool is_transparent(uint block_id) {
@@ -19,15 +20,40 @@ bool is_transparent(uint block_id) {
 	       block_id == 5u  || // Leaves
 	       block_id == 14u || // Strong SSS
 	       block_id == 15u || // Weak SSS
+		   block_id == 34u || // Weak white light, transparent
+		   block_id == 37u || // Weak golden light, transparent
 	       block_id == 41u || // Brewing stand
 	       block_id == 48u || // Sea pickle
 	       block_id == 49u || // Nether mushrooms
-	       block_id == 80u;   // Miscellaneous transparent
+	       block_id == 256u;  // Miscellaneous transparent
+}
+
+// Workaround for emitter ids 61 and >=64 not working in compute - TODO
+bool is_custom(uint block_id) {
+	return 64u <= block_id && block_id < 96u;
+}
+bool is_candle(uint block_id) {
+	return 264u <= block_id && block_id < 332u;
+}
+
+float get_candle_intensity(uint level) {
+	//return level > 0 ? (level > 1 ? (level > 2 ? 10.0 : 8.0) : 6.0) : 3.0;
+	return sqr(float(level + 1u)) + 1u;
 }
 
 vec3 get_emitted_light(uint block_id) {
 	if (is_emitter(block_id)) {
 		return texelFetch(light_data_sampler, ivec2(int(block_id) - 32, 0), 0).rgb;
+	} else if (is_custom(block_id)) {
+		return light_color[block_id - 32u];
+	} else if (is_candle(block_id)) {
+		if(block_id > 327) { // Uncolored Candle
+			return light_color[18u] / 8.0 * get_candle_intensity(block_id - 328u);
+		}
+		block_id -= 264u;
+		uint level = uint(floor(float(block_id) / 16.0));
+		float intensity = get_candle_intensity(level);
+		return tint_color[block_id - level * 16u] * intensity;
 	} else {
 		return vec3(0.0);
 	}
@@ -35,9 +61,9 @@ vec3 get_emitted_light(uint block_id) {
 
 vec3 get_tint(uint block_id) {
 	if (is_translucent(block_id)) {
-		return texelFetch(light_data_sampler, ivec2(int(block_id) - 64, 1), 0).rgb;
+		return texelFetch(light_data_sampler, ivec2(int(block_id) - 164, 1), 0).rgb;
 	} else {
-		return vec3(is_transparent(block_id));
+		return vec3(is_transparent(block_id) || is_emitter(block_id) || is_candle(block_id));
 	}
 }
 
@@ -70,7 +96,8 @@ void update_lpv(writeonly image3D light_img, sampler3D light_sampler) {
 
 	uint block_id      = texelFetch(voxel_sampler, pos, 0).x;
 	vec3 light_avg     = gather_light(light_sampler, previous_pos) * rcp(7.0);
-	vec3 emitted_light = sqr(get_emitted_light(block_id));
+	vec3 emitted_light = get_emitted_light(block_id);
+	emitted_light      = sqr(emitted_light) * sign(emitted_light);
 	vec3 tint          = sqr(get_tint(block_id));
 
 	vec3 light = emitted_light + light_avg * tint;

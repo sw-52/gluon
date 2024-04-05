@@ -1,7 +1,7 @@
 #ifndef INCLUDE_LIGHT_LPV_LIGHT_COLORS
 #define INCLUDE_LIGHT_LPV_LIGHT_COLORS
 
-const vec3[32] light_color = vec3[32](
+const vec3[64] light_color = vec3[64](
 	vec3(1.00, 1.00, 1.00) * 12.0, // Strong white light
 	vec3(1.00, 1.00, 1.00) *  6.0, // Medium white light
 	vec3(1.00, 1.00, 1.00) *  1.0, // Weak white light
@@ -28,12 +28,44 @@ const vec3[32] light_color = vec3[32](
 	vec3(0.75, 0.44, 1.00) *  4.0, // Amethyst cluster
 	vec3(0.75, 0.44, 1.00) *  4.0, // Calibrated sculk sensor
 	vec3(0.75, 1.00, 0.83) *  6.0, // Active sculk sensor
-	vec3(0.0), // Unused
 	vec3(1.00, 0.10, 0.10) *  3.3, // Redstone block
 	vec3(0.10, 1.00, 0.10) *  3.3, // Emerald block
 	vec3(0.10, 0.10, 1.00) *  3.3, // Lapis block
+	vec3(1.00, 1.00, 1.00) * 32.0, // Lightning rod
 	vec3(0.60, 0.10, 1.00) * 12.0, // Nether portal
-	vec3(0.0)  // End portal
+	vec3(0.0),  // End portal
+	vec3(1.0, 0.1, 0.1) *  8.0, // Red
+	vec3(1.0, 0.5, 0.1) *  8.0, // Orange
+	vec3(1.0, 1.0, 0.1) *  8.0, // Yellow
+	vec3(0.7, 0.7, 0.0) *  8.0, // Brown
+	vec3(0.1, 1.0, 0.1) *  8.0, // Green
+	vec3(0.5, 1.0, 0.5) *  8.0, // Lime
+	vec3(0.1, 0.1, 1.0) *  8.0, // Blue
+	vec3(0.5, 0.5, 1.0) *  8.0, // Light blue
+	vec3(0.1, 1.0, 1.0) *  8.0, // Cyan
+	vec3(0.7, 0.1, 1.0) *  8.0, // Purple
+	vec3(1.0, 0.1, 1.0) *  8.0, // Magenta
+	vec3(1.0, 0.5, 1.0) *  8.0, // Pink
+	vec3(0.1, 0.1, 0.1) *  8.0, // Black
+	vec3(0.9, 0.9, 0.9) *  8.0, // White
+	vec3(0.3, 0.3, 0.3) *  8.0, // Gray
+	vec3(0.7, 0.7, 0.7) *  8.0,  // Light gray
+	vec3(1.00, 1.00, 1.00) * 32.0, // Lightning rod
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0)   // Unused
 );
 
 const vec3[16] tint_color = vec3[16](

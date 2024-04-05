@@ -11,7 +11,7 @@
 
 #include "/include/global.glsl"
 
-layout (local_size_x = 32) in;
+layout (local_size_x = 64) in;
 
 #if   VOXEL_VOLUME_SIZE == 64
 const ivec3 workGroups = ivec3(2, 64, 64);

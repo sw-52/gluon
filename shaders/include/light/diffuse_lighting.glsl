@@ -103,13 +103,16 @@ vec3 get_diffuse_lighting(
 	vec3  lighting = vec3(0.0);
 	float directional_lighting = (0.9 + 0.1 * normal.x) * (0.8 + 0.2 * abs(flat_normal.y)); // Random directional shading to make faces easier to distinguish
 
-#if defined WORLD_OVERWORLD || defined WORLD_END
+#if defined WORLD_OVERWORLD || defined WORLD_END || defined WORLD_SPACE
 
 	// Sunlight/moonlight
 
 #ifdef SHADOW
 	vec3 diffuse = vec3(lift(max0(NoL), 0.33 * rcp(SHADING_STRENGTH)) * (1.0 - 0.5 * material.sss_amount));
 	vec3 bounced = 0.033 * (1.0 - shadows) * (1.0 - 0.1 * max0(normal.y)) * pow1d5(ao + eps) * pow4(light_levels.y) * BOUNCED_LIGHT_I;
+	#ifdef WORLD_SPACE
+	bounced *= clamp01(smoothstep(0.0, 0.1, light_dir.y));
+	#endif
 	vec3 sss = sss_approx(material.albedo, material.sss_amount, material.sheen_amount, sss_depth, LoV, shadows.x);
 
 	// Adjust SSS outside of shadow distance
@@ -117,6 +120,8 @@ vec3 get_diffuse_lighting(
 
 	#ifdef AO_IN_SUNLIGHT
 	diffuse *= sqr(ao);
+	#else // TODO: More ao control
+	diffuse *= 0.4 + 0.6 * sqr(ao);
 	#endif
 
 	#ifdef OVERCAST_SKY_AFFECTS_LIGHTING
@@ -174,7 +179,7 @@ vec3 get_diffuse_lighting(
 	skylight = 16.0 * directional_lighting * mix(skylight, vec3(dot(skylight, luminance_weights_rec2020)), 0.5);
 #endif
 
-	lighting += skylight * get_skylight_falloff(light_levels.y);
+	lighting += skylight * get_skylight_falloff(light_levels.y) * SKYLIGHT_I;
 
 	// Blocklight
 
@@ -197,8 +202,14 @@ vec3 get_diffuse_lighting(
 	// Cave lighting
 
 	lighting += 0.15 * CAVE_LIGHTING_I * directional_lighting * ao * (1.0 - light_levels.y * light_levels.y) * (1.0 - 0.7 * darknessFactor);
-	lighting += nightVision * night_vision_scale * directional_lighting * ao;
 #endif
+	if(nightVision > 0.0) {
+		float lum = dot(lighting, luminance_weights);
+		vec3 nv_color = vec3(0.1, 0.95, 0.2);
+		float nv_strength = nightVision * night_vision_scale * directional_lighting * ao * ao;
+		vec3 nv_lighting = nv_color * nv_strength;
+		lighting += nv_lighting * clamp01(1.0 - lum) * mix(1.0, 4.0, clamp01((0.25 - lum) * 4.0));
+	}
 
 	return max0(lighting) * material.albedo * rcp_pi * mix(1.0, metal_diffuse_amount, float(material.is_metal));
 }

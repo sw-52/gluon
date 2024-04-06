@@ -33,7 +33,7 @@ vec3 undistort_shadow_space(vec3 shadow_clip_pos) {
 // Many thanks to Emin for letting me use it <3
 // https://www.complementary.dev/reimagined
 vec3 get_shadow_bias(vec3 scene_pos, vec3 normal, float NoL, float skylight) {
-#if defined WORLD_END
+#if defined WORLD_END || defined WORLD_SPACE
 	skylight = 1.0;
 #endif
 

@@ -17,9 +17,17 @@ uniform int heldBlockLightValue2;
 vec3 get_handheld_light_color(int held_item_id, int held_item_light_value) {
 #ifdef COLORED_LIGHTS
 	bool is_emitter = 10032 <= held_item_id && held_item_id < 10064;
+	bool is_custom = 10064 <= held_item_id && held_item_id < 10300;
+	bool is_candle = 10264 <= held_item_id && held_item_id < 10280;
 
 	if (is_emitter) {
 		return texelFetch(light_data_sampler, ivec2(int(held_item_id) - 10032, 0), 0).rgb;
+	} else if(is_custom) {
+		if(is_candle) {
+			return texelFetch(light_data_sampler, ivec2(int(held_item_id) - 10264, 1), 0).rgb * 8.0;
+		} else {
+			return texelFetch(light_data_sampler, ivec2(int(held_item_id) - 10032, 0), 0).rgb;
+		}
 	} else {
 		return vec3(0.0);
 	}

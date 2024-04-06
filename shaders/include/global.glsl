@@ -8,6 +8,10 @@
 	#define attribute in
 #endif
 
+#if defined(WORLD_MOON) || defined(WORLD_MARS) || defined(WORLD_VENUS) || defined(WORLD_MERCURY)
+	#define WORLD_SPACE
+#endif
+
 // Common constants
 
 const float eps          = 1e-6;
@@ -32,7 +36,10 @@ const float taau_render_scale = 1.0;
 #define rcp(x) (1.0 / (x))
 #define clamp01(x) clamp(x, 0.0, 1.0) // free on operation output
 #define max0(x) max(x, 0.0)
+#define max1(x) max(x, 1.0)
 #define min1(x) min(x, 1.0)
+#define log10(x) (log2(x) / log2(10.0))
+#define logx(x, y) (log2(x) / log2(y))
 
 float sqr(float x) { return x * x; }
 vec2  sqr(vec2  v) { return v * v; }
@@ -44,15 +51,23 @@ float cube(float x) { return x * x * x; }
 float max_of(vec2 v) { return max(v.x, v.y); }
 float max_of(vec3 v) { return max(v.x, max(v.y, v.z)); }
 float max_of(vec4 v) { return max(v.x, max(v.y, max(v.z, v.w))); }
+float max_of(vec4 v, float a) { return max(max_of(v), a); }
+uint  max_of(uint a, uint b, uint c, uint d) { return max(a, max(b, max(c, d))); }
 float min_of(vec2 v) { return min(v.x, v.y); }
 float min_of(vec3 v) { return min(v.x, min(v.y, v.z)); }
 float min_of(vec4 v) { return min(v.x, min(v.y, min(v.z, v.w))); }
+float min_of(vec4 v, float a) { return min(min_of(v), a); }
+uint  min_of(uint a, uint b, uint c, uint d) { return min(a, min(b, min(c, d))); }
 
 float length_squared(vec2 v) { return dot(v, v); }
 float length_squared(vec3 v) { return dot(v, v); }
 
 vec2 normalize_safe(vec2 v) { return v == vec2(0.0) ? v : normalize(v); }
 vec3 normalize_safe(vec3 v) { return v == vec3(0.0) ? v : normalize(v); }
+
+float sdiv(float a, float b) { return abs(b) < eps ? 0.0 : a/b; }
+vec3  sdiv(vec3 a, float b)  { return abs(b) < eps ? vec3(0.0) : a/b; }
+vec3  sdiv(vec3 a, vec3 b)   { return vec3(sdiv(a.x, b.x), sdiv(a.y, b.y), sdiv(a.z, b.z)); }
 
 // Remapping functions
 
@@ -172,6 +187,15 @@ vec3 project_and_divide(mat4 m, vec3 pos) {
 vec3 project_ortho(mat4 m, vec3 pos) {
     return diagonal(m).xyz * pos + m[3].xyz;
 }
+
+#define cartesian_to_polar(a) vec2(length(a), atan(a.y, a.x))
+
+#define polar_to_cartesian(polar) (polar.x * vec2(cos(polar.y), sin(polar.y)))
+#define polar_to_cartesian2(x, y) (x * vec2(cos(y), sin(y)))
+
+#define cartesian_to_log_polar(a) vec2(log(length(a)), atan(a.y, a.x))
+
+#define log_polar_to_cartesian(logp) (exp(logp.x) * vec2(cos(logp.y), sin(logp.y)))
 
 // DH support
 

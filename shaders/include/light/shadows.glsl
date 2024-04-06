@@ -1,7 +1,7 @@
 #if !defined INCLUDE_LIGHT_SHADOWS
 #define INCLUDE_LIGHT_SHADOWS
 
-#if defined WORLD_OVERWORLD || defined WORLD_END
+#if defined WORLD_OVERWORLD || defined WORLD_END || defined WORLD_SPACE
 
 #include "/include/light/distortion.glsl"
 #include "/include/utility/color.glsl"

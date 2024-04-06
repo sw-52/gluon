@@ -131,6 +131,10 @@ uniform float time_midnight;
 #include "/include/utility/fast_math.glsl"
 #include "/include/utility/space_conversion.glsl"
 
+#if defined (PHYSICS_MOD_OCEAN) && defined (PHYSICS_OCEAN)
+#include "/include/misc/oceans.glsl"
+#endif
+
 /*
 const bool colortex5MipmapEnabled = true;
 */
@@ -155,7 +159,7 @@ vec3 purkinje_shift(vec3 rgb, vec2 light_levels) {
 	return rgb;
 #else
 	float purkinje_intensity  = 0.05 * PURKINJE_SHIFT_INTENSITY;
-	      purkinje_intensity  = purkinje_intensity - purkinje_intensity * smoothstep(-0.12, -0.06, sun_dir.y) * light_levels.y; // No purkinje shift in daylight
+	      purkinje_intensity -= purkinje_intensity * smoothstep(-0.12, -0.06, sun_dir.y) * light_levels.y; // No purkinje shift in daylight
 	      purkinje_intensity *= clamp01(1.0 - light_levels.x); // Reduce purkinje intensity in blocklight
 	      purkinje_intensity *= clamp01(0.3 + 0.7 * cube(light_levels.y)); // Reduce purkinje intensity underground
 
@@ -213,12 +217,14 @@ void main() {
 
 	if (depth0 == 1.0 && !front_is_dh_terrain) {
 		// Apply volumetric fog
-#if (defined WORLD_OVERWORLD || defined WORLD_END) && defined VL
+#if (defined WORLD_OVERWORLD || defined WORLD_END /*|| defined WORLD_NETHER*/) && defined VL
 		scene_color = scene_color * fog_transmittance + fog_scattering;
 		bloomy_fog = clamp01(dot(fog_transmittance, vec3(luminance_weights_rec2020)));
 		#if defined WORLD_END
 		bloomy_fog = bloomy_fog * 0.5 + 0.5;
 		#endif
+#elif defined WORLD_SPACE
+	bloomy_fog = 1.0;
 #endif
 
 #if defined WORLD_NETHER
@@ -297,6 +303,13 @@ void main() {
 #endif
 
 			normal = tbn * get_water_normal(world_pos, flat_normal, coord, flow_dir, light_levels.y, flowing_water);
+
+#if defined (PHYSICS_MOD_OCEAN) && defined (PHYSICS_OCEAN)
+			if(physics_iterationsNormal >= 1.0) {
+				WavePixelData wave = physics_wavePixel(physics_localPosition.xz, physics_localWaviness, physics_iterationsNormal, physics_gameTime);
+				//normal = normalize(wave.normal /*+ mix(normal, vec3(0.0), clamp01(physics_localWaviness))*/);
+			}
+#endif
 		}
 #endif
 	//------------------------------------------------------------------------//
@@ -352,7 +365,7 @@ void main() {
 		if (isEyeInWater == 1.0) {
 			float NoV = clamp01(dot(normal, -world_dir));
 			float water_n = isEyeInWater == 1 ? air_n / water_n : water_n / air_n;
-			scene_color *= 1.0 - fresnel_dielectric_n(NoV, water_n);
+			scene_color *= 1.0 - min1(fresnel_dielectric_n(NoV, water_n) * SNELLS_WINDOW_INTENSITY);
 		}
 #endif
 	}
@@ -451,7 +464,7 @@ void main() {
 
 	// Apply atmospheric fog
 
-#if (defined WORLD_OVERWORLD || defined WORLD_END) && defined VL
+#if (defined WORLD_OVERWORLD || defined WORLD_END /*|| defined WORLD_NETHER*/) && defined VL
 	scene_color = scene_color * fog_transmittance + fog_scattering;
 	bloomy_fog = clamp01(dot(fog_transmittance, vec3(luminance_weights_rec2020)));
 	bloomy_fog = isEyeInWater == 1.0 ? sqrt(bloomy_fog) : bloomy_fog;

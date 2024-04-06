@@ -48,6 +48,7 @@ void main() {
 	     pos = pos + cameraPosition;
 	     pos = animate_vertex(pos, false, 1.0, 0);
 	     pos = pos - cameraPosition;
+		 pos = world_curvature(pos);
 
 	vec3 view_pos = scene_to_view_space(pos);
 	vec4 clip_pos = project(gl_ProjectionMatrix, view_pos);

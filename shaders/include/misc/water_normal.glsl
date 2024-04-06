@@ -1,4 +1,4 @@
-#if !defined INCLUDE_MISC_WATER_NORMAL
+#ifndef INCLUDE_MISC_WATER_NORMAL
 #define INCLUDE_MISC_WATER_NORMAL
 
 #include "/include/utility/space_conversion.glsl"
@@ -20,16 +20,17 @@ float get_water_height(vec2 coord, vec2 flow_dir, bool flowing_water) {
 	const float wave_amplitude     = 1.0;
 	const float wave_frequency     = 0.4 * WATER_WAVE_FREQUENCY;
 	const float wave_speed_still   = 0.5 * WATER_WAVE_SPEED_STILL;
-	const float wave_speed_flowing = 0.50 * WATER_WAVE_SPEED_FLOWING;
-	const float wave_angle         = 30.0 * degree;
-	const float noise_frequency    = 0.01;
-	const float noise_strength     = 2.0;
-	const float noise_fade         = 1.33;
+	const float wave_speed_flowing = 0.5 * WATER_WAVE_SPEED_FLOWING;
+	const float wave_angle         = WATER_WAVE_ANGLE * degree;
+	const float noise_frequency    = 0.01 * WATER_NOISE_FREQUENCY;
+	const float noise_strength     = 2.0 * WATER_NOISE_STRENGTH;
+	const float noise_fade         = 1.33 * WATER_NOISE_FADE;
 	const float persistence        = 0.5 * WATER_WAVE_PERSISTENCE;
 	const float lacunarity         = 2.3 * WATER_WAVE_LACUNARITY;
 
+	vec2 wave_dir = flowing_water ?  flow_dir : vec2(cos(wave_angle), sin(wave_angle));
 	float t = (flowing_water ? wave_speed_flowing : wave_speed_still) * frameTimeCounter;
-	float noise = texture(noisetex, (coord + vec2(0.0, 0.25 * t)) * noise_frequency).y * noise_strength;
+	float noise = texture(noisetex, (coord + wave_dir * t) * noise_frequency).y * noise_strength;
 
 	float height = 0.0;
 	float amplitude_sum = 0.0;
@@ -37,8 +38,16 @@ float get_water_height(vec2 coord, vec2 flow_dir, bool flowing_water) {
 	float wave_length = 1.0;
 	float amplitude = wave_amplitude;
 	float frequency = wave_frequency;
+	/*vec2 coord2 = sin(coord * 0.05 + t * 0.01);//coord * 0.01; // + t * 0.002;
+	coord2 = coord2 - sin(coord2);
+	coord2.x = coord2.y + coord2.x;
+	coord2.y = -coord2.x;*/
+	//coord2 = vec2(cos(coord2.x + coord2.y), sin(coord2.x - coord2.y)) * 2.0;
+	/*coord2 = cos(coord2) * 1.0;
+	coord2 += golden_angle;*/
 
-	vec2 wave_dir = flowing_water ?  flow_dir : vec2(cos(wave_angle), sin(wave_angle));
+	//mat2 wave_rot = flowing_water ? mat2(1.0) : mat2(cos(golden_angle + coord.x*0.01 + t*0.01), sin(golden_angle + coord.y*0.01 + t*0.015), -sin(golden_angle + coord.y*0.01 + t*0.005), cos(golden_angle + coord.x*0.01 + t*0.01));
+	//mat2 wave_rot = mat2(cos(coord2.x), sin(coord2.y), -sin(coord2.y), cos(coord2.x));
 	mat2 wave_rot = flowing_water ? mat2(1.0) : mat2(cos(golden_angle), sin(golden_angle), -sin(golden_angle), cos(golden_angle));
 
 	for (uint i = 0u; i < gerstner_iterations; ++i) {
@@ -62,7 +71,7 @@ vec3 get_water_normal(vec3 world_pos, vec3 flat_normal, vec2 coord, vec2 flow_di
 	float wave1 = get_water_height(coord + vec2(h, 0.0), flow_dir, flowing_water);
 	float wave2 = get_water_height(coord + vec2(0.0, h), flow_dir, flowing_water);
 
-#if defined WORLD_OVERWORLD
+#ifdef WORLD_OVERWORLD
 	float normal_influence  = mix(0.01, 0.04 + 0.15 * rainStrength, dampen(skylight));
 #else
 	float normal_influence  = 0.04;

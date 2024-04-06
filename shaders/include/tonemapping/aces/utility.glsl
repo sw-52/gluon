@@ -1,5 +1,5 @@
-#if !defined INCLUDE_ACES_UTILITY
-#define INCLUDE_ACES_UTILITY
+#if !defined INCLUDE_TONEMAPPING_ACES_UTILITY
+#define INCLUDE_TONEMAPPING_ACES_UTILITY
 
 #include "/include/utility/color.glsl"
 #include "/include/utility/fast_math.glsl"
@@ -24,9 +24,9 @@ mat3 get_chromatic_adaptation_matrix(vec3 src_xyz, vec3 dst_xyz) {
 	return (bradford_cone_response * von_kries) * inverse(bradford_cone_response); // please invert at compile time
 }
 
-float log10(float x) {
+/*float log10(float x) {
 	return log(x) * rcp(log(10.0));
-}
+}*/
 
 vec3 y_to_lin_c_v(vec3 y, float y_max, float y_min) {
 	return (y - y_min) / (y_max - y_min);
@@ -85,4 +85,4 @@ float rgb_to_yc(vec3 rgb) {
 	return rcp(3.0) * (rgb.r + rgb.g + rgb.b + yc_radius_weight * chroma);
 }
 
-#endif // INCLUDE_ACES_UTILITY
+#endif // INCLUDE_TONEMAPPING_ACES_UTILITY

@@ -13,7 +13,7 @@
 
 
 //----------------------------------------------------------------------------//
-#if defined vsh
+#ifdef vsh
 
 flat out vec2 light_levels;
 flat out vec4 tint;
@@ -32,6 +32,14 @@ uniform mat4 modelViewMatrix;
 #if BOX_LINE_WIDTH != 2.0
 uniform int renderStage;
 #endif
+#endif
+
+#ifdef WORLD_CURVATURE
+uniform float rainStrength;
+#include "/include/vertex/displacement.glsl"
+uniform mat4 gbufferProjectionInverse;
+uniform mat4 gbufferModelView;
+uniform mat4 gbufferModelViewInverse;
 #endif
 
 uniform vec2 taa_offset;
@@ -80,6 +88,14 @@ void main() {
 	vec4 clip_pos = project(gl_ProjectionMatrix, view_pos);
 #endif
 
+#ifdef WORLD_CURVATURE
+	vec3 pos = (gbufferProjectionInverse * clip_pos).xyz;
+		 pos = transform(gbufferModelViewInverse, pos);
+		 pos = world_curvature(pos);
+		 pos = transform(gbufferModelView, pos);
+	clip_pos = project(gl_ProjectionMatrix, pos);
+#endif
+
 #if   defined TAA && defined TAAU
 	clip_pos.xy  = clip_pos.xy * taau_render_scale + clip_pos.w * (taau_render_scale - 1.0);
 	clip_pos.xy += taa_offset * clip_pos.w;
@@ -97,7 +113,7 @@ void main() {
 
 
 //----------------------------------------------------------------------------//
-#if defined fsh
+#ifdef fsh
 
 layout (location = 0) out vec4 scene_color;
 layout (location = 1) out vec4 gbuffer_data_0; // albedo, block ID, flat normal, light levels

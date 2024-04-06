@@ -26,7 +26,7 @@ float gerstner_wave(vec2 coord, vec2 wave_dir, float t, float noise, float wavel
 float get_water_displacement(vec3 world_pos, float skylight) {
 	const float wave_frequency = 0.3 * WATER_WAVE_FREQUENCY;
 	const float wave_speed     = 0.37 * WATER_WAVE_SPEED_STILL;
-	const float wave_angle     = 30.0 * degree;
+	const float wave_angle     = WATER_WAVE_ANGLE * degree;
 	const float wavelength     = 1.0;
 	const vec2  wave_dir       = vec2(cos(wave_angle), sin(wave_angle));
 
@@ -88,6 +88,48 @@ vec3 animate_vertex(vec3 world_pos, bool is_top_vertex, float skylight, uint mat
 	default:
 		return world_pos;
 	}
+}
+
+#ifdef WORLD_END
+	#define CURVATURE_SIZE END_CURVATURE_SIZE
+#elif defined(WORLD_NETHER)
+	#define CURVATURE_SIZE NETHER_CURVATURE_SIZE
+#else
+	#define CURVATURE_SIZE OVERWORLD_CURVATURE_SIZE
+#endif
+
+vec3 world_curvature(vec3 scene_pos) {
+#if CURVATURE_SIZE != 0.0 && defined(WORLD_CURVATURE)
+	//scene_pos += cameraPosition;
+	#if CURVATURE_MODE == CURVATURE_MODE_SQUARED_DISTANCE
+
+		scene_pos.y -= length_squared(scene_pos.xz) / CURVATURE_SIZE;
+
+	#elif CURVATURE_MODE == CURVATURE_MODE_BASIC_SPHERICAL || CURVATURE_MODE == CURVATURE_MODE_LOG_SPHERICAL
+
+		const float size = CURVATURE_SIZE;
+
+		#if CURVATURE_MODE == CURVATURE_MODE_BASIC_SPHERICAL
+		float h = scene_pos.y + size;
+		#elif CURVATURE_MODE == CURVATURE_MODE_LOG_SPHERICAL
+		float h = exp(scene_pos.y / size) * size;
+		#endif
+
+		vec2 azimuth = cartesian_to_polar(scene_pos.xz);
+		float phi = azimuth.x / size;
+
+		// Prevent looping with higher render distance
+		if(phi > pi) return vec3(0, intBitsToFloat(0xff800000), 0); // negative infinity ¯\_(o_o)_/¯
+
+		float h_sin_phi = h * sin(phi);
+		scene_pos.y = h * cos(phi) /*+ 128.0*/ /* exp(128.0 / CURVATURE_SIZE)*/ - size;
+		scene_pos.x = h_sin_phi * cos(azimuth.y);
+		scene_pos.z = h_sin_phi * sin(azimuth.y);
+
+	#endif
+	//scene_pos -= cameraPosition;
+#endif
+	return scene_pos;
 }
 
 #endif // INCLUDE_VERTEX_DISPLACEMENT

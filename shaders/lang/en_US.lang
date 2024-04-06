@@ -16,6 +16,8 @@ screen.water                           = Water
 screen.post                            = Post-Processing
 screen.misc                            = Misc
 screen.box                             = Box
+screen.compatibility                   = Compatibility
+screen.world_curvature                 = World Curvature Settings
 
 screen.colored_lights                  = Colored Lights Settings
 screen.rp_settings                     = Resource Pack Settings
@@ -24,12 +26,45 @@ screen.light_sources                   = Light Sources
 screen.shadows                         = Shadows
 screen.color_grading                   = Color Grading
 screen.exposure                        = Exposure
+screen.tonemap_settings                = Tonemap Settings
+
+screen.dof_settings                    = DoF Settings
+
+screen.tonemap_general_settings        = General Tonemap Settings
+screen.aces_settings                   = Academy Tonemap Settings
+screen.aces_pfe_settings               = Print Film Emulation LMT Settings
+screen.aces_pfe_hue_settings           = PFE Hue Settings
+screen.lottes_settings                 = Lottes Tonemap Settings
+screen.uncharted_2_settings            = Uncharted 2 Tonemap Settings
+screen.uchimura_settings               = Uchimura Tonemap Settings
+screen.agx_settings                    = AgX Tonemap Settings
+screen.khronos_neutral_settings        = Khronos Neutral Tonemap Settings
+screen.jjs_zcam_settings               = justjohn's ZCAM Tonemap Settings
+screen.bottosson_settings              = BOttosson Tonemap Settings
+screen.melon_tonemap_settings          = Melon Tonemap Settings
+screen.opendrt_settings                = OpenDRT Settings
+screen.jzdt_settings                   = JzDT Settings
 
 screen.aurora                          = Aurora
+screen.aurora_color                    = Aurora Color Settings
+screen.aurora_c0                       = Color 0
+screen.aurora_c1                       = Color 1
+screen.aurora_c2                       = Color 2
+screen.aurora_c3                       = Color 3
+screen.aurora_c4                       = Color 4
+screen.aurora_c5                       = Color 5
+screen.aurora_c6                       = Color 6
+screen.aurora_c7                       = Color 7
+screen.aurora_c8                       = Color 8
+screen.aurora_c9                       = Color 9
+screen.aurora_c10                      = Color 10
+screen.aurora_c11                      = Color 11
+
 screen.clouds                          = Clouds
 screen.clouds_cumulus                  = Cumulus Clouds Settings
 screen.clouds_altocumulus              = Altocumulus Clouds Settings
 screen.clouds_cumulus_congestus        = Cumulus Congestus Clouds Settings
+screen.clouds_cumulonimbus             = Cumulonimbus Clouds Settings
 screen.clouds_cirrus                   = Planar Clouds Settings
 screen.clouds_minecrafty               = Blocky Clouds Settings
 
@@ -104,6 +139,18 @@ option.DESERT_SANDSTORM.comment        = Sandstorm during rain in desert biome
 option.END_GLOW                        = End Glow
 option.END_GLOW.comment                = Wavery glowing effect in the End. Requires Volumetric Lighting
 
+option.WORLD_CURVATURE          = World Curvature
+option.DISABLE_FRUSTUM_CULLING  = Disable Frustum Culling
+option.CURVATURE_MODE           = Curvature Mode
+option.CURVATURE_MODE.comment   = Squared Distance - Displaces Y position based on squared XZ distance (Parabola shape) \nBasic Spherical - Projects the surface to a sphere (Produces squished or elongated shapes) \nLog Spherical - Projects the surface to a sphere while maintaining the aspect ratio between sides (Changes scale by height)
+option.OVERWORLD_CURVATURE_SIZE = Overworld Curvature Size
+option.NETHER_CURVATURE_SIZE    = Nether Curvature Size
+option.END_CURVATURE_SIZE       = End Curvature Size
+
+value.CURVATURE_MODE.CURVATURE_MODE_SQUARED_DISTANCE = Squared Distance
+value.CURVATURE_MODE.CURVATURE_MODE_BASIC_SPHERICAL  = Basic Spherical
+value.CURVATURE_MODE.CURVATURE_MODE_LOG_SPHERICAL    = Log Spherical
+
 # Lighting settings
 
 option.COLORED_LIGHTS                  = Colored Lights
@@ -148,6 +195,8 @@ option.BLOCK_ENTITY_SHADOWS            = Block Entity Shadows
 option.PIXELATED_SHADOWS               = Pixelated Shadows
 option.PIXELATED_SHADOWS.comment       = Shadows snap to block texels, creating a pixelated look
 option.PIXELATED_SHADOWS_RESOLUTION    = Pixelated Shadows Resolution
+option.SHADOW_DEPTH_SCALE              = Shadow Depth Scale
+option.SHADOW_DISTORTION               = Shadow Distortion
 
 option.SUN_NR                          = Red
 option.SUN_NG                          = Green
@@ -189,10 +238,14 @@ option.BLOCKLIGHT_I                    = Blocklight Intensity
 option.VOXEL_VOLUME_SIZE               = Voxel Volume Size
 option.VOXEL_VOLUME_SIZE.comment       = High performance impact, also affected by shadow distance
 suffix.VOXEL_VOLUME_SIZE               = m
+option.COLORED_LIGHT_I                 = Colored Light Intensity
 
 suffix.shadowMapResolution             = ²
 suffix.sunPathRotation                 = °
 
+value.shadowDistance.8.0               = 8 blocks
+value.shadowDistance.16.0              = 1 chunk
+value.shadowDistance.32.0              = 2 chunks
 value.shadowDistance.48.0              = 3 chunks
 value.shadowDistance.64.0              = 4 chunks
 value.shadowDistance.80.0              = 5 chunks
@@ -212,13 +265,16 @@ value.shadowDistance.384.0             = 24 chunks
 value.shadowDistance.512.0             = 32 chunks
 value.shadowDistance.768.0             = 48 chunks
 value.shadowDistance.1024.0            = 64 chunks
+value.shadowDistance.1280.0            = 80 chunks
+value.shadowDistance.1536.0            = 96 chunks
 
 # Sky settings
 
 option.VANILLA_SUN                     = Vanilla Sun
-option.VANILLA_MOON                    = Vanilla Moon
+option.MOON_TYPE                       = Moon Type
 option.SUN_ANGULAR_RADIUS              = Sun Angular Radius
 option.MOON_ANGULAR_RADIUS             = Moon Angular Radius
+option.SUN_LUMINANCE                   = Sun Luminance
 option.SKY_GROUND                      = Sky Ground
 option.SKY_GROUND.comment              = Visible planet surface below the horizon
 option.STARS                           = Stars
@@ -227,6 +283,10 @@ option.STARS_INTENSITY                 = Stars Intensity
 option.STARS_INTENSITY.comment         = Controls the brightness of stars in the night sky
 option.STARS_COVERAGE                  = Stars Coverage
 option.STARS_COVERAGE.comment          = Controls the number of stars in the night sky
+
+value.MOON_TYPE.MOON_VANILLA           = Vanilla Moon
+value.MOON_TYPE.MOON_PHOTON            = Photon Moon
+value.MOON_TYPE.MOON_FANCY             = Fancy Moon
 
 # Clouds
 option.CLOUDS_CUMULUS                       = Cumulus Clouds
@@ -244,9 +304,9 @@ option.CLOUDS_CUMULUS_SIZE                  = Size
 option.CLOUDS_CUMULUS_DETAIL_STRENGTH       = Detail Strength
 option.CLOUDS_CUMULUS_CURL_STRENGTH         = Curl Strength
 option.CLOUDS_CUMULUS_WIND_SPEED            = Wind Speed
-suffix.CLOUDS_CUMULUS_ALTITUDE              = m/s
+suffix.CLOUDS_CUMULUS_WIND_SPEED            = m/s
 option.CLOUDS_CUMULUS_WIND_ANGLE            = Wind Angle
-suffix.CLOUDS_CUMULUS_ALTITUDE              = °
+suffix.CLOUDS_CUMULUS_WIND_ANGLE            = °
 
 option.CLOUDS_ALTOCUMULUS                       = Cumulus Clouds
 option.CLOUDS_ALTOCUMULUS.comment               = Mid-altitude volumetric clouds made to resemble altocumulus clouds
@@ -263,12 +323,13 @@ option.CLOUDS_ALTOCUMULUS_SIZE                  = Size
 option.CLOUDS_ALTOCUMULUS_DETAIL_STRENGTH       = Detail Strength
 option.CLOUDS_ALTOCUMULUS_CURL_STRENGTH         = Curl Strength
 option.CLOUDS_ALTOCUMULUS_WIND_SPEED            = Wind Speed
-suffix.CLOUDS_ALTOCUMULUS_ALTITUDE              = m/s
+suffix.CLOUDS_ALTOCUMULUS_WIND_SPEED            = m/s
 option.CLOUDS_ALTOCUMULUS_WIND_ANGLE            = Wind Angle
-suffix.CLOUDS_ALTOCUMULUS_ALTITUDE              = °
+suffix.CLOUDS_ALTOCUMULUS_WIND_ANGLE            = °
 
 option.CLOUDS_CUMULUS_CONGESTUS                       = Cumulus Congestus Clouds
 option.CLOUDS_CUMULUS_CONGESTUS.comment               = Massive, distant volumetric clouds
+option.CLOUDS_CUMULUS_CONGESTUS_PRIMARY_STEPS         = Primary Steps
 option.CLOUDS_CUMULUS_CONGESTUS_PRIMARY_STEPS_H       = Primary Steps - Horizon
 option.CLOUDS_CUMULUS_CONGESTUS_PRIMARY_STEPS_Z       = Primary Steps - Zenith
 option.CLOUDS_CUMULUS_CONGESTUS_LIGHTING_STEPS        = Lighting Steps
@@ -282,9 +343,37 @@ option.CLOUDS_CUMULUS_CONGESTUS_SIZE                  = Size
 option.CLOUDS_CUMULUS_CONGESTUS_DETAIL_STRENGTH       = Detail Strength
 option.CLOUDS_CUMULUS_CONGESTUS_CURL_STRENGTH         = Curl Strength
 option.CLOUDS_CUMULUS_CONGESTUS_WIND_SPEED            = Wind Speed
-suffix.CLOUDS_CUMULUS_CONGESTUS_ALTITUDE              = m/s
+suffix.CLOUDS_CUMULUS_CONGESTUS_WIND_SPEED            = m/s
 option.CLOUDS_CUMULUS_CONGESTUS_WIND_ANGLE            = Wind Angle
-suffix.CLOUDS_CUMULUS_CONGESTUS_ALTITUDE              = °
+suffix.CLOUDS_CUMULUS_CONGESTUS_WIND_ANGLE            = °
+option.CLOUDS_CUMULUS_CONGESTUS_DISTANCE              = Start Distance
+suffix.CLOUDS_CUMULUS_CONGESTUS_DISTANCE              = m
+option.CLOUDS_CUMULUS_CONGESTUS_END_DISTANCE          = End Distance
+suffix.CLOUDS_CUMULUS_CONGESTUS_END_DISTANCE          = m
+
+option.CLOUDS_CUMULONIMBUS                       = Cumulonimbus Clouds
+option.CLOUDS_CUMULONIMBUS.comment               = Massive, towering volumetric clouds
+option.CLOUDS_CUMULONIMBUS_PRIMARY_STEPS         = Primary Steps
+option.CLOUDS_CUMULONIMBUS_PRIMARY_STEPS_H       = Primary Steps - Horizon
+option.CLOUDS_CUMULONIMBUS_PRIMARY_STEPS_Z       = Primary Steps - Zenith
+option.CLOUDS_CUMULONIMBUS_LIGHTING_STEPS        = Lighting Steps
+option.CLOUDS_CUMULONIMBUS_AMBIENT_STEPS         = Ambient Steps
+option.CLOUDS_CUMULONIMBUS_ALTITUDE              = Altitude
+suffix.CLOUDS_CUMULONIMBUS_ALTITUDE              = m
+option.CLOUDS_CUMULONIMBUS_THICKNESS             = Thickness
+option.CLOUDS_CUMULONIMBUS_DENSITY               = Density
+option.CLOUDS_CUMULONIMBUS_COVERAGE              = Coverage
+option.CLOUDS_CUMULONIMBUS_SIZE                  = Size
+option.CLOUDS_CUMULONIMBUS_DETAIL_STRENGTH       = Detail Strength
+option.CLOUDS_CUMULONIMBUS_CURL_STRENGTH         = Curl Strength
+option.CLOUDS_CUMULONIMBUS_WIND_SPEED            = Wind Speed
+suffix.CLOUDS_CUMULONIMBUS_WIND_SPEED            = m/s
+option.CLOUDS_CUMULONIMBUS_WIND_ANGLE            = Wind Angle
+suffix.CLOUDS_CUMULONIMBUS_WIND_ANGLE            = °
+option.CLOUDS_CUMULONIMBUS_DISTANCE              = Start Distance
+suffix.CLOUDS_CUMULONIMBUS_DISTANCE              = m
+option.CLOUDS_CUMULONIMBUS_END_DISTANCE          = End Distance
+suffix.CLOUDS_CUMULONIMBUS_END_DISTANCE          = m
 
 option.BLOCKY_CLOUDS                   = Blocky Clouds
 option.BLOCKY_CLOUDS.comment           = Vanilla-styled volumetric clouds. Enabling this option disables all other cloud types
@@ -305,6 +394,9 @@ option.CLOUDS_TEMPORAL_UPSCALING       = Temporal Upscaling
 option.CLOUDS_DAILY_WEATHER            = Daily Weather Variation
 option.CLOUDS_DAILY_WEATHER.comment    = Clouds are affected by the daily weather system
 option.CLOUDS_AERIAL_PERSPECTIVE_BOOST = Aerial Perspective Boost
+option.CLOUDS_SINGLE_LAYER             = Single Cloud Layer
+option.CLOUDS_SINGLE_LAYER.comment     = Clouds are rendered in a single layer
+option.CLOUDS_ACCUMULATION_LIMIT       = Accumulation Limit
 value.CLOUDS_TEMPORAL_UPSCALING.1      = Off
 value.CLOUDS_TEMPORAL_UPSCALING.2      = 4×
 value.CLOUDS_TEMPORAL_UPSCALING.3      = 9×
@@ -324,25 +416,32 @@ option.CLOUDS_CIRRUS_COVERAGE              = Cirrus Coverage
 option.CLOUDS_CIRRUS_SIZE                  = Cirrus Size
 option.CLOUDS_CIRRUS_DETAIL_STRENGTH       = Cirrus Detail Strength
 option.CLOUDS_CIRRUS_CURL_STRENGTH         = Cirrus Curl Strength
-option.CLOUDS_CC_DENSITY               = Cirrocumulus Density
-option.CLOUDS_CC_COVERAGE              = Cirrocumulus Coverage
-option.CLOUDS_CC_SIZE                  = Cirrocumulus Size
-option.CLOUDS_CC_DETAIL_STRENGTH       = Cirrocumulus Detail Strength
-option.CLOUDS_CC_CURL_STRENGTH         = Cirrocumulus Curl Strength
+option.CLOUDS_CC_DENSITY                   = Cirrocumulus Density
+option.CLOUDS_CC_COVERAGE                  = Cirrocumulus Coverage
+option.CLOUDS_CC_SIZE                      = Cirrocumulus Size
+option.CLOUDS_CC_DETAIL_STRENGTH           = Cirrocumulus Detail Strength
+option.CLOUDS_CC_CURL_STRENGTH             = Cirrocumulus Curl Strength
 option.CLOUDS_CIRRUS_WIND_SPEED            = Wind Speed
-suffix.CLOUDS_CIRRUS_ALTITUDE              = m/s
+suffix.CLOUDS_CIRRUS_WIND_SPEED            = m/s
 option.CLOUDS_CIRRUS_WIND_ANGLE            = Wind Angle
-suffix.CLOUDS_CIRRUS_ALTITUDE              = °
+suffix.CLOUDS_CIRRUS_WIND_ANGLE            = °
 
-option.CLOUDS_ALTOCUMULUS                       = Altocumulus Clouds
+option.CLOUDS_ALTOCUMULUS                  = Altocumulus Clouds
 option.CLOUDS_CIRRUS                       = Planar Clouds
 
+option.AURORA_TYPE                     = Aurora Style
+option.AURORA_COLOR                    = Aurora Color
 option.AURORA_NORMAL                   = Aurora in Any Biome
 option.AURORA_SNOW                     = Aurora in Snow Biome
-option.AURORA_BRIGHTNESS               = Aurora Brightness
-option.AURORA_FREQUENCY                = Aurora Frequency
+option.AURORA_BRIGHTNESS               = Aurora Brightness in Any Biome
+option.AURORA_BRIGHTNESS_SNOW          = Aurora Brightness in Snow Biome
+option.AURORA_FREQUENCY                = Aurora Frequency in Any Biome
+option.AURORA_FREQUENCY_SNOW           = Aurora Frequency in Snow Biome
 option.AURORA_CLOUD_LIGHTING           = Cloud Light Contribution
 option.AURORA_GROUND_LIGHTING          = Ground Light Contribution
+
+value.AURORA_TYPE.AURORA_PHOTON        = Classic Photon Aurora
+value.AURORA_TYPE.AURORA_NIMITZ        = Fancy Nimitz Aurora
 
 value.AURORA_NORMAL.AURORA_NEVER       = Never
 value.AURORA_NORMAL.AURORA_RARELY      = Rarely
@@ -351,6 +450,142 @@ value.AURORA_NORMAL.AURORA_ALWAYS      = Always
 value.AURORA_SNOW.AURORA_NEVER         = Never
 value.AURORA_SNOW.AURORA_RARELY        = Rarely
 value.AURORA_SNOW.AURORA_ALWAYS        = Always
+
+value.AURORA_COLOR.-1                  = Random Color
+value.AURORA_COLOR.0                   = Color 0
+value.AURORA_COLOR.1                   = Color 1
+value.AURORA_COLOR.2                   = Color 2
+value.AURORA_COLOR.3                   = Color 3
+value.AURORA_COLOR.4                   = Color 4
+value.AURORA_COLOR.5                   = Color 5
+value.AURORA_COLOR.6                   = Color 6
+value.AURORA_COLOR.7                   = Color 7
+value.AURORA_COLOR.8                   = Color 8
+value.AURORA_COLOR.9                   = Color 9
+value.AURORA_COLOR.10                  = Color 10
+value.AURORA_COLOR.11                  = Color 11
+
+
+option.AURORA_COLOR_0_TOP_R  = Top Red
+option.AURORA_COLOR_0_TOP_G  = Top Green
+option.AURORA_COLOR_0_TOP_B  = Top Blue
+option.AURORA_COLOR_0_TOP_I  = Top Intensity
+option.AURORA_COLOR_0_BTM_R  = Bottom Red
+option.AURORA_COLOR_0_BTM_G  = Bottom Green
+option.AURORA_COLOR_0_BTM_B  = Bottom Blue
+option.AURORA_COLOR_0_BTM_I  = Bottom Intensity
+option.AURORA_COLOR_0_WEIGHT = Weight
+
+option.AURORA_COLOR_1_TOP_R  = Top Red
+option.AURORA_COLOR_1_TOP_G  = Top Green
+option.AURORA_COLOR_1_TOP_B  = Top Blue
+option.AURORA_COLOR_1_TOP_I  = Top Intensity
+option.AURORA_COLOR_1_BTM_R  = Bottom Red
+option.AURORA_COLOR_1_BTM_G  = Bottom Green
+option.AURORA_COLOR_1_BTM_B  = Bottom Blue
+option.AURORA_COLOR_1_BTM_I  = Bottom Intensity
+option.AURORA_COLOR_1_WEIGHT = Weight
+
+option.AURORA_COLOR_2_TOP_R  = Top Red
+option.AURORA_COLOR_2_TOP_G  = Top Green
+option.AURORA_COLOR_2_TOP_B  = Top Blue
+option.AURORA_COLOR_2_TOP_I  = Top Intensity
+option.AURORA_COLOR_2_BTM_R  = Bottom Red
+option.AURORA_COLOR_2_BTM_G  = Bottom Green
+option.AURORA_COLOR_2_BTM_B  = Bottom Blue
+option.AURORA_COLOR_2_BTM_I  = Bottom Intensity
+option.AURORA_COLOR_2_WEIGHT = Weight
+
+option.AURORA_COLOR_3_TOP_R  = Top Red
+option.AURORA_COLOR_3_TOP_G  = Top Green
+option.AURORA_COLOR_3_TOP_B  = Top Blue
+option.AURORA_COLOR_3_TOP_I  = Top Intensity
+option.AURORA_COLOR_3_BTM_R  = Bottom Red
+option.AURORA_COLOR_3_BTM_G  = Bottom Green
+option.AURORA_COLOR_3_BTM_B  = Bottom Blue
+option.AURORA_COLOR_3_BTM_I  = Bottom Intensity
+option.AURORA_COLOR_3_WEIGHT = Weight
+
+option.AURORA_COLOR_4_TOP_R  = Top Red
+option.AURORA_COLOR_4_TOP_G  = Top Green
+option.AURORA_COLOR_4_TOP_B  = Top Blue
+option.AURORA_COLOR_4_TOP_I  = Top Intensity
+option.AURORA_COLOR_4_BTM_R  = Bottom Red
+option.AURORA_COLOR_4_BTM_G  = Bottom Green
+option.AURORA_COLOR_4_BTM_B  = Bottom Blue
+option.AURORA_COLOR_4_BTM_I  = Bottom Intensity
+option.AURORA_COLOR_4_WEIGHT = Weight
+
+option.AURORA_COLOR_5_TOP_R  = Top Red
+option.AURORA_COLOR_5_TOP_G  = Top Green
+option.AURORA_COLOR_5_TOP_B  = Top Blue
+option.AURORA_COLOR_5_TOP_I  = Top Intensity
+option.AURORA_COLOR_5_BTM_R  = Bottom Red
+option.AURORA_COLOR_5_BTM_G  = Bottom Green
+option.AURORA_COLOR_5_BTM_B  = Bottom Blue
+option.AURORA_COLOR_5_BTM_I  = Bottom Intensity
+option.AURORA_COLOR_5_WEIGHT = Weight
+
+option.AURORA_COLOR_6_TOP_R  = Top Red
+option.AURORA_COLOR_6_TOP_G  = Top Green
+option.AURORA_COLOR_6_TOP_B  = Top Blue
+option.AURORA_COLOR_6_TOP_I  = Top Intensity
+option.AURORA_COLOR_6_BTM_R  = Bottom Red
+option.AURORA_COLOR_6_BTM_G  = Bottom Green
+option.AURORA_COLOR_6_BTM_B  = Bottom Blue
+option.AURORA_COLOR_6_BTM_I  = Bottom Intensity
+option.AURORA_COLOR_6_WEIGHT = Weight
+
+option.AURORA_COLOR_7_TOP_R  = Top Red
+option.AURORA_COLOR_7_TOP_G  = Top Green
+option.AURORA_COLOR_7_TOP_B  = Top Blue
+option.AURORA_COLOR_7_TOP_I  = Top Intensity
+option.AURORA_COLOR_7_BTM_R  = Bottom Red
+option.AURORA_COLOR_7_BTM_G  = Bottom Green
+option.AURORA_COLOR_7_BTM_B  = Bottom Blue
+option.AURORA_COLOR_7_BTM_I  = Bottom Intensity
+option.AURORA_COLOR_7_WEIGHT = Weight
+
+option.AURORA_COLOR_8_TOP_R  = Top Red
+option.AURORA_COLOR_8_TOP_G  = Top Green
+option.AURORA_COLOR_8_TOP_B  = Top Blue
+option.AURORA_COLOR_8_TOP_I  = Top Intensity
+option.AURORA_COLOR_8_BTM_R  = Bottom Red
+option.AURORA_COLOR_8_BTM_G  = Bottom Green
+option.AURORA_COLOR_8_BTM_B  = Bottom Blue
+option.AURORA_COLOR_8_BTM_I  = Bottom Intensity
+option.AURORA_COLOR_8_WEIGHT = Weight
+
+option.AURORA_COLOR_9_TOP_R  = Top Red
+option.AURORA_COLOR_9_TOP_G  = Top Green
+option.AURORA_COLOR_9_TOP_B  = Top Blue
+option.AURORA_COLOR_9_TOP_I  = Top Intensity
+option.AURORA_COLOR_9_BTM_R  = Bottom Red
+option.AURORA_COLOR_9_BTM_G  = Bottom Green
+option.AURORA_COLOR_9_BTM_B  = Bottom Blue
+option.AURORA_COLOR_9_BTM_I  = Bottom Intensity
+option.AURORA_COLOR_9_WEIGHT = Weight
+
+option.AURORA_COLOR_10_TOP_R  = Top Red
+option.AURORA_COLOR_10_TOP_G  = Top Green
+option.AURORA_COLOR_10_TOP_B  = Top Blue
+option.AURORA_COLOR_10_TOP_I  = Top Intensity
+option.AURORA_COLOR_10_BTM_R  = Bottom Red
+option.AURORA_COLOR_10_BTM_G  = Bottom Green
+option.AURORA_COLOR_10_BTM_B  = Bottom Blue
+option.AURORA_COLOR_10_BTM_I  = Bottom Intensity
+option.AURORA_COLOR_10_WEIGHT = Weight
+
+option.AURORA_COLOR_11_TOP_R  = Top Red
+option.AURORA_COLOR_11_TOP_G  = Top Green
+option.AURORA_COLOR_11_TOP_B  = Top Blue
+option.AURORA_COLOR_11_TOP_I  = Top Intensity
+option.AURORA_COLOR_11_BTM_R  = Bottom Red
+option.AURORA_COLOR_11_BTM_G  = Bottom Green
+option.AURORA_COLOR_11_BTM_B  = Bottom Blue
+option.AURORA_COLOR_11_BTM_I  = Bottom Intensity
+option.AURORA_COLOR_11_WEIGHT = Weight
+
 
 # Fog settings
 
@@ -487,6 +722,7 @@ option.WATER_FOAM                      = Water Foam
 option.WATER_FOAM.comment              = White highlights where water meets terrain. Helps to make water more easily visible in some cases
 option.SNELLS_WINDOW                   = Snell's Window
 option.SNELLS_WINDOW.comment           = Total internal reflection underwater
+option.SNELLS_WINDOW_INTENSITY         = Snell's Window Intensity
 option.WATER_TEXTURE                   = Water Texture
 option.WATER_TEXTURE.comment           = How to use the vanilla water texture.\n\nOff - no water texture.\nHighlights: water texture adds highlights to the water, like how it works in Bedrock RTX.\nVanilla: water texture is used like any other texture
 option.BIOME_WATER_COLOR               = Biome-Colored Water
@@ -508,6 +744,10 @@ option.WATER_WAVE_SPEED_STILL          = Speed (Still)
 option.WATER_WAVE_SPEED_FLOWING        = Speed (Flowing)
 option.WATER_WAVE_PERSISTENCE          = Persistence
 option.WATER_WAVE_LACUNARITY           = Lacunarity
+option.WATER_WAVE_ANGLE                = Angle
+option.WATER_NOISE_FREQUENCY           = Noise Frequency
+option.WATER_NOISE_STRENGTH            = Noise Strength
+option.WATER_NOISE_FADE                = Noise Fade
 option.WATER_PARALLAX                  = Water Parallax
 option.WATER_PARALLAX.comment          = Makes water waves appear 3D
 option.WATER_DISPLACEMENT              = Water Displacement
@@ -523,20 +763,34 @@ option.WATER_ABSORPTION_G_UNDERWATER   = Green Absorption - Underwater
 option.WATER_ABSORPTION_B_UNDERWATER   = Blue Absorption - Underwater
 option.WATER_SCATTERING_UNDERWATER     = Scattering - Underwater
 
+suffix.WATER_WAVE_ANGLE                = °
+
 # Post-processing settings
 
 option.BLOOM                           = Bloom
 option.BLOOM.comment                   = Soft "glow" effect around bright areas and light sources
 option.BLOOM_INTENSITY                 = Bloom Intensity
 option.BLOOM_INTENSITY.comment         = Adjusts how much the bloom affects the final image
+
 option.DOF                             = Depth of Field
-option.DOG.comment                     = Camera focus effect - blurs out-of-focus areas
+option.DOF.comment                     = Camera focus effect - blurs out-of-focus areas
 option.DOF_INTENSITY                   = DoF Intensity
 option.DOF_INTENSITY.comment           = Adjusts the intensity of Depth of Field
 option.DOF_SAMPLES                     = DoF Samples
 option.DOF_SAMPLES.comment             = Number of samples taken for Depth of Field. Higher sample counts result in a higher quality blur but take more performance
 option.DOF_FOCUS                       = DoF Focus
 option.DOF_FOCUS.comment               = Focal distance for Depth of Field
+option.DOF_SIZE_X                      = Horizontal Size
+option.DOF_SIZE_Y                      = Vertical Size
+option.DOF_CA                          = Chromatic Aberration
+option.DOF_CA_INTENSITY                = CA Intensity
+option.DOF_CA_INTENSITY.comment        = Chromatic Aberration Intensity
+option.DOF_CA_R_OFFSET                 = Red Offset
+option.DOF_CA_G_OFFSET                 = Green Offset
+option.DOF_CA_B_OFFSET                 = Blue Offset
+option.DOF_CA_R_ANGLE                  = Red Angle
+option.DOF_CA_G_ANGLE                  = Green Angle
+option.DOF_CA_B_ANGLE                  = Blue Angle
 option.MOTION_BLUR                     = Motion Blur
 option.MOTION_BLUR.comment             = Cinematic blur in motion, also useful to smoothen low framerates but can cause motion sickness
 option.MOTION_BLUR_INTENSITY           = Motion Blur Intensity
@@ -560,24 +814,43 @@ option.VIGNETTE_INTENSITY.comment      = Adjusts the intensity of Vignette
 
 value.DOF_FOCUS.-1.0                   = Automatic
 
+suffix.DOF_CA_R_ANGLE                  = °
+suffix.DOF_CA_G_ANGLE                  = °
+suffix.DOF_CA_B_ANGLE                  = °
+
 option.tonemap                         = Tonemap Operator
 
+value.tonemap.tonemap_none             = §cNo Tonemap
 value.tonemap.academy_fit              = Academy Fit
 value.tonemap.academy_rrt              = Academy RRT
+value.tonemap.tonemap_lottes           = Lottes
 value.tonemap.tonemap_hejl_2015        = Hejl 2015
 value.tonemap.tonemap_hejl_burgess     = Hejl-Burgess
-value.tonemap.tonemap_lottes           = Lottes
 value.tonemap.tonemap_uncharted_2      = Uncharted 2
 value.tonemap.tonemap_tech             = Tech
 value.tonemap.tonemap_ozius            = Ozius
 value.tonemap.tonemap_reinhard         = Reinhard
 value.tonemap.tonemap_reinhard_jodie   = Reinhard-Jodie
+value.tonemap.tonemap_uchimura         = Uchimura
+value.tonemap.tonemap_agx              = AgX
+value.tonemap.tonemap_khronos_neutral  = Khronos Neutral
+value.tonemap.tonemap_justjohn         = justjohn's ZCAM
+value.tonemap.tonemap_bottosson        = BOttosson
+value.tonemap.tonemap_melon            = Melon
+value.tonemap.tonemap_opendrt          = OpenDRT
+value.tonemap.tonemap_jzdt             = JzDT
+value.tonemap.tonemap_rgbdrt           = rgbDRT
+value.tonemap.tonemap_zcam_drt         = ZCAM DRT
+value.tonemap.tonemap_fidelityfx_lpm   = FidelityFX LPM
+value.tonemap.tonemap_hatchling        = Hatchling Oklab
 
 # Color Grading
 
 option.GRADE_BRIGHTNESS                = Brightness
 option.GRADE_CONTRAST                  = Contrast
 option.GRADE_SATURATION                = Saturation
+option.GRADE_VIBRANCE                  = Vibrance
+option.GRADE_GAIN                      = Gain
 option.GRADE_WHITE_BALANCE             = White Balance
 option.GRADE_ORANGE_SAT_BOOST          = Orange Saturation Boost
 option.GRADE_TEAL_SAT_BOOST            = Teal Saturation Boost
@@ -589,6 +862,144 @@ suffix.GRADE_GREEN_HUE_SHIFT           = °
 option.PURKINJE_SHIFT                  = Purkinje Shift
 option.PURKINJE_SHIFT.option           = Simulates the effect of low lighting on human vision; desaturating all colors and darkening red hues
 option.PURKINJE_SHIFT_INTENSITY        = Purkinje Shift Intensity
+
+# Tonemap settings
+
+option.TONEMAP_HUE_FADE               = Bright Hue Fade
+option.TONEMAP_COLORTEST              = Tonemap Color Test
+
+value.TONEMAP_COLORTEST.COLORTEST_NONE      = §fOff
+value.TONEMAP_COLORTEST.COLORTEST_JJS_ZCAM  = §ejustjohn's ZCAM
+value.TONEMAP_COLORTEST.COLORTEST_BOTTOSSON = §eBOttosson
+
+option.ACES_LMT1                        = Academy LMT 1
+option.ACES_LMT2                        = Academy LMT 2
+value.ACES_LMT1.ACES_LMT_NONE           = §fNone
+value.ACES_LMT1.ACES_LMT_GAMUT_COMPRESS = §aGamut Compress
+value.ACES_LMT1.ACES_LMT_BLUE_FIX       = §5Blue Light Fix
+value.ACES_LMT2.ACES_LMT_NONE           = §fNone
+value.ACES_LMT2.ACES_LMT_PFE            = §bPrint Film Emulation
+value.ACES_LMT2.ACES_LMT_BLEACH         = §eBleach Bypass
+
+option.ACES_PFE_PRESET   = PFE Preset
+value.ACES_PFE_PRESET.ACES_PFE_PRESET_CUSTOM  = §aCustom
+value.ACES_PFE_PRESET.ACES_PFE_PRESET_DEFAULT = §fDefault
+value.ACES_PFE_PRESET.ACES_PFE_PRESET_NATURAL = §eNatural
+
+option.ACES_PFE_SCALEC   = Scale Color
+option.ACES_PFE_SLOPE_R  = Slope Red
+option.ACES_PFE_SLOPE_G  = Slope Green
+option.ACES_PFE_SLOPE_B  = Slope Blue
+option.ACES_PFE_OFFSET_R = Offset Red
+option.ACES_PFE_OFFSET_G = Offset Green
+option.ACES_PFE_OFFSET_B = Offset Blue
+option.ACES_PFE_POWER_R  = Power Red
+option.ACES_PFE_POWER_G  = Power Green
+option.ACES_PFE_POWER_B  = Power Blue
+option.ACES_PFE_SAT      = Saturation
+option.ACES_PFE_GAMMA1   = Contrast
+option.ACES_PFE_GAMMA2   = Pivot
+
+option.ACES_PFE_BYPASS    = Disable Hue Adjustments
+option.ACES_PFE_ROTATEH11 = Hue 1
+option.ACES_PFE_ROTATEH12 = Range 1
+option.ACES_PFE_ROTATEH13 = Rotate 1
+option.ACES_PFE_ROTATEH21 = Hue 2
+option.ACES_PFE_ROTATEH22 = Range 2
+option.ACES_PFE_ROTATEH23 = Rotate 2
+option.ACES_PFE_ROTATEH31 = Hue 3
+option.ACES_PFE_ROTATEH32 = Range 3
+option.ACES_PFE_ROTATEH33 = Rotate 3
+option.ACES_PFE_SCALECH11 = Scale Color Hue 1
+option.ACES_PFE_SCALECH12 = Scale Color Range 1
+option.ACES_PFE_SCALECH13 = Scale Color 1
+option.ACES_PFE_ROTATEH41 = Hue 4
+option.ACES_PFE_ROTATEH42 = Range 4
+option.ACES_PFE_ROTATEH43 = Rotate 4
+option.ACES_PFE_SCALECH21 = Scale Color Hue 2
+option.ACES_PFE_SCALECH22 = Scale Color Range 2
+option.ACES_PFE_SCALECH23 = Scale Color 2
+
+option.LOTTES_CONTRAST  = Lottes Contrast
+option.LOTTES_SHOULDER  = Shoulder Contrast
+
+option.UNCHARTED_2_PARTIAL           = Uncharted 2 Partial Tonemap
+option.UNCHARTED_2_SHOULDER_STRENGTH = Shoulder Strength
+option.UNCHARTED_2_LINEAR_STRENGTH   = Linear Strength
+option.UNCHARTED_2_LINEAR_ANGLE      = Linear Angle
+option.UNCHARTED_2_TOE_STRENGTH      = Toe Strength
+option.UNCHARTED_2_TOE_NUMERATOR     = Toe Numerator
+option.UNCHARTED_2_TOE_DENOMINATOR   = Toe Denominator
+
+option.UCHIMURA_MAX_BRIGHTNESS        = Maximum Brightness
+option.UCHIMURA_CONTRAST              = Contrast
+option.UCHIMURA_LINEAR_SECTION_START  = Linear Section Start
+option.UCHIMURA_LINEAR_SECTION_LENGTH = Linear Section Length
+option.UCHIMURA_BLACK_TIGHTNESS       = Black Tightness
+option.UCHIMURA_BLACK_PEDESTAL        = Black Pedestal
+
+option.JJS_ZCAM_REC2020             = Experimental Rec.2020
+
+option.AGX_LOOK                     = AgX Tonemap Look
+option.AGX_LOOK.comment             = \nDefault: No change and no extra performance impact.\nGolden: Adds warm tones for a less saturated, golden feel.\nPunchy: Enhances colors and contrast for vivid visuals.\nCustom: Enables customizing Offset, Slope, Power, and Saturation\n\nEquation:\n§o luma + Saturation * [(color * Slope + Offset)^Power - luma]
+option.AGX_EOTF                     = AgX EOTF
+option.AGX_HIGHER_PRECISION         = Higher Precision Approximation
+option.AGX_HIGHER_PRECISION.comment = Difference is probably unnoticable
+option.AGX_OFFSET_R                 = Red Offset
+option.AGX_OFFSET_G                 = Green Offset
+option.AGX_OFFSET_B                 = Blue Offset
+option.AGX_SLOPE_R                  = Red Slope
+option.AGX_SLOPE_G                  = Green Slope
+option.AGX_SLOPE_B                  = Blue Slope
+option.AGX_POWER_R                  = Red Power
+option.AGX_POWER_G                  = Green Power
+option.AGX_POWER_B                  = Blue Power
+option.AGX_SATURATION               = AgX Saturation
+
+value.AGX_LOOK.AGX_LOOK_CUSTOM  = §aCustom
+value.AGX_LOOK.AGX_LOOK_DEFAULT = §fDefault
+value.AGX_LOOK.AGX_LOOK_GOLDEN  = §6Golden
+value.AGX_LOOK.AGX_LOOK_PUNCHY  = §ePunchy
+
+option.KHRONOS_NEUTRAL_SCMP  = Compression Start
+option.KHRONOS_NEUTRAL_DESAT = Desaturation
+
+option.BOTTOSSON_APPR          = Approach
+option.BOTTOSSON_COMPRESS      = Gamut Compress
+option.BOTTOSSON_TONEMAP_CURVE = Tonemap Curve
+option.BOTTOSSON_SOFT_CLIP     = Soft Clip Color
+option.BOTTOSSON_SOFTNESS      = Clipping Softness
+option.BOTTOSSON_LIGHT_SAT     = Light Saturation
+option.BOTTOSSON_CHROMA        = Chroma Scale
+
+value.BOTTOSSON_APPR.BOTTOSSON_APPR_CHROMA_SAT  = Chromatic Saturation
+value.BOTTOSSON_APPR.BOTTOSSON_APPR_CHROMA_LUM  = Chromatic Luminance
+value.BOTTOSSON_APPR.BOTTOSSON_APPR_SEPARATE_BW = Achromatic Separation
+
+option.MELON_TONEMAP_HUESHIFT       = Bright Hue Shift
+option.MELON_TONEMAP_WHITESHIFT     = Bright White Shift
+option.MELON_TONEMAP_SHIFT_STRENGTH = Bright Shift Strength
+
+option.OPENDRT_EXPOSURE        = Tonemap Exposure
+option.OPENDRT_DECHROMA        = Dechroma
+option.OPENDRT_CHROMA_CONTRAST = Chroma Contrast
+option.OPENDRT_CONRTAST_PIVOT  = Chroma Contrast Pivot
+option.OPENDRT_CONTRAST        = Tonescale Contrast
+option.OPENDRT_FLARE           = Flare Compensation
+option.OPENDRT_GRAY_BOOST      = Gray Boost
+option.OPENDRT_WEIGHT_RED      = Weight Red
+option.OPENDRT_WEIGHT_GREEN    = Weight Green
+option.OPENDRT_WEIGHT_BLUE     = Weight Blue
+option.OPENDRT_HS_RED          = Hue Shift Red
+option.OPENDRT_HS_GREEN        = Hue Shift Green
+option.OPENDRT_HS_BLUE         = Hue Shift Blue
+
+option.JZDT_DECHROMA            = Dechroma
+option.JZDT_SATURATION          = Saturation
+option.JZDT_EUCLIDEAN           = Euclidean Distance Norm
+option.JZDT_PERCEPTUAL_DECHROMA = Perceptual Dechroma
+option.JZDT_GAMUT_COMPRESS      = Gamut Compress
+
 
 # Exposure
 
@@ -616,6 +1027,7 @@ option.WHITE_WORLD                     = White World
 option.WHITE_WORLD.comment             = Set every albedo texture to white
 option.TONEMAP_COMPARISON              = Tonemap Comparison
 option.TONEMAP_COMPARISON.comment      = Compare two tonemapping functions on the left and right halves of your screen
+option.TONEMAP_PLOT                    = Tonemap Plot
 option.tonemap_left                    = Left Tonemap
 option.tonemap_right                   = Right Tonemap
 option.FANCY_NETHER_PORTAL             = Fancy Nether Portal
@@ -631,6 +1043,11 @@ value.DEBUG_VIEW.DEBUG_VIEW_SAMPLER    = Sampler
 value.DEBUG_VIEW.DEBUG_VIEW_WEATHER    = Weather
 value.DEBUG_VIEW.DEBUG_VIEW_HISTOGRAM  = Histogram
 
+value.TONEMAP_PLOT.TONEMAP_PLOT_NONE   = §fOff
+value.TONEMAP_PLOT.TONEMAP_PLOT_WHITE  = Brightness
+value.TONEMAP_PLOT.TONEMAP_PLOT_COLOR  = Per Channel
+
+value.tonemap_left.tonemap_none           = §cNo Tonemap
 value.tonemap_left.academy_fit            = Academy Fit
 value.tonemap_left.academy_rrt            = Academy RRT
 value.tonemap_left.tonemap_lottes         = Lottes
@@ -641,17 +1058,42 @@ value.tonemap_left.tonemap_tech           = Tech
 value.tonemap_left.tonemap_ozius          = Ozius
 value.tonemap_left.tonemap_reinhard       = Reinhard
 value.tonemap_left.tonemap_reinhard_jodie = Reinhard-Jodie
+value.tonemap_left.tonemap_uchimura       = Uchimura
+value.tonemap_left.tonemap_agx            = AgX
+value.tonemap_left.tonemap_khronos_neutral= Khronos Neutral
+value.tonemap_left.tonemap_justjohn       = justjohn's ZCAM
+value.tonemap_left.tonemap_bottosson      = BOttosson
+value.tonemap_left.tonemap_melon          = Melon
+value.tonemap_left.tonemap_opendrt        = OpenDRT
+value.tonemap_left.tonemap_jzdt           = JzDT
+value.tonemap_left.tonemap_rgbdrt         = rgbDRT
+value.tonemap_left.tonemap_zcam_drt       = ZCAM DRT
+value.tonemap_left.tonemap_fidelityfx_lpm = FidelityFX LPM
+value.tonemap_left.tonemap_hatchling      = Hatchling Oklab
 
+value.tonemap_right.tonemap_none           = §cNo Tonemap
 value.tonemap_right.academy_fit            = Academy Fit
 value.tonemap_right.academy_rrt            = Academy RRT
 value.tonemap_right.tonemap_lottes         = Lottes
-value.tonemap_right.tonemap_hejl_burgess   = Hejl-Burgess
 value.tonemap_right.tonemap_hejl_2015      = Hejl 2015
+value.tonemap_right.tonemap_hejl_burgess   = Hejl-Burgess
 value.tonemap_right.tonemap_uncharted_2    = Uncharted 2
 value.tonemap_right.tonemap_tech           = Tech
 value.tonemap_right.tonemap_ozius          = Ozius
 value.tonemap_right.tonemap_reinhard       = Reinhard
 value.tonemap_right.tonemap_reinhard_jodie = Reinhard-Jodie
+value.tonemap_right.tonemap_uchimura       = Uchimura
+value.tonemap_right.tonemap_agx            = AgX
+value.tonemap_right.tonemap_khronos_neutral= Khronos Neutral
+value.tonemap_right.tonemap_justjohn       = justjohn's ZCAM
+value.tonemap_right.tonemap_bottosson      = BOttosson
+value.tonemap_right.tonemap_melon          = Melon
+value.tonemap_right.tonemap_opendrt        = OpenDRT
+value.tonemap_right.tonemap_jzdt           = JzDT
+value.tonemap_right.tonemap_rgbdrt         = rgbDRT
+value.tonemap_right.tonemap_zcam_drt       = ZCAM DRT
+value.tonemap_right.tonemap_fidelityfx_lpm = FidelityFX LPM
+value.tonemap_right.tonemap_hatchling      = Hatchling Oklab
 
 # Box
 
@@ -667,6 +1109,9 @@ option.BOX_EMISSION             = Emission
 option.BOX_EMISSION.comment     = Scales color past 1. Requires bloom.
 option.BOX_LINE_WIDTH           = Line Width
 
+# Compatibility
+option.PHYSICS_MOD_OCEAN        = Physics Mod Ocean
+
 # Daily Weather System
 
 option.WEATHER_DAY                         = Day
@@ -680,6 +1125,7 @@ option.WEATHER_D0_CLOUDS_CIRRUS            = Cirrus Coverage
 option.WEATHER_D0_CLOUDS_CC                = Cirrocumulus Coverage
 option.WEATHER_D0_FOGGINESS                = Fogginess
 option.WEATHER_D0_CLOUDS_CUMULUS_CONGESTUS_AMOUNT = Cumulus Congestus Clouds
+option.WEATHER_D0_CLOUDS_CUMULONIMBUS_AMOUNT = Cumulonimbus Clouds
 option.WEATHER_D0_CLOUDS_STRATUS_AMOUNT    = Stratus Clouds
 option.WEATHER_D0_OVERCASTNESS             = Overcastness
 option.WEATHER_D1_CLOUDS_CUMULUS_MIN       = Min Cumulus Coverage
@@ -690,6 +1136,7 @@ option.WEATHER_D1_CLOUDS_CIRRUS            = Cirrus Coverage
 option.WEATHER_D1_CLOUDS_CC                = Cirrocumulus Coverage
 option.WEATHER_D1_FOGGINESS                = Fogginess
 option.WEATHER_D1_CLOUDS_CUMULUS_CONGESTUS_AMOUNT = Cumulus Congestus Clouds
+option.WEATHER_D1_CLOUDS_CUMULONIMBUS_AMOUNT = Cumulonimbus Clouds
 option.WEATHER_D1_CLOUDS_STRATUS_AMOUNT    = Stratus Clouds
 option.WEATHER_D1_OVERCASTNESS             = Overcastness
 option.WEATHER_D2_CLOUDS_CUMULUS_MIN       = Min Cumulus Coverage
@@ -700,6 +1147,7 @@ option.WEATHER_D2_CLOUDS_CIRRUS            = Cirrus Coverage
 option.WEATHER_D2_CLOUDS_CC                = Cirrocumulus Coverage
 option.WEATHER_D2_FOGGINESS                = Fogginess
 option.WEATHER_D2_CLOUDS_CUMULUS_CONGESTUS_AMOUNT = Cumulus Congestus Clouds
+option.WEATHER_D2_CLOUDS_CUMULONIMBUS_AMOUNT = Cumulonimbus Clouds
 option.WEATHER_D2_CLOUDS_STRATUS_AMOUNT    = Stratus Clouds
 option.WEATHER_D2_OVERCASTNESS             = Overcastness
 option.WEATHER_D3_CLOUDS_CUMULUS_MIN       = Min Cumulus Coverage
@@ -710,6 +1158,7 @@ option.WEATHER_D3_CLOUDS_CIRRUS            = Cirrus Coverage
 option.WEATHER_D3_CLOUDS_CC                = Cirrocumulus Coverage
 option.WEATHER_D3_FOGGINESS                = Fogginess
 option.WEATHER_D3_CLOUDS_CUMULUS_CONGESTUS_AMOUNT = Cumulus Congestus Clouds
+option.WEATHER_D3_CLOUDS_CUMULONIMBUS_AMOUNT = Cumulonimbus Clouds
 option.WEATHER_D3_CLOUDS_STRATUS_AMOUNT    = Stratus Clouds
 option.WEATHER_D3_OVERCASTNESS             = Overcastness
 option.WEATHER_D4_CLOUDS_CUMULUS_MIN       = Min Cumulus Coverage
@@ -720,6 +1169,7 @@ option.WEATHER_D4_CLOUDS_CIRRUS            = Cirrus Coverage
 option.WEATHER_D4_CLOUDS_CC                = Cirrocumulus Coverage
 option.WEATHER_D4_FOGGINESS                = Fogginess
 option.WEATHER_D4_CLOUDS_CUMULUS_CONGESTUS_AMOUNT = Cumulus Congestus Clouds
+option.WEATHER_D4_CLOUDS_CUMULONIMBUS_AMOUNT = Cumulonimbus Clouds
 option.WEATHER_D4_CLOUDS_STRATUS_AMOUNT    = Stratus Clouds
 option.WEATHER_D4_OVERCASTNESS             = Overcastness
 option.WEATHER_D5_CLOUDS_CUMULUS_MIN       = Min Cumulus Coverage
@@ -730,6 +1180,7 @@ option.WEATHER_D5_CLOUDS_CIRRUS            = Cirrus Coverage
 option.WEATHER_D5_CLOUDS_CC                = Cirrocumulus Coverage
 option.WEATHER_D5_FOGGINESS                = Fogginess
 option.WEATHER_D5_CLOUDS_CUMULUS_CONGESTUS_AMOUNT = Cumulus Congestus Clouds
+option.WEATHER_D5_CLOUDS_CUMULONIMBUS_AMOUNT = Cumulonimbus Clouds
 option.WEATHER_D5_CLOUDS_STRATUS_AMOUNT    = Stratus Clouds
 option.WEATHER_D5_OVERCASTNESS             = Overcastness
 option.WEATHER_D6_CLOUDS_CUMULUS_MIN       = Min Cumulus Coverage
@@ -740,6 +1191,7 @@ option.WEATHER_D6_CLOUDS_CIRRUS            = Cirrus Coverage
 option.WEATHER_D6_CLOUDS_CC                = Cirrocumulus Coverage
 option.WEATHER_D6_FOGGINESS                = Fogginess
 option.WEATHER_D6_CLOUDS_CUMULUS_CONGESTUS_AMOUNT = Cumulus Congestus Clouds
+option.WEATHER_D6_CLOUDS_CUMULONIMBUS_AMOUNT = Cumulonimbus Clouds
 option.WEATHER_D6_CLOUDS_STRATUS_AMOUNT    = Stratus Clouds
 option.WEATHER_D6_OVERCASTNESS             = Overcastness
 option.WEATHER_D7_CLOUDS_CUMULUS_MIN       = Min Cumulus Coverage
@@ -750,6 +1202,7 @@ option.WEATHER_D7_CLOUDS_CIRRUS            = Cirrus Coverage
 option.WEATHER_D7_CLOUDS_CC                = Cirrocumulus Coverage
 option.WEATHER_D7_FOGGINESS                = Fogginess
 option.WEATHER_D7_CLOUDS_CUMULUS_CONGESTUS_AMOUNT = Cumulus Congestus Clouds
+option.WEATHER_D7_CLOUDS_CUMULONIMBUS_AMOUNT = Cumulonimbus Clouds
 option.WEATHER_D7_CLOUDS_STRATUS_AMOUNT    = Stratus Clouds
 option.WEATHER_D7_OVERCASTNESS             = Overcastness
 option.WEATHER_D8_CLOUDS_CUMULUS_MIN       = Min Cumulus Coverage
@@ -760,6 +1213,7 @@ option.WEATHER_D8_CLOUDS_CIRRUS            = Cirrus Coverage
 option.WEATHER_D8_CLOUDS_CC                = Cirrocumulus Coverage
 option.WEATHER_D8_FOGGINESS                = Fogginess
 option.WEATHER_D8_CLOUDS_CUMULUS_CONGESTUS_AMOUNT = Cumulus Congestus Clouds
+option.WEATHER_D8_CLOUDS_CUMULONIMBUS_AMOUNT = Cumulonimbus Clouds
 option.WEATHER_D8_CLOUDS_STRATUS_AMOUNT    = Stratus Clouds
 option.WEATHER_D8_OVERCASTNESS             = Overcastness
 option.WEATHER_D9_CLOUDS_CUMULUS_MIN       = Min Cumulus Coverage
@@ -770,6 +1224,7 @@ option.WEATHER_D9_CLOUDS_CIRRUS            = Cirrus Coverage
 option.WEATHER_D9_CLOUDS_CC                = Cirrocumulus Coverage
 option.WEATHER_D9_FOGGINESS                = Fogginess
 option.WEATHER_D9_CLOUDS_CUMULUS_CONGESTUS_AMOUNT = Cumulus Congestus Clouds
+option.WEATHER_D9_CLOUDS_CUMULONIMBUS_AMOUNT = Cumulonimbus Clouds
 option.WEATHER_D9_CLOUDS_STRATUS_AMOUNT    = Stratus Clouds
 option.WEATHER_D9_OVERCASTNESS             = Overcastness
 option.WEATHER_D10_CLOUDS_CUMULUS_MIN      = Min Cumulus Coverage
@@ -780,6 +1235,7 @@ option.WEATHER_D10_CLOUDS_CIRRUS           = Cirrus Coverage
 option.WEATHER_D10_CLOUDS_CC               = Cirrocumulus Coverage
 option.WEATHER_D10_FOGGINESS               = Fogginess
 option.WEATHER_D10_CLOUDS_CUMULUS_CONGESTUS_AMOUNT = Cumulus Congestus Clouds
+option.WEATHER_D10_CLOUDS_CUMULONIMBUS_AMOUNT = Cumulonimbus Clouds
 option.WEATHER_D10_CLOUDS_STRATUS_AMOUNT   = Stratus Clouds
 option.WEATHER_D10_OVERCASTNESS            = Overcastness
 option.WEATHER_D11_CLOUDS_CUMULUS_MIN      = Min Cumulus Coverage
@@ -790,5 +1246,6 @@ option.WEATHER_D11_CLOUDS_CIRRUS           = Cirrus Coverage
 option.WEATHER_D11_CLOUDS_CC               = Cirrocumulus Coverage
 option.WEATHER_D11_FOGGINESS               = Fogginess
 option.WEATHER_D11_CLOUDS_CUMULUS_CONGESTUS_AMOUNT = Cumulus Congestus Clouds
+option.WEATHER_D11_CLOUDS_CUMULONIMBUS_AMOUNT = Cumulonimbus Clouds
 option.WEATHER_D11_CLOUDS_STRATUS_AMOUNT   = Stratus Clouds
 option.WEATHER_D11_OVERCASTNESS            = Overcastness

@@ -1,4 +1,4 @@
-#if !defined INCLUDE_FOG_AIR_FOG_VL
+#ifndef INCLUDE_FOG_AIR_FOG_VL
 #define INCLUDE_FOG_AIR_FOG_VL
 
 #include "/include/light/distortion.glsl"
@@ -8,7 +8,7 @@
 #include "/include/utility/random.glsl"
 #include "/include/utility/space_conversion.glsl"
 
-#if defined PROGRAM_DEFERRED0
+#ifdef PROGRAM_DEFERRED0
 	#define NOISE_3D colortex6
 #else
 	#define NOISE_3D colortex0
@@ -164,7 +164,7 @@ mat2x3 raymarch_air_fog(vec3 world_start_pos, vec3 world_end_pos, bool sky, floa
 	vec3 scattering = vec3(0.0);
 	float scatter_amount = 1.0;
 
-#if defined PROGRAM_DEFERRED0
+#ifdef PROGRAM_DEFERRED0
 	vec3 ambient_color = ambient_color_fog;
 #endif
 

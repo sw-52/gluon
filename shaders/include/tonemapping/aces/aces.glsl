@@ -1,5 +1,5 @@
-#if !defined INCLUDE_ACES_ACES
-#define INCLUDE_ACES_ACES
+#if !defined INCLUDE_TONEMAPPING_ACES_ACES
+#define INCLUDE_TONEMAPPING_ACES_ACES
 
 /*
  * Implemented following the reference implementation given by the Academy at
@@ -93,13 +93,9 @@ float cubic_basis_shaper_fit(float x, const float width) {
 float center_hue(float hue, float center_h) {
 	float hue_centered = hue - center_h;
 
-	if (hue_centered < -180.0) {
-		return hue_centered + 360.0;
-	} else if (hue_centered > 180.0) {
-		return hue_centered - 360.0;
-	} else {
-		return hue_centered;
-	}
+	if (hue_centered < -180.0) hue_centered += 360.0;
+	else if (hue_centered > 180.0) hue_centered -= 360.0;
+	return hue_centered;
 }
 
 vec3 rrt_sweeteners(vec3 aces) {
@@ -206,4 +202,31 @@ vec3 rrt_and_odt_fit(vec3 rgb) {
 	return a / b;
 }
 
-#endif // INCLUDE_ACES_ACES
+
+#if ACES_LMT1 == ACES_LMT_GAMUT_COMPRESS
+	#include "lmt/gamut_compress.glsl"
+#elif ACES_LMT1 == ACES_LMT_BLUE_FIX
+	#include "lmt/blue_artifact_fix.glsl"
+#endif
+
+#if ACES_LMT2 == ACES_LMT_PFE || ACES_LMT2 == ACES_LMT_BLEACH
+	#include "lmt/other.glsl"
+#endif
+
+vec3 aces_lmt(vec3 ap0) {
+	#if ACES_LMT1 == ACES_LMT_GAMUT_COMPRESS
+		ap0 = gamut_compress(ap0);
+	#elif ACES_LMT1 == ACES_LMT_BLUE_FIX
+		ap0 = blue_light_artifact_fix(ap0);
+	#endif
+
+	#if ACES_LMT2 == ACES_LMT_PFE
+		ap0 = lmt_pfe(ap0);
+	#elif ACES_LMT2 == ACES_LMT_BLEACH
+		ap0 = lmt_bleach(ap0);
+	#endif
+
+	return ap0;
+}
+
+#endif // INCLUDE_TONEMAPPING_ACES_ACES

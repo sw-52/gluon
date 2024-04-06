@@ -125,6 +125,7 @@ void main() {
 	     pos = pos + cameraPosition;
 	     pos = animate_vertex(pos, is_top_vertex, light_levels.y, material_mask);
 	     pos = pos - cameraPosition;
+		 pos = world_curvature(pos);
 
 	scene_pos = pos;
 

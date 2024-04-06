@@ -1,7 +1,7 @@
-#if !defined INCLUDE_LIGHT_LPV_LIGHT_COLORS
+#ifndef INCLUDE_LIGHT_LPV_LIGHT_COLORS
 #define INCLUDE_LIGHT_LPV_LIGHT_COLORS
 
-const vec3[32] light_color = vec3[32](
+const vec3[64] light_color = vec3[64](
 	vec3(1.00, 1.00, 1.00) * 12.0, // Strong white light
 	vec3(1.00, 1.00, 1.00) *  6.0, // Medium white light
 	vec3(1.00, 1.00, 1.00) *  1.0, // Weak white light
@@ -12,7 +12,7 @@ const vec3[32] light_color = vec3[32](
 	vec3(1.00, 0.30, 0.10) * 24.0, // Lava
 	vec3(1.00, 0.45, 0.10) *  9.0, // Medium orange light
 	vec3(1.00, 0.63, 0.15) *  4.0, // Brewing stand
-	vec3(1.00, 0.57, 0.30) * 12.0, // Medium golden light
+	vec3(1.00, 0.57, 0.30) * 12.0, // Medium golden light (Jack o' Lantern)
 	vec3(0.45, 0.73, 1.00) *  6.0, // Soul lights
 	vec3(0.45, 0.73, 1.00) * 14.0, // Beacon
 	vec3(0.75, 1.00, 0.83) *  3.0, // Sculk
@@ -20,7 +20,7 @@ const vec3[32] light_color = vec3[32](
 	vec3(0.60, 0.10, 1.00) *  4.0, // Pink glow
 	vec3(0.75, 1.00, 0.50) *  1.0, // Sea pickle
 	vec3(1.00, 0.50, 0.25) *  4.0, // Nether plants
-	vec3(1.00, 0.57, 0.30) *  8.0, // Medium golden light
+	vec3(1.00, 0.57, 0.30) *  8.0, // Medium golden light (Candles)
 	vec3(1.00, 0.65, 0.30) *  8.0, // Ochre froglight
 	vec3(0.86, 1.00, 0.44) *  8.0, // Verdant froglight
 	vec3(0.75, 0.44, 1.00) *  8.0, // Pearlescent froglight
@@ -28,12 +28,44 @@ const vec3[32] light_color = vec3[32](
 	vec3(0.75, 0.44, 1.00) *  4.0, // Amethyst cluster
 	vec3(0.75, 0.44, 1.00) *  4.0, // Calibrated sculk sensor
 	vec3(0.75, 1.00, 0.83) *  6.0, // Active sculk sensor
-	vec3(1.00, 0.18, 0.10) *  3.3, // Redstone block
-	vec3(0.0), // Unused
-	vec3(0.0), // Unused
-	vec3(0.0), // Unused
+	vec3(1.00, 0.10, 0.10) *  3.3, // Redstone block
+	vec3(0.10, 1.00, 0.10) *  3.3, // Emerald block
+	vec3(0.10, 0.10, 1.00) *  3.3, // Lapis block
+	vec3(1.00, 1.00, 1.00) * 32.0, // Lightning rod
 	vec3(0.60, 0.10, 1.00) * 12.0, // Nether portal
-	vec3(0.0)  // End portal
+	vec3(0.0),  // End portal
+	vec3(1.0, 0.1, 0.1) *  8.0, // Red
+	vec3(1.0, 0.5, 0.1) *  8.0, // Orange
+	vec3(1.0, 1.0, 0.1) *  8.0, // Yellow
+	vec3(0.7, 0.7, 0.0) *  8.0, // Brown
+	vec3(0.1, 1.0, 0.1) *  8.0, // Green
+	vec3(0.5, 1.0, 0.5) *  8.0, // Lime
+	vec3(0.1, 0.1, 1.0) *  8.0, // Blue
+	vec3(0.5, 0.5, 1.0) *  8.0, // Light blue
+	vec3(0.1, 1.0, 1.0) *  8.0, // Cyan
+	vec3(0.7, 0.1, 1.0) *  8.0, // Purple
+	vec3(1.0, 0.1, 1.0) *  8.0, // Magenta
+	vec3(1.0, 0.5, 1.0) *  8.0, // Pink
+	vec3(0.1, 0.1, 0.1) *  8.0, // Black
+	vec3(0.9, 0.9, 0.9) *  8.0, // White
+	vec3(0.3, 0.3, 0.3) *  8.0, // Gray
+	vec3(0.7, 0.7, 0.7) *  8.0,  // Light gray
+	vec3(1.00, 1.00, 1.00) * 32.0, // Lightning rod
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0),  // Unused
+	vec3(0.0)   // Unused
 );
 
 const vec3[16] tint_color = vec3[16](

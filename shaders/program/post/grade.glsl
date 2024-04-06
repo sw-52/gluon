@@ -153,9 +153,10 @@ vec3 gain(vec3 x, float k) {
 // Color grading applied before tone mapping
 // rgb := color in acescg [0, inf]
 vec3 grade_input(vec3 rgb) {
-	float brightness = 0.83 * GRADE_BRIGHTNESS;
-	float contrast   = 1.00 * GRADE_CONTRAST;
-	float saturation = 0.98 * GRADE_SATURATION;
+	const float brightness = 0.83 * GRADE_BRIGHTNESS;
+	const float contrast   = 1.00 * GRADE_CONTRAST;
+	const float saturation = 0.98 * GRADE_SATURATION;
+	const float vibrance   = GRADE_VIBRANCE;
 
 	// Brightness
 	rgb *= brightness;
@@ -169,6 +170,18 @@ vec3 grade_input(vec3 rgb) {
 	// Saturation
 	float lum = dot(rgb, luminance_weights);
 	rgb = max0(mix(vec3(lum), rgb, saturation));
+
+	// Vibrance
+	float max_c = max_of(rgb);
+	float min_c = min_of(rgb);
+	float sat = (max_c - min_c);
+	rgb = max0(mix(rgb, mix(vec3(lum), rgb, vibrance), clamp01(1.0 - sat)));
+
+	//vec3 hsl = rgb_to_hsl(rgb);
+	//hsl.y = mix(hsl.y, hsl.y * vibrance, 1.0 - hsl.y);
+	////hsl.y *= 1.0 + (vibrance - 1.0) * (1.0 - hsl.y);
+	//rgb = hsl_to_rgb(hsl);
+
 
 #if GRADE_WHITE_BALANCE != 6500
 	// White balance (slow)
@@ -214,7 +227,7 @@ vec3 grade_output(vec3 rgb) {
 
 	rgb = hsl_to_rgb(hsl);
 
-	rgb = gain(rgb, 1.05);
+	rgb = gain(rgb, 1.05 * GRADE_GAIN);
 
 	return sqr(rgb);
 }

@@ -1,6 +1,8 @@
 #ifndef INCLUDE_TONEMAPPING_BOTTOSSON
 #define INCLUDE_TONEMAPPING_BOTTOSSON
 
+// Source: https://www.shadertoy.com/view/fsXcz4
+
 // Copyright(c) 2022 Björn Ottosson
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy of

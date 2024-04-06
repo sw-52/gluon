@@ -26,10 +26,11 @@ screen.light_sources                   = Light Sources
 screen.shadows                         = Shadows
 screen.color_grading                   = Color Grading
 screen.exposure                        = Exposure
-screen.tonemap_settings                = Tonemap Specific Settings
+screen.tonemap_settings                = Tonemap Settings
 
 screen.dof_settings                    = DoF Settings
 
+screen.tonemap_general_settings        = General Tonemap Settings
 screen.aces_settings                   = Academy Tonemap Settings
 screen.aces_pfe_settings               = Print Film Emulation LMT Settings
 screen.aces_pfe_hue_settings           = PFE Hue Settings
@@ -37,7 +38,12 @@ screen.lottes_settings                 = Lottes Tonemap Settings
 screen.uncharted_2_settings            = Uncharted 2 Tonemap Settings
 screen.uchimura_settings               = Uchimura Tonemap Settings
 screen.agx_settings                    = AgX Tonemap Settings
+screen.khronos_neutral_settings        = Khronos Neutral Tonemap Settings
 screen.jjs_zcam_settings               = justjohn's ZCAM Tonemap Settings
+screen.bottosson_settings              = BOttosson Tonemap Settings
+screen.melon_tonemap_settings          = Melon Tonemap Settings
+screen.opendrt_settings                = OpenDRT Settings
+screen.jzdt_settings                   = JzDT Settings
 
 screen.aurora                          = Aurora
 screen.aurora_color                    = Aurora Color Settings
@@ -814,7 +820,7 @@ suffix.DOF_CA_B_ANGLE                  = °
 
 option.tonemap                         = Tonemap Operator
 
-value.tonemap.tonemap_none             = No Tonemap
+value.tonemap.tonemap_none             = §cNo Tonemap
 value.tonemap.academy_fit              = Academy Fit
 value.tonemap.academy_rrt              = Academy RRT
 value.tonemap.tonemap_lottes           = Lottes
@@ -827,7 +833,16 @@ value.tonemap.tonemap_reinhard         = Reinhard
 value.tonemap.tonemap_reinhard_jodie   = Reinhard-Jodie
 value.tonemap.tonemap_uchimura         = Uchimura
 value.tonemap.tonemap_agx              = AgX
+value.tonemap.tonemap_khronos_neutral  = Khronos Neutral
 value.tonemap.tonemap_justjohn         = justjohn's ZCAM
+value.tonemap.tonemap_bottosson        = BOttosson
+value.tonemap.tonemap_melon            = Melon
+value.tonemap.tonemap_opendrt          = OpenDRT
+value.tonemap.tonemap_jzdt             = JzDT
+value.tonemap.tonemap_rgbdrt           = rgbDRT
+value.tonemap.tonemap_zcam_drt         = ZCAM DRT
+value.tonemap.tonemap_fidelityfx_lpm   = FidelityFX LPM
+value.tonemap.tonemap_hatchling        = Hatchling Oklab
 
 # Color Grading
 
@@ -848,7 +863,13 @@ option.PURKINJE_SHIFT_INTENSITY        = Purkinje Shift Intensity
 
 # Tonemap settings
 
-option.UNCHARTED_2_PARTIAL          = Uncharted 2 Partial Tonemap
+option.TONEMAP_HUE_FADE               = Bright Hue Fade
+option.TONEMAP_COLORTEST              = Tonemap Color Test
+
+value.TONEMAP_COLORTEST.COLORTEST_NONE      = §fOff
+value.TONEMAP_COLORTEST.COLORTEST_JJS_ZCAM  = §ejustjohn's ZCAM
+value.TONEMAP_COLORTEST.COLORTEST_BOTTOSSON = §eBOttosson
+
 option.ACES_LMT1                        = Academy LMT 1
 option.ACES_LMT2                        = Academy LMT 2
 value.ACES_LMT1.ACES_LMT_NONE           = §fNone
@@ -897,12 +918,25 @@ option.ACES_PFE_SCALECH21 = Scale Color Hue 2
 option.ACES_PFE_SCALECH22 = Scale Color Range 2
 option.ACES_PFE_SCALECH23 = Scale Color 2
 
+option.LOTTES_CONTRAST  = Lottes Contrast
+option.LOTTES_SHOULDER  = Shoulder Contrast
+
+option.UNCHARTED_2_PARTIAL           = Uncharted 2 Partial Tonemap
+option.UNCHARTED_2_SHOULDER_STRENGTH = Shoulder Strength
+option.UNCHARTED_2_LINEAR_STRENGTH   = Linear Strength
+option.UNCHARTED_2_LINEAR_ANGLE      = Linear Angle
+option.UNCHARTED_2_TOE_STRENGTH      = Toe Strength
+option.UNCHARTED_2_TOE_NUMERATOR     = Toe Numerator
+option.UNCHARTED_2_TOE_DENOMINATOR   = Toe Denominator
+
 option.UCHIMURA_MAX_BRIGHTNESS        = Maximum Brightness
 option.UCHIMURA_CONTRAST              = Contrast
 option.UCHIMURA_LINEAR_SECTION_START  = Linear Section Start
 option.UCHIMURA_LINEAR_SECTION_LENGTH = Linear Section Length
 option.UCHIMURA_BLACK_TIGHTNESS       = Black Tightness
 option.UCHIMURA_BLACK_PEDESTAL        = Black Pedestal
+
+option.JJS_ZCAM_REC2020             = Experimental Rec.2020
 
 option.AGX_LOOK                     = AgX Tonemap Look
 option.AGX_LOOK.comment             = \nDefault: No change and no extra performance impact.\nGolden: Adds warm tones for a less saturated, golden feel.\nPunchy: Enhances colors and contrast for vivid visuals.\nCustom: Enables customizing Offset, Slope, Power, and Saturation\n\nEquation:\n§o luma + Saturation * [(color * Slope + Offset)^Power - luma]
@@ -920,10 +954,50 @@ option.AGX_POWER_G                  = Green Power
 option.AGX_POWER_B                  = Blue Power
 option.AGX_SATURATION               = AgX Saturation
 
-value.AGX_LOOK.AGX_LOOK_CUSTOM  = Custom
-value.AGX_LOOK.AGX_LOOK_DEFAULT = Default
-value.AGX_LOOK.AGX_LOOK_GOLDEN  = Golden
-value.AGX_LOOK.AGX_LOOK_PUNCHY  = Punchy
+value.AGX_LOOK.AGX_LOOK_CUSTOM  = §aCustom
+value.AGX_LOOK.AGX_LOOK_DEFAULT = §fDefault
+value.AGX_LOOK.AGX_LOOK_GOLDEN  = §6Golden
+value.AGX_LOOK.AGX_LOOK_PUNCHY  = §ePunchy
+
+option.KHRONOS_NEUTRAL_SCMP  = Compression Start
+option.KHRONOS_NEUTRAL_DESAT = Desaturation
+
+option.BOTTOSSON_APPR          = Approach
+option.BOTTOSSON_COMPRESS      = Gamut Compress
+option.BOTTOSSON_TONEMAP_CURVE = Tonemap Curve
+option.BOTTOSSON_SOFT_CLIP     = Soft Clip Color
+option.BOTTOSSON_SOFTNESS      = Clipping Softness
+option.BOTTOSSON_LIGHT_SAT     = Light Saturation
+option.BOTTOSSON_CHROMA        = Chroma Scale
+
+value.BOTTOSSON_APPR.BOTTOSSON_APPR_CHROMA_SAT  = Chromatic Saturation
+value.BOTTOSSON_APPR.BOTTOSSON_APPR_CHROMA_LUM  = Chromatic Luminance
+value.BOTTOSSON_APPR.BOTTOSSON_APPR_SEPARATE_BW = Achromatic Separation
+
+option.MELON_TONEMAP_HUESHIFT       = Bright Hue Shift
+option.MELON_TONEMAP_WHITESHIFT     = Bright White Shift
+option.MELON_TONEMAP_SHIFT_STRENGTH = Bright Shift Strength
+
+option.OPENDRT_EXPOSURE        = Tonemap Exposure
+option.OPENDRT_DECHROMA        = Dechroma
+option.OPENDRT_CHROMA_CONTRAST = Chroma Contrast
+option.OPENDRT_CONRTAST_PIVOT  = Chroma Contrast Pivot
+option.OPENDRT_CONTRAST        = Tonescale Contrast
+option.OPENDRT_FLARE           = Flare Compensation
+option.OPENDRT_GRAY_BOOST      = Gray Boost
+option.OPENDRT_WEIGHT_RED      = Weight Red
+option.OPENDRT_WEIGHT_GREEN    = Weight Green
+option.OPENDRT_WEIGHT_BLUE     = Weight Blue
+option.OPENDRT_HS_RED          = Hue Shift Red
+option.OPENDRT_HS_GREEN        = Hue Shift Green
+option.OPENDRT_HS_BLUE         = Hue Shift Blue
+
+option.JZDT_DECHROMA            = Dechroma
+option.JZDT_SATURATION          = Saturation
+option.JZDT_EUCLIDEAN           = Euclidean Distance Norm
+option.JZDT_PERCEPTUAL_DECHROMA = Perceptual Dechroma
+option.JZDT_GAMUT_COMPRESS      = Gamut Compress
+
 
 # Exposure
 
@@ -951,6 +1025,7 @@ option.WHITE_WORLD                     = White World
 option.WHITE_WORLD.comment             = Set every albedo texture to white
 option.TONEMAP_COMPARISON              = Tonemap Comparison
 option.TONEMAP_COMPARISON.comment      = Compare two tonemapping functions on the left and right halves of your screen
+option.TONEMAP_PLOT                    = Tonemap Plot
 option.tonemap_left                    = Left Tonemap
 option.tonemap_right                   = Right Tonemap
 option.FANCY_NETHER_PORTAL             = Fancy Nether Portal
@@ -965,7 +1040,11 @@ value.DEBUG_VIEW.DEBUG_VIEW_SAMPLER    = Sampler
 value.DEBUG_VIEW.DEBUG_VIEW_WEATHER    = Weather
 value.DEBUG_VIEW.DEBUG_VIEW_HISTOGRAM  = Histogram
 
-value.tonemap_left.tonemap_none           = No Tonemap
+value.TONEMAP_PLOT.TONEMAP_PLOT_NONE   = §fOff
+value.TONEMAP_PLOT.TONEMAP_PLOT_WHITE  = Brightness
+value.TONEMAP_PLOT.TONEMAP_PLOT_COLOR  = Per Channel
+
+value.tonemap_left.tonemap_none           = §cNo Tonemap
 value.tonemap_left.academy_fit            = Academy Fit
 value.tonemap_left.academy_rrt            = Academy RRT
 value.tonemap_left.tonemap_lottes         = Lottes
@@ -978,9 +1057,18 @@ value.tonemap_left.tonemap_reinhard       = Reinhard
 value.tonemap_left.tonemap_reinhard_jodie = Reinhard-Jodie
 value.tonemap_left.tonemap_uchimura       = Uchimura
 value.tonemap_left.tonemap_agx            = AgX
+value.tonemap_left.tonemap_khronos_neutral= Khronos Neutral
 value.tonemap_left.tonemap_justjohn       = justjohn's ZCAM
+value.tonemap_left.tonemap_bottosson      = BOttosson
+value.tonemap_left.tonemap_melon          = Melon
+value.tonemap_left.tonemap_opendrt        = OpenDRT
+value.tonemap_left.tonemap_jzdt           = JzDT
+value.tonemap_left.tonemap_rgbdrt         = rgbDRT
+value.tonemap_left.tonemap_zcam_drt       = ZCAM DRT
+value.tonemap_left.tonemap_fidelityfx_lpm = FidelityFX LPM
+value.tonemap_left.tonemap_hatchling      = Hatchling Oklab
 
-value.tonemap_right.tonemap_none           = No Tonemap
+value.tonemap_right.tonemap_none           = §cNo Tonemap
 value.tonemap_right.academy_fit            = Academy Fit
 value.tonemap_right.academy_rrt            = Academy RRT
 value.tonemap_right.tonemap_lottes         = Lottes
@@ -993,7 +1081,16 @@ value.tonemap_right.tonemap_reinhard       = Reinhard
 value.tonemap_right.tonemap_reinhard_jodie = Reinhard-Jodie
 value.tonemap_right.tonemap_uchimura       = Uchimura
 value.tonemap_right.tonemap_agx            = AgX
+value.tonemap_right.tonemap_khronos_neutral= Khronos Neutral
 value.tonemap_right.tonemap_justjohn       = justjohn's ZCAM
+value.tonemap_right.tonemap_bottosson      = BOttosson
+value.tonemap_right.tonemap_melon          = Melon
+value.tonemap_right.tonemap_opendrt        = OpenDRT
+value.tonemap_right.tonemap_jzdt           = JzDT
+value.tonemap_right.tonemap_rgbdrt         = rgbDRT
+value.tonemap_right.tonemap_zcam_drt       = ZCAM DRT
+value.tonemap_right.tonemap_fidelityfx_lpm = FidelityFX LPM
+value.tonemap_right.tonemap_hatchling      = Hatchling Oklab
 
 # Box
 

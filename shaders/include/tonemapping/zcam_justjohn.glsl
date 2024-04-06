@@ -27,31 +27,31 @@
 *   SOFTWARE.
 */
 
-// eotf_pq parameters
-const float Lp = 10000.0;
-const float m1 = 2610.0 / 16384.0;
-const float m2 = 1.7 * 2523.0 / 32.0;
-const float c1 = 107.0 / 128.0;
-const float c2 = 2413.0 / 128.0;
-const float c3 = 2392.0 / 128.0;
+vec3 eotf_pq(vec3 x, bool inverse) {
+    // eotf_pq parameters
+    const float Lp = 10000.0;
+    const float m1 = 2610.0 / 16384.0;
+    const float m2 = 1.7 * 2523.0 / 32.0;
+    const float c1 = 107.0 / 128.0;
+    const float c2 = 2413.0 / 128.0;
+    const float c3 = 2392.0 / 128.0;
 
-vec3 eotf_pq(vec3 x) {
-    x = sign(x) * pow(abs(x), vec3(1.0 / m2));
-    x = sign(x) * pow((abs(x) - c1) / (c2 - c3 * abs(x)), vec3(1.0 / m1)) * Lp;
-    return x;
-}
-
-vec3 eotf_pq_inverse(vec3 x) {
-    x /= Lp;
-    x = sign(x) * pow(abs(x), vec3(m1));
-    x = sign(x) * pow((c1 + c2 * abs(x)) / (1.0 + c3 * abs(x)), vec3(m2));
+    if(!inverse) { // Forward
+        x = sign(x) * pow(abs(x), vec3(1.0 / m2));
+        x = sign(x) * pow((abs(x) - c1) / (c2 - c3 * abs(x)), vec3(1.0 / m1)) * Lp;
+    } else { // Inverse
+        x /= Lp;
+        x = sign(x) * pow(abs(x), vec3(m1));
+        x = sign(x) * pow((c1 + c2 * abs(x)) / (1.0 + c3 * abs(x)), vec3(m2));
+    }
     return x;
 }
 
 // XYZ <-> ICh parameters
-const float W = 140.0;
-const float b = 1.15;
-const float g = 0.66;
+// uses #define to prevent conflict with params from other tonemaps
+#define W 140.0
+#define b 1.15
+#define g 0.66
 
 vec3 XYZ_to_ICh(vec3 XYZ) {
     XYZ *= W;
@@ -63,7 +63,7 @@ vec3 XYZ_to_ICh(vec3 XYZ) {
     -0.0166008, 0.2648,   0.66848));
 
     vec3 LMS = XYZ_to_LMS * XYZ;
-    LMS = eotf_pq_inverse(LMS);
+    LMS = eotf_pq(LMS, true);
 
     const mat3 LMS_to_Iab = transpose(mat3(
      0.0,       1.0,      0.0,
@@ -72,7 +72,7 @@ vec3 XYZ_to_ICh(vec3 XYZ) {
 
     vec3 Iab = LMS_to_Iab * LMS;
 
-    float I = eotf_pq(vec3(Iab.x)).x / W;
+    float I = eotf_pq(vec3(Iab.x), false).x / W;
     float C = length(Iab.yz);
     float h = atan(Iab.z, Iab.y);
     return vec3(I, C, h);
@@ -80,7 +80,7 @@ vec3 XYZ_to_ICh(vec3 XYZ) {
 
 vec3 ICh_to_XYZ(vec3 ICh) {
     vec3 Iab;
-    Iab.x = eotf_pq_inverse(vec3(ICh.x * W)).x;
+    Iab.x = eotf_pq(vec3(ICh.x * W), true).x;
     Iab.y = ICh.y * cos(ICh.z);
     Iab.z = ICh.y * sin(ICh.z);
 
@@ -90,7 +90,7 @@ vec3 ICh_to_XYZ(vec3 ICh) {
          1.0, 0.0426, -0.7538));
 
     vec3 LMS = Iab_to_LMS * Iab;
-    LMS = eotf_pq(LMS);
+    LMS = eotf_pq(LMS, false);
 
     const mat3 LMS_to_XYZ = transpose(mat3(
          1.92423, -1.00479,  0.03765,
@@ -175,5 +175,9 @@ vec3 zcam_gamma_correct(vec3 linear) {
     vec3 lower = linear * 12.92;
     return mix(higher, lower, cutoff);
 }
+
+#undef W
+#undef b
+#undef g
 
 #endif // INCLUDE_TONEMAPPING_ZCAM_JUSTJOHN

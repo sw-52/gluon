@@ -1,14 +1,14 @@
 #ifndef INCLUDE_TONEMAPPING_AGX
 #define INCLUDE_TONEMAPPING_AGX
 
+#include "/include/utility/color.glsl"
+
 /*
 *   Minimal implementation of Troy Sobotka's AgX display transform by bwrensch
 *   Source: https://www.shadertoy.com/view/cd3XWr
 *           https://iolite-engine.com/blog_posts/minimal_agx_implementation
 *   Original: https://github.com/sobotka/AgX
 */
-
-#include "/include/utility/color.glsl"
 
 #ifdef AGX_HIGHER_PRECISION // Mean error^2: 1.85907662e-06
 vec3 agx_default_contrast_approx(vec3 x) {

@@ -32,6 +32,12 @@ uniform mat4 dhProjection;
 uniform vec3 cameraPosition;
 uniform vec2 taa_offset;
 
+#ifdef WORLD_CURVATURE
+uniform float rainStrength;
+#include "/include/vertex/displacement.glsl"
+uniform mat4 gbufferProjectionInverse;
+#endif
+
 void main() {
 	light_levels = linear_step(
         vec2(1.0 / 32.0),
@@ -89,6 +95,14 @@ void main() {
     scene_pos = transform(gbufferModelViewInverse, pos);
 
     vec4 clip_pos = dhProjection * vec4(pos, 1.0);
+
+#ifdef WORLD_CURVATURE
+    	 pos = (gbufferProjectionInverse * clip_pos).xyz;
+		 pos = transform(gbufferModelViewInverse, pos);
+		 pos = world_curvature(pos);
+		 pos = transform(gbufferModelView, pos);
+	clip_pos = project(gl_ProjectionMatrix, pos);
+#endif
 
 #if   defined TAA && defined TAAU
 	clip_pos.xy  = clip_pos.xy * taau_render_scale + clip_pos.w * (taau_render_scale - 1.0);

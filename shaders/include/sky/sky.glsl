@@ -268,7 +268,7 @@ vec3 draw_space_moon(vec3 ray_dir, vec3 color) {
 
 	// Limb darkening model from http://www.physics.hmc.edu/faculty/esin/a101/limbdarkening.pdf
 	float center_to_edge = max0(sun_angular_radius - fast_acos(nu));
-	vec3 limb_darkening = pow(vec3(1.0 - sqr(1.0 - center_to_edge)), 0.25);
+	float limb_darkening = pow(1.0 - sqr(1.0 - center_to_edge), 0.25);
 
 	return color * step(0.0, center_to_edge) * limb_darkening;
 }

@@ -157,12 +157,7 @@ uniform sampler3D light_sampler_b;
 #endif
 
 #ifdef SHADOW
-#ifdef WORLD_OVERWORLD
-uniform sampler2D shadowtex0;
-uniform sampler2DShadow shadowtex1;
-#endif
-
-#ifdef WORLD_END
+#if defined WORLD_OVERWORLD || defined WORLD_END || defined WORLD_SPACE
 uniform sampler2D shadowtex0;
 uniform sampler2DShadow shadowtex1;
 #endif

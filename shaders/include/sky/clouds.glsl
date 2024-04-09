@@ -1144,6 +1144,22 @@ CloudsResult draw_cirrus_clouds(
 }
 #endif
 
+const uint cloud_layers = 3;
+
+// Insertion sort from https://github.com/OpenGLInsights/OpenGLInsightsCode/blob/master/Chapter%2020%20Efficient%20Layered%20Fragment%20Buffer%20Techniques/sorting.glsl
+CloudsResult[cloud_layers] sort_results(CloudsResult[cloud_layers] clouds) {
+	for (int j = 1; j < clouds.length(); ++j) {
+		CloudsResult key = clouds[j];
+		int i = j - 1;
+		while (i >= 0 && clouds[i].apparent_distance > key.apparent_distance) {
+			clouds[i+1] = clouds[i];
+			--i;
+		}
+		clouds[i+1] = key;
+	}
+	return clouds;
+}
+
 CloudsResult draw_clouds(
 	vec3 air_viewer_pos,
 	vec3 ray_dir,
@@ -1152,34 +1168,108 @@ CloudsResult draw_clouds(
 	float dither
 ) {
 	CloudsResult result = clouds_not_hit;
+	CloudsResult[] results = CloudsResult[cloud_layers](clouds_not_hit, clouds_not_hit, clouds_not_hit);
+
+	// More readable = more better
+	#define result_ac (0 + uint(has_cu_clouds))
+	#define result_ci (1 + uint(has_cu_clouds))
+	#define result_cu 0
+
+	// Draw cu_con on top, otherwise it doesn't look good (and also slightly faster sort if no cu clouds)
+	bool has_cu_clouds     = false;
+	bool has_cu_con_clouds = false;
+	bool has_ac_clouds     = false;
+	bool has_ci_clouds     = false;
+
+	bool sort_clouds = false;
+	const float sort_distance_tolerance = 0.0;
+	vec3 cloud_altitudes = vec3(0.0);
 
 	if (clouds_cumulus_congestus_amount < 0.5) {
 		#ifdef CLOUDS_CUMULUS
-		result = draw_cumulus_clouds(air_viewer_pos, ray_dir, clear_sky, distance_to_terrain, dither);
+		if (max_of(clouds_cumulus_coverage) >= 1e-3) has_cu_clouds = true;
 		#endif
 	} else {
 		#ifdef CLOUDS_CUMULUS_CONGESTUS
-		result = draw_cumulus_congestus_clouds(air_viewer_pos, ray_dir, clear_sky, distance_to_terrain, dither);
+		if (clouds_cumulus_congestus_amount - 0.5 >= 1e-3) has_cu_con_clouds = true;
 		#endif
 	}
 
-	if (result.transmittance < 1e-3) return result;
-
 #ifdef CLOUDS_ALTOCUMULUS
-	CloudsResult result_ac = draw_altocumulus_clouds(air_viewer_pos, ray_dir, clear_sky, distance_to_terrain, dither);
-	result.scattering += result_ac.scattering * result.transmittance;
-	result.transmittance *= result_ac.transmittance;
-	result.apparent_distance = min(result.apparent_distance, result_ac.apparent_distance);
-	if (result.transmittance < 1e-3) return result;
+	if (max_of(clouds_altocumulus_coverage) >= 1e-3) has_ac_clouds = true;
 #endif
 
 #ifdef CLOUDS_CIRRUS
-	CloudsResult result_ci = draw_cirrus_clouds(air_viewer_pos, ray_dir, clear_sky, distance_to_terrain, dither);
-	result.scattering += result_ci.scattering * result.transmittance;
-	result.transmittance *= result_ci.transmittance;
-	result.apparent_distance = min(result.apparent_distance, result_ci.apparent_distance);
-	if (result.transmittance < 1e-3) return result;
+	if (clouds_cirrus_coverage >= 1e-3) has_ci_clouds = true;
 #endif
+
+	// Sort clouds only if camera is above second layer
+	if (has_cu_clouds) {
+		cloud_altitudes = vec3(CLOUDS_CUMULUS_ALTITUDE, CLOUDS_ALTOCUMULUS_ALTITUDE, CLOUDS_CIRRUS_ALTITUDE);
+
+		// Get second smallest altitude
+		float max_altitude = max_of(cloud_altitudes);
+		float min_altitude = min_of(cloud_altitudes);
+		float second_layer_altitude = cloud_altitudes.x + cloud_altitudes.y + cloud_altitudes.z - max_altitude - min_altitude;
+		sort_clouds = second_layer_altitude - sort_distance_tolerance <= cameraPosition.y * CLOUDS_SCALE;
+		if (!sort_clouds) cloud_altitudes = vec3(min_altitude, second_layer_altitude, max_altitude);
+	} else {
+		float max_altitude = max(CLOUDS_ALTOCUMULUS_ALTITUDE, CLOUDS_CIRRUS_ALTITUDE);
+		sort_clouds = max_altitude - sort_distance_tolerance <= cameraPosition.y * CLOUDS_SCALE; 
+		if (!sort_clouds) cloud_altitudes.xy = vec2(min(CLOUDS_ALTOCUMULUS_ALTITUDE, CLOUDS_CIRRUS_ALTITUDE), max_altitude);
+	}
+
+	if (has_cu_clouds) {
+		results[result_cu] = draw_cumulus_clouds(air_viewer_pos, ray_dir, clear_sky, distance_to_terrain, dither);
+		if (!sort_clouds) {
+			if (results[result_cu].transmittance < 1e-3) return results[result_cu];
+			result = results[result_cu];
+		}
+	} else if (has_cu_con_clouds) {
+		result = draw_cumulus_congestus_clouds(air_viewer_pos, ray_dir, clear_sky, distance_to_terrain, dither);
+		if (result.transmittance < 1e-3) return result;
+	}
+
+	if (has_ac_clouds) {
+		results[result_ac] = draw_altocumulus_clouds(air_viewer_pos, ray_dir, clear_sky, distance_to_terrain, dither);
+		if (!sort_clouds) {
+			result.scattering += results[result_ac].scattering * result.transmittance;
+			result.transmittance *= results[result_ac].transmittance;
+			result.apparent_distance = min(result.apparent_distance, results[result_ac].apparent_distance);
+			if (result.transmittance < 1e-3) return result;
+		}
+	}
+
+	if (has_ci_clouds) {
+		results[result_ci] = draw_cirrus_clouds(air_viewer_pos, ray_dir, clear_sky, distance_to_terrain, dither);
+		if(!sort_clouds) {
+			result.scattering += results[result_ci].scattering * result.transmittance;
+			result.transmittance *= results[result_ci].transmittance;
+			result.apparent_distance = min(result.apparent_distance, results[result_ci].apparent_distance);
+			if (result.transmittance < 1e-3) return result;
+		}
+	}
+
+// Just in case it will be used somewhere else
+#undef result_ac
+#undef result_ci
+#undef result_cu
+
+	if (sort_clouds) {
+		results = sort_results(results);
+
+		for (uint i = 0; i < (results.length() - uint(has_cu_con_clouds)); ++i) {
+			if (i == 0 && !has_cu_con_clouds) {
+				result = results[i];
+			} else {
+				result.scattering += results[i].scattering * result.transmittance;
+				result.transmittance *= results[i].transmittance;
+				result.apparent_distance = min(result.apparent_distance, results[i].apparent_distance);
+			}
+			
+			if (result.transmittance < 1e-3) break;
+		}
+	}
 
 	return result;
 }

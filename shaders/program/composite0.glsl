@@ -1,7 +1,7 @@
 /*
 --------------------------------------------------------------------------------
 
-  Photon Shaders by SixthSurge
+  Photon Shader by SixthSurge
 
   program/composite0.glsl:
   Calculate volumetric fog
@@ -71,14 +71,9 @@ void main() {
 	mat2x3 rayleigh_coeff = air_fog_rayleigh_coeff(), mie_coeff = air_fog_mie_coeff();
 	air_fog_coeff[0] = mat2x3(rayleigh_coeff[0], mie_coeff[0]);
 	air_fog_coeff[1] = mat2x3(rayleigh_coeff[1], mie_coeff[1]);
-
-	#if defined OVERCAST_SKY_AFFECTS_LIGHTING
-	float overcastness = daily_weather_blend(daily_weather_overcastness);
-	light_color *= 1.0 - 0.5 * overcastness;
-	#endif
 #endif
 
-	vec2 vertex_pos = gl_Vertex.xy * VL_RENDER_SCALE;
+	vec2 vertex_pos = gl_Vertex.xy;
 	gl_Position = vec4(vertex_pos * 2.0 - 1.0, 0.0, 1.0);
 }
 
@@ -93,7 +88,7 @@ void main() {
 layout (location = 0) out vec3 fog_scattering;
 layout (location = 1) out vec3 fog_transmittance;
 
-/* DRAWBUFFERS:67 */
+/* RENDERTARGETS: 6,7 */
 
 in vec2 uv;
 
@@ -208,7 +203,7 @@ void main() {
 	vec4 gbuffer_data_0 = texelFetch(colortex1, view_texel, 0);
 
 #ifdef DISTANT_HORIZONS
-    mat4 projection_matrix, inverse_projection_matrix;
+    mat4 projection_matrix, projection_matrix_inverse;
     bool is_dh_terrain;
 	float dh_depth = texelFetch(dhDepthTex, view_texel, 0).x;
 
@@ -217,21 +212,21 @@ void main() {
         depth0 = dh_depth;
         depth1 = dh_depth;
         projection_matrix = dhProjection;
-        inverse_projection_matrix = dhProjectionInverse;
+        projection_matrix_inverse = dhProjectionInverse;
     } else {
         is_dh_terrain = false;
         projection_matrix = gbufferProjection;
-        inverse_projection_matrix = gbufferProjectionInverse;
+        projection_matrix_inverse = gbufferProjectionInverse;
     }
 #else
     #define is_dh_terrain             false
     #define projection_matrix         gbufferProjection
-    #define inverse_projection_matrix gbufferProjectionInverse
+    #define projection_matrix_inverse gbufferProjectionInverse
 #endif
 
 	float skylight = unpack_unorm_2x8(gbuffer_data_0.w).y;
 
-	vec3 view_pos  = screen_to_view_space(inverse_projection_matrix, vec3(uv, depth0), true);
+	vec3 view_pos  = screen_to_view_space(projection_matrix_inverse, vec3(uv, depth0), true);
 	vec3 scene_pos = view_to_scene_space(view_pos);
 	vec3 world_pos = scene_pos + cameraPosition;
 

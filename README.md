@@ -13,9 +13,11 @@
 * [Jessie](https://github.com/Jessie-LC) - f0 and f82 values for labPBR hardcoded metals
 * [Sledgehammer Games](https://www.sledgehammergames.com/) - Bloom downsampling method used in Call of Duty Advanced Warfare (described [here](http://www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare))
 * http://momentsingraphics.de/ - Blue noise texture
+* [NakiriRuri](https://github.com/NakiriRuri) and [OrzMiku](https://github.com/Orzmiku) - Chinese settings translation 
 
 ## installation
 
+* [Download on Modrinth](https://modrinth.com/shader/photon-shader/versions) (recommended)
 * [Download latest commit](https://github.com/sixthsurge/photon/archive/refs/heads/main.zip)
 
 * Photon can be used with [Iris](https://irisshaders.dev/download) (recommended) or [OptiFine](https://optifine.net/home)
@@ -64,5 +66,5 @@
 
 ## community
 
-For questions, suggestions and news regarding this shader pack, head to my channel `#photon-sixthsurge` in the [shaderLABS discord server](https://discord.gg/RpzWN9S).
+For questions, suggestions and news regarding this shader pack, head to my [discord server](https://discord.gg/ngEW66HScd)
 

@@ -1,7 +1,7 @@
 /*
 --------------------------------------------------------------------------------
 
-  Photon Shaders by SixthSurge
+  Photon Shader by SixthSurge
 
   program/composite1.glsl
   Apply volumetric fog, reflections and refraction
@@ -43,7 +43,7 @@ void main() {
 layout (location = 0) out vec3 scene_color;
 layout (location = 1) out float bloomy_fog;
 
-/* DRAWBUFFERS:03 */
+/* RENDERTARGETS: 0,3 */
 
 in vec2 uv;
 
@@ -56,13 +56,15 @@ flat in vec3 light_color;
 
 uniform sampler2D noisetex;
 
-uniform sampler2D colortex0; // Scene color
-uniform sampler2D colortex1; // Gbuffer 0
-uniform sampler2D colortex2; // Gbuffer 1
-uniform sampler2D colortex4; // Sky map
-uniform sampler2D colortex5; // Scene history
-uniform sampler2D colortex6; // Volumetric fog scattering
-uniform sampler2D colortex7; // Volumetric fog transmittance
+uniform sampler2D colortex0; // scene color
+uniform sampler2D colortex1; // gbuffer 0
+uniform sampler2D colortex2; // gbuffer 1
+uniform sampler2D colortex4; // sky map
+uniform sampler2D colortex5; // scene history
+uniform sampler2D colortex6; // volumetric fog scattering
+uniform sampler2D colortex7; // volumetric fog transmittance
+uniform sampler2D colortex11; // clouds history
+uniform sampler2D colortex12; // clouds data
 
 uniform sampler2D depthtex0;
 uniform sampler2D depthtex1;
@@ -137,6 +139,7 @@ uniform float time_midnight;
 
 /*
 const bool colortex5MipmapEnabled = true;
+const bool colortex11MipmapEnabled = true;
 */
 
 // https://iquilezles.org/www/articles/texture/texture.htm
@@ -151,6 +154,20 @@ vec4 smooth_filter(sampler2D sampler, vec2 coord) {
 
 	coord = (coord - 0.5) / res;
 	return texture(sampler, coord);
+}
+
+vec4 read_clouds(out float apparent_distance) {
+#if defined WORLD_OVERWORLD
+	// Soften clouds for new pixels
+	float pixel_age = texelFetch(colortex12, ivec2(gl_FragCoord.xy), 0).y;
+	int ld = int(3.0 * dampen(max0(1.0 - 0.1 * pixel_age)));
+
+	apparent_distance = min_of(textureGather(colortex12, uv * taau_render_scale, 0));
+
+	return bicubic_filter_lod(colortex11, uv * taau_render_scale, ld);
+#else
+	return vec4(0.0, 0.0, 0.0, 1.0);
+#endif
 }
 
 // http://www.diva-portal.org/smash/get/diva2:24136/FULLTEXT01.pdf
@@ -181,11 +198,14 @@ vec3 purkinje_shift(vec3 rgb, vec2 light_levels) {
 }
 
 void main() {
+	bloomy_fog = 1.0;
+
 	ivec2 texel = ivec2(gl_FragCoord.xy);
 
 	// Sample textures
 
 	scene_color         = texelFetch(colortex0, texel, 0).rgb;
+	vec3 original_color = scene_color;
 	float depth0        = texelFetch(depthtex0, texel, 0).x;
 	float depth1        = texelFetch(depthtex1, texel, 0).x;
 #ifdef DISTANT_HORIZONS
@@ -198,9 +218,8 @@ void main() {
 #endif
 
 #ifdef VL
-	vec2 fog_uv = clamp(uv * VL_RENDER_SCALE, vec2(0.0), floor(view_res * VL_RENDER_SCALE - 1.0) * view_pixel_size);
-	vec3 fog_scattering    = smooth_filter(colortex6, fog_uv).rgb;
-	vec3 fog_transmittance = smooth_filter(colortex7, fog_uv).rgb;
+	vec3 fog_scattering    = smooth_filter(colortex6, uv).rgb;
+	vec3 fog_transmittance = smooth_filter(colortex7, uv).rgb;
 #endif
 
 	// Distant Horizons support
@@ -230,7 +249,7 @@ void main() {
 #if defined WORLD_NETHER
 		bloomy_fog = spherical_fog(far, nether_fog_start, nether_bloomy_fog_density * (1.0 - blindness)) * 0.5 + 0.5;
 #endif
-		// Apply purkinje shift
+		// purkinje shift
 		scene_color = purkinje_shift(scene_color, vec2(0.0, 1.0));
 
 		return;
@@ -314,7 +333,7 @@ void main() {
 #endif
 	//------------------------------------------------------------------------//
 	} else {
-		material = material_from(albedo, material_mask, world_pos, light_levels);
+		material = material_from(albedo, material_mask, world_pos, flat_normal, light_levels);
 
 #ifdef DISTANT_HORIZONS
 		if (!front_is_dh_terrain) {
@@ -420,6 +439,7 @@ void main() {
 
 #if defined ENVIRONMENT_REFLECTIONS || defined SKY_REFLECTIONS
 	if (material.ssr_multiplier > eps && (depth0 < 1.0 || front_is_dh_terrain)) {
+		mat3 tbn = get_tbn_matrix(normal);
 		vec3 reflections = get_specular_reflections(
 			material,
 			tbn,
@@ -456,11 +476,30 @@ void main() {
 #endif
 
 		reflections *= common_fog_alpha(length(scene_pos), false);
-		reflections *= border_fog(scene_pos, world_dir);
 
 		scene_color += reflections;
 	}
 #endif
+
+	// Apply border fog
+	float border_fog = border_fog(scene_pos, world_dir);
+	scene_color = mix(original_color, scene_color, border_fog);
+
+	// Apply clouds in front of translucents
+
+	bool is_translucent = depth0 != depth1;
+#ifdef DISTANT_HORIZONS
+         is_translucent = is_translucent || depth0_dh != depth1_dh;
+#endif
+
+	if (is_translucent) {
+		float clouds_dist;
+		vec4 clouds = read_clouds(clouds_dist);
+
+		if (clouds_dist < view_dist) {
+			scene_color = scene_color * clouds.w + clouds.xyz;
+		}
+	}
 
 	// Apply atmospheric fog
 

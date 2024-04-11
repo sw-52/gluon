@@ -1,7 +1,7 @@
 /*
 --------------------------------------------------------------------------------
 
-  Photon Shaders by SixthSurge
+  Photon Shader by SixthSurge
 
   program/post/temporal.glsl:
   TAA and auto exposure
@@ -172,7 +172,7 @@ void main() {
 layout (location = 0) out vec3 bloom_input;
 layout (location = 1) out vec4 result;
 
-/* DRAWBUFFERS:05 */
+/* RENDERTARGETS: 0,5 */
 
 in vec2 uv;
 
@@ -191,8 +191,8 @@ uniform sampler2D colortex0; // Scene color
 uniform sampler2D colortex5; // Scene history
 
 #ifdef TAAU
-uniform sampler2D colortex6; // TAA min color
-uniform sampler2D colortex7; // TAA max color
+uniform sampler2D colortex13; // TAA min color
+uniform sampler2D colortex14; // TAA max color
 #endif
 
 uniform sampler2D depthtex0;
@@ -441,8 +441,8 @@ void main() {
 	}
 
 	// Interpolate AABB bounds across pixels
-	vec3 min_color = texture(colortex6, pos).rgb;
-	vec3 max_color = texture(colortex7, pos).rgb;
+	vec3 min_color = texture(colortex13, pos).rgb;
+	vec3 max_color = texture(colortex14, pos).rgb;
 
 	bool history_clipped;
 	history_color = rgb_to_ycocg(history_color);

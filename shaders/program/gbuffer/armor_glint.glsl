@@ -1,7 +1,7 @@
 /*
 --------------------------------------------------------------------------------
 
-  Photon Shaders by SixthSurge
+  Photon Shader by SixthSurge
 
   program/gbuffer/armor_glint.glsl:
   Handle enchantment glint
@@ -74,7 +74,7 @@ void main() {
 layout (location = 0) out vec3 colortex0_out;
 layout (location = 1) out vec4 colortex3_out;
 
-/* DRAWBUFFERS:03 */
+/* RENDERTARGETS: 0,3 */
 
 in vec2 uv;
 

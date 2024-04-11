@@ -3,7 +3,7 @@
 /*
 --------------------------------------------------------------------------------
 
-  Photon Shaders by SixthSurge
+  Photon Shader by SixthSurge
 
   world0/prepare.vsh:
   Render cloud shadow map
@@ -20,7 +20,7 @@ in vec2 uv;
 
 flat in vec2 clouds_cumulus_coverage;
 flat in vec2 clouds_altocumulus_coverage;
-flat in vec2 clouds_cirrus_coverage;
+flat in float clouds_cirrus_coverage;
 flat in float clouds_cumulus_congestus_amount;
 flat in float clouds_cumulonimbus_amount;
 flat in float clouds_stratus_amount;
@@ -81,13 +81,19 @@ const vec3 sun_color  = vec3(0.0);
 const vec3 moon_color = vec3(0.0);
 const vec3 sky_color  = vec3(0.0);
 
+#ifdef DISTANT_HORIZONS
+uniform int dhRenderDistance;
+#endif
+
 #define PROGRAM_PREPARE
-#include "/include/light/cloud_shadows.glsl"
 #include "/include/sky/clouds.glsl"
 
 void main() {
-	vec3 scene_pos = unproject_cloud_shadow_map(uv);
-	cloud_shadow_map = render_cloud_shadow_map(scene_pos);
+#ifndef BLOCKY_CLOUDS
+    cloud_shadow_map = render_cloud_shadow_map(uv);
+#else
+    cloud_shadow_map = 1.0;
+#endif
 }
 
 #ifndef CLOUD_SHADOWS

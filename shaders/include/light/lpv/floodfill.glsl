@@ -12,22 +12,6 @@ bool is_translucent(uint block_id) {
 	return 164u <= block_id && block_id < 180u;
 }
 
-bool is_transparent(uint block_id) {
-	return block_id == 0u  || // Air
-	       block_id == 2u  || // Small plants
-	       block_id == 3u  || // Tall plants (lower half)
-		   block_id == 4u  || // Tall plants (upper half)
-	       block_id == 5u  || // Leaves
-	       block_id == 14u || // Strong SSS
-	       block_id == 15u || // Weak SSS
-		   block_id == 34u || // Weak white light, transparent
-		   block_id == 37u || // Weak golden light, transparent
-	       block_id == 41u || // Brewing stand
-	       block_id == 48u || // Sea pickle
-	       block_id == 49u || // Nether mushrooms
-	       block_id == 256u;  // Miscellaneous transparent
-}
-
 // Workaround for emitter ids 61 and >=64 not working in compute - TODO
 bool is_custom(uint block_id) {
 	return 64u <= block_id && block_id < 96u;
@@ -59,11 +43,11 @@ vec3 get_emitted_light(uint block_id) {
 	}
 }
 
-vec3 get_tint(uint block_id) {
+vec3 get_tint(uint block_id, bool is_transparent) {
 	if (is_translucent(block_id)) {
 		return texelFetch(light_data_sampler, ivec2(int(block_id) - 164, 1), 0).rgb;
 	} else {
-		return vec3(is_transparent(block_id) || is_emitter(block_id) || is_candle(block_id));
+		return vec3(is_transparent);
 	}
 }
 
@@ -95,10 +79,12 @@ void update_lpv(writeonly image3D light_img, sampler3D light_sampler) {
 	ivec3 previous_pos = ivec3(vec3(pos) - floor(previousCameraPosition) + floor(cameraPosition));
 
 	uint block_id      = texelFetch(voxel_sampler, pos, 0).x;
+	bool transparent   = block_id == 0u || block_id >= 1024u;
+	     block_id      = block_id & 1023;
 	vec3 light_avg     = gather_light(light_sampler, previous_pos) * rcp(7.0);
 	vec3 emitted_light = get_emitted_light(block_id);
-	emitted_light      = sqr(emitted_light) * sign(emitted_light);
-	vec3 tint          = sqr(get_tint(block_id));
+	     emitted_light = sqr(emitted_light) * sign(emitted_light);
+	vec3 tint          = sqr(get_tint(block_id, transparent));
 
 	vec3 light = emitted_light + light_avg * tint;
 

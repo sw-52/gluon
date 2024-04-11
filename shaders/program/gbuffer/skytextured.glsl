@@ -1,7 +1,7 @@
 /*
 --------------------------------------------------------------------------------
 
-  Photon Shaders by SixthSurge
+  Photon Shader by SixthSurge
 
   program/gbuffer/skytextured.glsl:
   Handle vanilla sun and moon and custom skies
@@ -53,7 +53,7 @@ void main() {
 
 layout (location = 0) out vec4 scene_color;
 
-/* DRAWBUFFERS:3 */
+/* RENDERTARGETS: 3 */
 
 in vec2 uv;
 

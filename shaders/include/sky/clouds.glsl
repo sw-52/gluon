@@ -10,6 +10,18 @@
 #include "/include/utility/random.glsl"
 #include "/include/utility/sampling.glsl"
 
+struct CloudsResult {
+	vec3 scattering;
+	float transmittance;
+	float apparent_distance;
+};
+
+const CloudsResult clouds_not_hit = CloudsResult(
+	vec3(0.0),
+	1.0,
+	1e6
+);
+
 uniform float day_factor;
 
 float clouds_phase_single(float cos_theta) { // Single scattering phase function
@@ -100,7 +112,7 @@ float clouds_cumulus_density(vec3 pos, vec2 detail_weights, vec2 edge_sharpening
 
 	float altitude_fraction = 0.8 * (r - clouds_cumulus_radius) * rcp(clouds_cumulus_thickness * dynamic_thickness);
 
-	pos.xz += cameraPosition.xz + wind_velocity * world_age;
+	pos.xz += cameraPosition.xz * CLOUDS_SCALE + wind_velocity * world_age;
 
 	// 2D noise for base shape and coverage
 	vec2 noise = vec2(
@@ -214,7 +226,13 @@ vec2 clouds_cumulus_scattering(
 	return scattering * scattering_integral_times_density;
 }
 
-vec4 draw_cumulus_clouds(vec3 ray_dir, vec3 clear_sky, float dither) {
+CloudsResult draw_cumulus_clouds(
+	vec3 air_viewer_pos,
+	vec3 ray_dir,
+	vec3 clear_sky,
+	float distance_to_terrain,
+	float dither
+) {
 	// ---------------------
 	//   Raymarching Setup
 	// ---------------------
@@ -235,24 +253,22 @@ vec4 draw_cumulus_clouds(vec3 ray_dir, vec3 clear_sky, float dither) {
 
 	uint primary_steps = uint(mix(primary_steps_horizon, primary_steps_zenith, abs(ray_dir.y)));
 
-#if defined PROGRAM_DEFERRED0
-	vec3 air_viewer_pos = vec3(0.0, planet_radius, 0.0);
-#else
-	vec3 air_viewer_pos = vec3(0.0, planet_radius + eyeAltitude, 0.0);
-#endif
+	float r = length(air_viewer_pos);
 
 	vec2 dists = intersect_spherical_shell(air_viewer_pos, ray_dir, clouds_cumulus_radius, clouds_cumulus_top_radius);
-	bool planet_intersected = intersect_sphere(air_viewer_pos, ray_dir, min(length(air_viewer_pos) - 10.0, planet_radius)).y >= 0.0;
+	bool planet_intersected = intersect_sphere(air_viewer_pos, ray_dir, min(r - 10.0, planet_radius)).y >= 0.0;
+	bool terrain_intersected = distance_to_terrain >= 0.0 && r < clouds_cumulus_radius && distance_to_terrain * CLOUDS_SCALE < dists.y;
 
-	if (dists.y < 0.0
-	 || planet_intersected && length(air_viewer_pos) < clouds_cumulus_radius
-	) { return vec4(0.0, 0.0, 0.0, 1.0); }
+	if (dists.y < 0.0                                   // volume not intersected
+	 || planet_intersected && r < clouds_cumulus_radius // planet blocking clouds
+	 || terrain_intersected                             // terrain blocking clouds
+	) { return clouds_not_hit; }
 
-	float ray_length = min(dists.y - dists.x, max_ray_length);
+	float ray_length = (distance_to_terrain >= 0.0) ? distance_to_terrain : dists.y;
+	      ray_length = clamp(ray_length - dists.x, 0.0, max_ray_length);
 	float step_length = ray_length * rcp(float(primary_steps));
 
 	vec3 ray_step = ray_dir * step_length;
-
 	vec3 ray_origin = air_viewer_pos + ray_dir * (dists.x + step_length * dither);
 
 	vec2 scattering = vec2(0.0); // x: direct light, y: skylight
@@ -343,8 +359,16 @@ vec4 draw_cumulus_clouds(vec3 ray_dir, vec3 clear_sky, float dither) {
 
 	vec3 clouds_scattering = scattering.x * light_color + scattering.y * sky_color;
 	     clouds_scattering = clouds_aerial_perspective(clouds_scattering, clouds_transmittance, air_viewer_pos, ray_origin, ray_dir, clear_sky);
+	
+	float apparent_distance = (distance_weight_sum == 0.0)
+		? 1e6
+		: (distance_sum / distance_weight_sum) + distance(air_viewer_pos, ray_origin);
 
-	return vec4(clouds_scattering, clouds_transmittance);
+	return CloudsResult(
+		clouds_scattering,
+		clouds_transmittance,
+		apparent_distance
+	);
 }
 #endif
 
@@ -366,7 +390,7 @@ const float clouds_cumulus_congestus_thickness        = /*CLOUDS_CUMULUS_CONGEST
 const float clouds_cumulus_congestus_top_radius       = clouds_cumulus_congestus_radius + clouds_cumulus_congestus_thickness;
 const float clouds_cumulus_congestus_distance         = CLOUDS_CUMULUS_CONGESTUS_DISTANCE;
 const float clouds_cumulus_congestus_end_distance     = CLOUDS_CUMULUS_CONGESTUS_END_DISTANCE;
-const float clouds_cumulus_congestus_extinction_coeff = 0.05;
+const float clouds_cumulus_congestus_extinction_coeff = 0.08;
 float clouds_cumulus_congestus_scattering_coeff       = clouds_cumulus_congestus_extinction_coeff * (1.0 - 0.33 * rainStrength);
 
 // altitude_fraction := 0 at the bottom of the cloud layer and 1 at the top
@@ -382,8 +406,8 @@ float clouds_cumulus_congestus_altitude_shaping(float density, float altitude_fr
 }
 
 float clouds_cumulus_congestus_density(vec3 pos) {
-	const float wind_angle = CLOUDS_CUMULUS_CONGESTUS_WIND_ANGLE * degree;
-	const vec2 wind_velocity = CLOUDS_CUMULUS_CONGESTUS_WIND_SPEED * vec2(cos(wind_angle), sin(wind_angle));
+	const float wind_angle = CLOUDS_CUMULUS_WIND_ANGLE * degree;
+	const vec2 wind_velocity = CLOUDS_CUMULUS_WIND_SPEED * vec2(cos(wind_angle), sin(wind_angle));
 
 	float r = length(pos);
 	if (r < clouds_cumulus_congestus_radius || r > clouds_cumulus_congestus_top_radius) return 0.0;
@@ -391,12 +415,12 @@ float clouds_cumulus_congestus_density(vec3 pos) {
 	float altitude_fraction = (r - clouds_cumulus_congestus_radius) * rcp(clouds_cumulus_congestus_thickness);
 	float distance_fraction = linear_step(clouds_cumulus_congestus_distance, clouds_cumulus_congestus_end_distance, length(pos.xz));
 
-	pos.xz += cameraPosition.xz + wind_velocity * (world_age + 50.0 * sqr(altitude_fraction));
+	pos.xz += cameraPosition.xz * CLOUDS_SCALE + wind_velocity * (world_age + 50.0 * sqr(altitude_fraction));
 
 	// 2D noise for base shape and coverage
-	float noise = texture(noisetex, (0.000004 / CLOUDS_CUMULUS_CONGESTUS_SIZE) * pos.xz).w;
+	float noise = texture(noisetex, (0.000002 / CLOUDS_CUMULUS_CONGESTUS_SIZE) * pos.xz).w;
 
-	float density  = 1.2 * linear_step(0.53, 1.0, noise) * linear_step(0.5, 0.75, clouds_cumulus_congestus_amount);
+	float density  = 1.2 * linear_step(0.2, 1.0, sqr(noise)) * linear_step(0.5, 0.75, clouds_cumulus_congestus_amount);
 	      density  = clouds_cumulus_congestus_altitude_shaping(density, altitude_fraction);
 		  density *= 4.0 * distance_fraction * (1.0 - distance_fraction);
 
@@ -419,7 +443,7 @@ float clouds_cumulus_congestus_density(vec3 pos) {
 	                  - 0.35 * smoothstep(0.05, 0.5, altitude_fraction) + 0.6;
 
 	density -= (0.25 * CLOUDS_CUMULUS_CONGESTUS_DETAIL_STRENGTH) * sqr(worley_0) * dampen(clamp01(1.0 - density));
-	density -= (0.20 * CLOUDS_CUMULUS_CONGESTUS_DETAIL_STRENGTH) * sqr(worley_1) * dampen(clamp01(1.0 - density)) * detail_fade;
+	density -= (0.10 * CLOUDS_CUMULUS_CONGESTUS_DETAIL_STRENGTH) * sqr(worley_1) * dampen(clamp01(1.0 - density)) * detail_fade;
 
 	// Adjust density so that the clouds are wispy at the bottom and hard at the top
 	density  = max0(density);
@@ -468,15 +492,15 @@ vec2 clouds_cumulus_congestus_scattering(
 
 	float scattering_integral_times_density = (1.0 - step_transmittance) / clouds_cumulus_congestus_extinction_coeff;
 
-	float powder_effect = clouds_powder_effect(4.0 * density, cos_theta);
+	float powder_effect = clouds_powder_effect(2.0 * density, cos_theta);
 
 	float phase = clouds_phase_single(cos_theta);
 	vec3 phase_g = pow(vec3(0.6, 0.9, 0.3), vec3(1.0 + light_optical_depth));
 
 	for (uint i = 0u; i < 8u; ++i) {
-		scattering.x += scatter_amount * exp(-extinct_amount *  light_optical_depth) * phase * 1.33;
-		scattering.x += scatter_amount * exp(-extinct_amount * ground_optical_depth) * isotropic_phase * bounced_light;
-		scattering.y += scatter_amount * exp(-extinct_amount *    sky_optical_depth) * isotropic_phase;
+		scattering.x += scatter_amount * exp(-extinct_amount *  light_optical_depth * 0.33) * phase;
+		scattering.x += scatter_amount * exp(-extinct_amount * ground_optical_depth * 0.33) * isotropic_phase * bounced_light;
+		scattering.y += scatter_amount * exp(-extinct_amount *    sky_optical_depth * 0.33) * isotropic_phase;
 
 		scatter_amount *= 0.55 * mix(lift(clamp01(clouds_cumulus_congestus_scattering_coeff / 0.1), 0.33), 1.0, cos_theta * 0.5 + 0.5) * powder_effect;
 		extinct_amount *= 0.5;
@@ -490,7 +514,13 @@ vec2 clouds_cumulus_congestus_scattering(
 	return scattering * scattering_integral_times_density;
 }
 
-vec4 draw_cumulus_congestus_clouds(vec3 ray_dir, vec3 clear_sky, float dither) {
+CloudsResult draw_cumulus_congestus_clouds(
+	vec3 air_viewer_pos,
+	vec3 ray_dir,
+	vec3 clear_sky,
+	float distance_to_terrain,
+	float dither
+) {
 	// ---------------------
 	//   Raymarching Setup
 	// ---------------------
@@ -504,12 +534,6 @@ vec4 draw_cumulus_congestus_clouds(vec3 ray_dir, vec3 clear_sky, float dither) {
 	const float planet_albedo     = 0.4;
 	const vec3  sky_dir           = vec3(0.0, 1.0, 0.0);
 
-#if defined PROGRAM_DEFERRED0
-	vec3 air_viewer_pos = vec3(0.0, planet_radius, 0.0);
-#else
-	vec3 air_viewer_pos = vec3(0.0, planet_radius + eyeAltitude, 0.0);
-#endif
-
 	vec2 sphere_dists   = intersect_spherical_shell(air_viewer_pos, ray_dir, clouds_cumulus_congestus_radius, clouds_cumulus_congestus_top_radius);
 	vec2 cylinder_dists = intersect_cylindrical_shell(air_viewer_pos, ray_dir, clouds_cumulus_congestus_distance, clouds_cumulus_congestus_end_distance);
 	vec2 dists          = vec2(max(sphere_dists.x, cylinder_dists.x), min(sphere_dists.y, cylinder_dists.y));
@@ -518,7 +542,7 @@ vec4 draw_cumulus_congestus_clouds(vec3 ray_dir, vec3 clear_sky, float dither) {
 
 	if (dists.y < 0.0
 	 || planet_intersected && length(air_viewer_pos) < clouds_cumulus_congestus_radius
-	) { return vec4(0.0, 0.0, 0.0, 1.0); }
+	) { return clouds_not_hit; }
 
 	float ray_length = dists.y - dists.x;
 	float step_length = ray_length * rcp(float(primary_steps));
@@ -597,10 +621,24 @@ vec4 draw_cumulus_congestus_clouds(vec3 ray_dir, vec3 clear_sky, float dither) {
 	// Remap the transmittance so that min_transmittance is 0
 	float clouds_transmittance = linear_step(min_transmittance, 1.0, transmittance);
 
+	// Aerial perspective
 	vec3 clouds_scattering = scattering.x * light_color + scattering.y * sky_color;
 	     clouds_scattering = clouds_aerial_perspective(clouds_scattering, clouds_transmittance, air_viewer_pos, ray_origin, ray_dir, clear_sky);
+		
+	// Fade away at the horizon
+	float horizon_fade = mix(dampen(linear_step(0.0, 0.08, ray_dir.y)), 1.0, smoothstep(sqr(clouds_cumulus_congestus_radius), sqr(clouds_cumulus_congestus_radius + 0.1 * clouds_cumulus_congestus_thickness), length_squared(air_viewer_pos)));
+	clouds_scattering = mix(clear_sky * (1.0 - clouds_transmittance), clouds_scattering, horizon_fade);
+	
+	float apparent_distance = (distance_weight_sum == 0.0)
+		? 1e6
+		: (distance_sum / distance_weight_sum) + distance(air_viewer_pos, ray_origin);
 
-	return vec4(clouds_scattering, clouds_transmittance);
+	return CloudsResult(
+		clouds_scattering,
+		clouds_transmittance,
+		apparent_distance
+	);
+
 }
 #endif
 
@@ -949,7 +987,7 @@ float clouds_altocumulus_density(vec3 pos) {
 	float dynamic_thickness = mix(0.5, 1.0, smoothstep(0.4, 0.6, clouds_altocumulus_coverage.y));
 	float altitude_fraction = 0.8 * (r - clouds_altocumulus_radius) * rcp(clouds_altocumulus_thickness * dynamic_thickness);
 
-	pos.xz += cameraPosition.xz + wind_velocity * world_age;
+	pos.xz += cameraPosition.xz * CLOUDS_SCALE + wind_velocity * world_age;
 
 	// 2D noise for base shape and coverage
 	vec2 noise = vec2(
@@ -1047,7 +1085,13 @@ vec2 clouds_altocumulus_scattering(
 	return scattering * scattering_integral_times_density;
 }
 
-vec4 draw_altocumulus_clouds(vec3 ray_dir, vec3 clear_sky, float dither) {
+CloudsResult draw_altocumulus_clouds(
+	vec3 air_viewer_pos,
+	vec3 ray_dir,
+	vec3 clear_sky,
+	float distance_to_terrain,
+	float dither
+) {
 	// ---------------------
 	//   Raymarching Setup
 	// ---------------------
@@ -1068,24 +1112,22 @@ vec4 draw_altocumulus_clouds(vec3 ray_dir, vec3 clear_sky, float dither) {
 
 	uint primary_steps = uint(mix(primary_steps_horizon, primary_steps_zenith, abs(ray_dir.y)));
 
-#if defined PROGRAM_DEFERRED0
-	vec3 air_viewer_pos = vec3(0.0, planet_radius, 0.0);
-#else
-	vec3 air_viewer_pos = vec3(0.0, planet_radius + eyeAltitude, 0.0);
-#endif
+	float r = length(air_viewer_pos);
 
 	vec2 dists = intersect_spherical_shell(air_viewer_pos, ray_dir, clouds_altocumulus_radius, clouds_altocumulus_top_radius);
-	bool planet_intersected = intersect_sphere(air_viewer_pos, ray_dir, min(length(air_viewer_pos) - 10.0, planet_radius)).y >= 0.0;
+	bool planet_intersected = intersect_sphere(air_viewer_pos, ray_dir, min(r - 10.0, planet_radius)).y >= 0.0;
+	bool terrain_intersected = distance_to_terrain >= 0.0 && r < clouds_altocumulus_radius && distance_to_terrain * CLOUDS_SCALE < dists.y;
 
-	if (dists.y < 0.0
-	 || planet_intersected && length(air_viewer_pos) < clouds_altocumulus_radius
-	) { return vec4(0.0, 0.0, 0.0, 1.0); }
+	if (dists.y < 0.0                                   // volume not intersected
+	 || planet_intersected && r < clouds_altocumulus_radius // planet blocking clouds
+	 || terrain_intersected                             // terrain blocking clouds
+	) { return clouds_not_hit; }
 
-	float ray_length = min(dists.y - dists.x, max_ray_length);
+	float ray_length = (distance_to_terrain >= 0.0) ? distance_to_terrain : dists.y;
+	      ray_length = clamp(ray_length - dists.x, 0.0, max_ray_length);
 	float step_length = ray_length * rcp(float(primary_steps));
 
 	vec3 ray_step = ray_dir * step_length;
-
 	vec3 ray_origin = air_viewer_pos + ray_dir * (dists.x + step_length * dither);
 
 	vec2 scattering = vec2(0.0); // x: direct light, y: skylight
@@ -1173,7 +1215,15 @@ vec4 draw_altocumulus_clouds(vec3 ray_dir, vec3 clear_sky, float dither) {
 	vec3 clouds_scattering = scattering.x * light_color + scattering.y * sky_color;
 	     clouds_scattering = clouds_aerial_perspective(clouds_scattering, clouds_transmittance, air_viewer_pos, ray_origin, ray_dir, clear_sky);
 
-	return vec4(clouds_scattering, clouds_transmittance);
+	float apparent_distance = (distance_weight_sum == 0.0)
+		? 1e6
+		: (distance_sum / distance_weight_sum) + distance(air_viewer_pos, ray_origin);
+
+	return CloudsResult(
+		clouds_scattering,
+		clouds_transmittance,
+		apparent_distance
+	);
 }
 #endif
 
@@ -1229,23 +1279,16 @@ float clouds_cirrus_density(vec2 coord, float altitude_fraction, out float cirru
 	const float wind_angle = CLOUDS_CIRRUS_WIND_ANGLE * degree;
 	const vec2 wind_velocity = CLOUDS_CIRRUS_WIND_SPEED * vec2(cos(wind_angle), sin(wind_angle));
 
-	coord = coord + cameraPosition.xz;
+	coord = coord + cameraPosition.xz * CLOUDS_SCALE;
 	coord = coord + wind_velocity * world_age;
 
 	vec2 curl = curl2D(0.00002 * coord) * 0.5
 	          + curl2D(0.00004 * coord) * 0.25
 			  + curl2D(0.00008 * coord) * 0.125;
 
-	float density = 0.0;
-	float height_shaping = 1.0 - abs(1.0 - 2.0 * altitude_fraction);
-
-	// -----------------
-	//   Cirrus Clouds
-	// -----------------
-
-	cirrus = 0.7 * texture(noisetex, (0.000001 / CLOUDS_CIRRUS_SIZE) * coord + (0.004 * CLOUDS_CIRRUS_CURL_STRENGTH) * curl).x
-	       + 0.3 * texture(noisetex, (0.000008 / CLOUDS_CIRRUS_SIZE) * coord + (0.008 * CLOUDS_CIRRUS_CURL_STRENGTH) * curl).x;
-	cirrus = linear_step(0.7 - clouds_cirrus_coverage.x, 1.0, cirrus);
+	float density = 0.7 * texture(noisetex, (0.000001 / CLOUDS_CIRRUS_SIZE) * coord + (0.004 * CLOUDS_CIRRUS_CURL_STRENGTH) * curl).x
+	              + 0.3 * texture(noisetex, (0.000008 / CLOUDS_CIRRUS_SIZE) * coord + (0.008 * CLOUDS_CIRRUS_CURL_STRENGTH) * curl).x;
+	      density = linear_step(0.7 - clouds_cirrus_coverage, 1.0, density);
 
 	float detail_amplitude = 0.2;
 	float detail_frequency = 0.00002;
@@ -1254,7 +1297,7 @@ float clouds_cirrus_density(vec2 coord, float altitude_fraction, out float cirru
 	for (int i = 0; i < 4; ++i) {
 		float detail = texture(noisetex, coord * detail_frequency + curl * curl_strength).x;
 
-		cirrus -= detail * detail_amplitude;
+		density -= detail * detail_amplitude;
 
 		detail_amplitude *= 0.6;
 		detail_frequency *= 2.0;
@@ -1263,25 +1306,8 @@ float clouds_cirrus_density(vec2 coord, float altitude_fraction, out float cirru
 		coord += 0.3 * wind_velocity * world_age;
 	}
 
-	density += mix(1.0, 0.75, day_factor) * cube(max0(cirrus)) * sqr(height_shaping) * CLOUDS_CIRRUS_DENSITY;
-
-	// -----------------------
-	//   Cirrocumulus Clouds
-	// -----------------------
-
-	float coverage = texture(noisetex, (0.0000026 / CLOUDS_CC_SIZE) * coord + (0.004 * CLOUDS_CC_CURL_STRENGTH) * curl + 0.25).w;
-		  coverage = 5.0 * linear_step(0.3, 0.7, clouds_cirrus_coverage.y * coverage);
-
-	cirrocumulus = dampen(texture(noisetex, (0.000025 * rcp(CLOUDS_CC_SIZE)) * coord + (0.1 * CLOUDS_CC_CURL_STRENGTH) * curl).w);
-	cirrocumulus = linear_step(1.0 - coverage, 1.0, cirrocumulus);
-
-	// detail
-	cirrocumulus -= texture(noisetex, coord * 0.00005 + (0.1 * CLOUDS_CC_CURL_STRENGTH) * curl).y * (CLOUDS_CC_DETAIL_STRENGTH);
-	cirrocumulus -= texture(noisetex, coord * 0.00015 + (0.4 * CLOUDS_CC_CURL_STRENGTH) * curl).y * (CLOUDS_CC_DETAIL_STRENGTH * 0.25);
-	cirrocumulus -= texture(noisetex, coord * 0.00040 + (0.9 * CLOUDS_CC_CURL_STRENGTH) * curl).y * (CLOUDS_CC_DETAIL_STRENGTH * 0.10);
-	cirrocumulus  = max0(cirrocumulus);
-
-	density += 0.2 * cube(max0(cirrocumulus)) * height_shaping * dampen(height_shaping) * CLOUDS_CC_DENSITY;
+	float height_shaping = 1.0 - abs(1.0 - 2.0 * altitude_fraction);
+	density = mix(1.0, 0.75, day_factor) * cube(max0(density)) * sqr(height_shaping) * CLOUDS_CIRRUS_DENSITY;
 
 	return density;
 }
@@ -1343,7 +1369,7 @@ vec2 clouds_cirrus_scattering(
 	      powder_effect = mix(powder_effect, 1.0, pow1d5(cos_theta * 0.5 + 0.5));
 
 	float scatter_amount = clouds_cirrus_scattering_coeff;
-	float extinct_amount = clouds_cirrus_extinction_coeff * (1.0 + 0.5 * max0(smoothstep(0.0, 0.15, abs(sun_dir.y)) - smoothstep(0.5, 0.7, clouds_cirrus_coverage.x)));
+	float extinct_amount = clouds_cirrus_extinction_coeff * (1.0 + 0.5 * max0(smoothstep(0.0, 0.15, abs(sun_dir.y)) - smoothstep(0.5, 0.7, clouds_cirrus_coverage)));
 
 	for (uint i = 0u; i < 4u; ++i) {
 		scattering.x += scatter_amount * exp(-extinct_amount * light_optical_depth) * phase * powder_effect; // direct light
@@ -1360,25 +1386,27 @@ vec2 clouds_cirrus_scattering(
 	return scattering * scattering_integral;
 }
 
-vec4 draw_cirrus_clouds(vec3 ray_dir, vec3 clear_sky, float dither) {
+CloudsResult draw_cirrus_clouds(
+	vec3 air_viewer_pos,
+	vec3 ray_dir,
+	vec3 clear_sky,
+	float distance_to_terrain,
+	float dither
+) {
 	// ---------------
 	//   Ray Casting
 	// ---------------
-
-#if defined PROGRAM_DEFERRED0
-	vec3 air_viewer_pos = vec3(0.0, planet_radius, 0.0);
-#else
-	vec3 air_viewer_pos = vec3(0.0, planet_radius + eyeAltitude, 0.0);
-#endif
 
 	float r = length(air_viewer_pos);
 
 	vec2 dists = intersect_sphere(air_viewer_pos, ray_dir, clouds_cirrus_radius);
 	bool planet_intersected = intersect_sphere(air_viewer_pos, ray_dir, min(r - 10.0, planet_radius)).y >= 0.0;
+	bool terrain_intersected = distance_to_terrain >= 0.0 && r < clouds_cirrus_radius && distance_to_terrain * CLOUDS_SCALE < dists.y;
 
 	if (dists.y < 0.0                              // sphere not intersected
 	 || planet_intersected && r < clouds_cirrus_radius // planet blocking clouds
-	) { return vec4(0.0, 0.0, 0.0, 1.0); }
+	 || terrain_intersected
+	) { return clouds_not_hit; }
 
 	float distance_to_sphere = (r < clouds_cirrus_radius) ? dists.y : dists.x;
 	vec3 sphere_pos = air_viewer_pos + ray_dir * distance_to_sphere;
@@ -1393,7 +1421,7 @@ vec4 draw_cirrus_clouds(vec3 ray_dir, vec3 clear_sky, float dither) {
 
 	float cirrus, cirrocumulus;
 	float density = clouds_cirrus_density(sphere_pos.xz, 0.5, cirrus, cirrocumulus);
-	if (density < eps) return vec4(0.0, 0.0, 0.0, 1.0);
+	if (density < eps) return clouds_not_hit;
 
 	float light_optical_depth = clouds_cirrus_optical_depth(sphere_pos, light_dir, dither);
 	float view_optical_depth  = density * clouds_cirrus_extinction_coeff * CLOUDS_CIRRUS_THICKNESS * rcp(abs(ray_dir.y) + eps);
@@ -1415,331 +1443,14 @@ vec4 draw_cirrus_clouds(vec3 ray_dir, vec3 clear_sky, float dither) {
 	vec3 clouds_scattering = scattering.x * light_color + scattering.y * sky_color;
 	     clouds_scattering = clouds_aerial_perspective(clouds_scattering, view_transmittance, air_viewer_pos, sphere_pos, ray_dir, clear_sky);
 
-	return vec4(clouds_scattering, view_transmittance);
+	return CloudsResult(
+		clouds_scattering,
+		view_transmittance,
+		distance_to_sphere
+	);
 }
 #endif
 
-#ifdef CLOUDS_SINGLE_LAYER
-vec4 draw_single_cloud_layer(vec3 ray_dir, vec3 clear_sky, float dither) {
-
-#ifdef PROGRAM_DEFERRED0
-	uint cu_primary_steps = uint(mix(CLOUDS_CUMULUS_PRIMARY_STEPS_H / 2, CLOUDS_CUMULUS_PRIMARY_STEPS_Z / 2, abs(ray_dir.y)));
-	uint ac_primary_steps = uint(mix(CLOUDS_ALTOCUMULUS_PRIMARY_STEPS_H / 2, CLOUDS_ALTOCUMULUS_PRIMARY_STEPS_Z / 2, abs(ray_dir.y)));
-#else
-	uint cu_primary_steps = uint(mix(CLOUDS_CUMULUS_PRIMARY_STEPS_H, CLOUDS_CUMULUS_PRIMARY_STEPS_Z, abs(ray_dir.y)));
-	uint ac_primary_steps = uint(mix(CLOUDS_ALTOCUMULUS_PRIMARY_STEPS_H, CLOUDS_ALTOCUMULUS_PRIMARY_STEPS_Z, abs(ray_dir.y)));
-#endif
-	const uint  cc_primary_steps      = CLOUDS_CUMULUS_CONGESTUS_PRIMARY_STEPS;
-	const uint  cb_primary_steps      = CLOUDS_CUMULONIMBUS_PRIMARY_STEPS;
-	const uint  cu_lighting_steps     = CLOUDS_CUMULUS_LIGHTING_STEPS;
-	const uint  cu_ambient_steps      = CLOUDS_CUMULUS_AMBIENT_STEPS;
-	const uint  ac_lighting_steps     = CLOUDS_ALTOCUMULUS_LIGHTING_STEPS;
-	const uint  ac_ambient_steps      = CLOUDS_ALTOCUMULUS_AMBIENT_STEPS;
-	const uint  cc_lighting_steps     = CLOUDS_CUMULUS_CONGESTUS_LIGHTING_STEPS;
-	const uint  cc_ambient_steps      = CLOUDS_CUMULUS_CONGESTUS_AMBIENT_STEPS;
-	const uint  cb_lighting_steps     = CLOUDS_CUMULONIMBUS_LIGHTING_STEPS;
-	const uint  cb_ambient_steps      = CLOUDS_CUMULONIMBUS_AMBIENT_STEPS;
-
-	const float max_ray_length        = 2e4;
-	const float ci_max_ray_length     = 1e3;
-	const float min_transmittance     = 0.075;
-	const float planet_albedo         = 0.4;
-	const vec3  sky_dir               = vec3(0.0, 1.0, 0.0);
-
-	uint primary_steps = 300;//max_of(cu_primary_steps, cc_primary_steps, cb_primary_steps, ac_primary_steps);
-
-#ifdef PROGRAM_DEFERRED0
-	vec3 air_viewer_pos = vec3(0.0, planet_radius, 0.0);
-#else
-	vec3 air_viewer_pos = vec3(0.0, planet_radius + eyeAltitude, 0.0);
-#endif
-	float r = length(air_viewer_pos);
-	
-	vec2 cu_dists = vec2(0.0, 1e30), ac_dists = vec2(0.0, 1e30), ci_dists = vec2(0.0, 1e30), cc_dists = vec2(0.0, 1e30), cb_dists = vec2(0.0, 1e30);
-	vec2 cu_radius = vec2(1e30, -1e30), cc_radius = vec2(1e30, -1e30), cb_radius = vec2(1e30, -1e30), ac_radius = vec2(1e30, -1e30);
-	float ci_radius = 1e30;
-
-#ifdef CLOUDS_CUMULUS
-	//cu_dists = intersect_spherical_shell(air_viewer_pos, ray_dir, clouds_cumulus_radius, clouds_cumulus_top_radius);
-	cu_radius.x = clouds_cumulus_radius;
-	cu_radius.y = clouds_cumulus_top_radius;
-	primary_steps += cu_primary_steps;
-#endif
-#ifdef CLOUDS_ALTOCUMULUS
-	//ac_dists  = intersect_spherical_shell(air_viewer_pos, ray_dir, clouds_altocumulus_radius, clouds_altocumulus_top_radius);
-	ac_radius.x = clouds_altocumulus_radius;
-	ac_radius.y = clouds_altocumulus_top_radius;
-	primary_steps += ac_primary_steps;
-#endif
-#ifdef CLOUDS_CIRRUS
-	//ci_dists = intersect_sphere(air_viewer_pos, ray_dir, clouds_cirrus_radius);
-	ci_radius = clouds_cirrus_radius;
-#endif
-
-#ifdef CLOUDS_CUMULUS_CONGESTUS
-	vec2 cc_sphere_dists   = intersect_spherical_shell(air_viewer_pos, ray_dir, clouds_cumulus_congestus_radius, clouds_cumulus_congestus_top_radius);
-	vec2 cc_cylinder_dists = intersect_cylindrical_shell(air_viewer_pos, ray_dir, clouds_cumulus_congestus_distance, clouds_cumulus_congestus_end_distance);
-	//cc_dists = vec2(max(cc_sphere_dists.x, cc_cylinder_dists.x), min(cc_sphere_dists.y, cc_cylinder_dists.y));
-	cc_radius.x = clouds_cumulus_congestus_radius;
-	cc_radius.y = clouds_cumulus_congestus_top_radius;
-	primary_steps += cc_primary_steps;
-#endif
-
-#ifdef CLOUDS_CUMULONIMBUS
-	vec2 cb_sphere_dists   = intersect_spherical_shell(air_viewer_pos, ray_dir, clouds_cumulonimbus_radius, clouds_cumulonimbus_top_radius);
-	vec2 cb_cylinder_dists = intersect_cylindrical_shell(air_viewer_pos, ray_dir, clouds_cumulonimbus_distance, clouds_cumulonimbus_end_distance);
-	//cb_dists = vec2(max(cb_sphere_dists.x, cb_cylinder_dists.x), min(cb_sphere_dists.y, cb_cylinder_dists.y));
-	cb_radius.x = clouds_cumulonimbus_radius;
-	cb_radius.y = clouds_cumulonimbus_top_radius;
-	primary_steps += cb_primary_steps;
-#endif
-
-	bool planet_intersected = intersect_sphere(air_viewer_pos, ray_dir, min(r - 10.0, planet_radius)).y >= 0.0;
-
-	//vec2 max_dists = vec2(0.0);
-	//max_dists.x = max_of(vec4(cu_dists.x, cc_dists.x, cb_dists.x, ac_dists.x), ci_dists.x);
-	//max_dists.y = min_of(vec4(cu_dists.y, cc_dists.y, cb_dists.y, ac_dists.y), ci_dists.y);
-	float min_radius = min_of(vec4(cu_radius.x, cc_radius.x, cb_radius.x, ac_radius.x)/*, ci_radius*/);
-	float max_top_radius = min_of(vec4(cu_radius.y, cc_radius.y, cb_radius.y, ac_radius.y)/*, ci_radius*/);
-	vec2 max_dists = intersect_spherical_shell(air_viewer_pos, ray_dir, min_radius, max_top_radius);
-
-	if (max_dists.y < 0.0
-	 || planet_intersected && r < min_radius
-	) { return vec4(0.0, 0.0, 0.0, 1.0); }
-
-	float ray_length = min(max_dists.y - max_dists.x, max_ray_length);
-	float step_length = ray_length * rcp(float(primary_steps));
-
-	vec3 ray_step = ray_dir * step_length;
-	vec3 ray_origin = air_viewer_pos + ray_dir * (max_dists.x + step_length * dither);
-
-	vec2 scattering = vec2(0.0); // x: direct light, y: skylight
-	vec2 ac_scattering = vec2(0.0);
-	vec2 ci_scattering = vec2(0.0);
-	float transmittance = 1.0;
-
-	float distance_sum = 0.0;
-	float distance_weight_sum = 0.0;
-
-	// Lighting
-
-	float ac_high_coverage = linear_step(0.5, 0.6, clouds_altocumulus_coverage.x);
-	float altocumulus_shadow = ac_high_coverage * dampen(day_factor);
-
-	// x - cu, cc, cb; y - ac; z - ci;
-	bvec3 moonlit            = bvec3(sun_dir.y < -0.04, sun_dir.y < -0.045, sun_dir.y < -0.049);
-	mat3  light_dir          = mat3(moonlit.x ? moon_dir : sun_dir, moonlit.y ? moon_dir : sun_dir, moonlit.z ? moon_dir : sun_dir);
-	vec3  cos_theta          = vec3(dot(ray_dir, light_dir[0]), dot(ray_dir, light_dir[1]), dot(ray_dir, light_dir[2]));
-	float pa_rpi             = planet_albedo * rcp_pi;
-	vec3  bounced_light      = vec3(pa_rpi * light_dir[0].y, pa_rpi * light_dir[1].y, pa_rpi * light_dir[2].y);
-
-	float cu_extinction_coeff   = mix(0.05, 0.1, smoothstep(0.0, 0.3, abs(sun_dir.y))) * (1.0 - 0.33 * rainStrength) * (1.0 - 0.6 * altocumulus_shadow) * CLOUDS_CUMULUS_DENSITY;
-	float ac_extinction_coeff   = mix(0.05, 0.1, day_factor) * (1.0 - 0.85 * ac_high_coverage * (dampen(time_noon + time_midnight) * 0.75 + 0.25)) * (1.0 - 0.33 * rainStrength) * CLOUDS_ALTOCUMULUS_DENSITY;
-	float scattering_coeff_rain = mix(1.00, 0.66, rainStrength);
-	float cu_scattering_coeff   = cu_extinction_coeff * scattering_coeff_rain;
-	float ac_scattering_coeff   = ac_extinction_coeff * scattering_coeff_rain;
-
-	float cu_dynamic_thickness = mix(0.5, 1.0, smoothstep(0.4, 0.6, clouds_cumulus_coverage.y));
-	vec2  cu_detail_weights    = mix(vec2(0.33, 0.40), vec2(0.25, 0.20), sqr(clouds_stratus_amount)) * CLOUDS_CUMULUS_DETAIL_STRENGTH;
-	vec2  cu_edge_sharpening   = mix(vec2(3.0, 8.0), vec2(1.0, 2.0), clouds_stratus_amount);
-
-	// Raymarching Loop
-
-	for (uint i = 0u; i < primary_steps; ++i) {
-		if (transmittance < min_transmittance) break;
-		vec3 ray_pos = ray_origin + ray_step * i;
-		
-		float cu_density = 0.0, cc_density = 0.0, cb_density = 0.0, ac_density = 0.0;
-
-#ifdef CLOUDS_CUMULUS
-		cu_density = clouds_cumulus_density(ray_pos, cu_detail_weights, cu_edge_sharpening, cu_dynamic_thickness);
-#endif
-#ifdef CLOUDS_CUMULUS_CONGESTUS
-		cc_density = clouds_cumulus_congestus_density(ray_pos);
-#endif
-#ifdef CLOUDS_CUMULONIMBUS
-		cb_density = clouds_cumulonimbus_density(ray_pos);
-#endif
-#ifdef CLOUDS_ALTOCUMULUS
-		ac_density = clouds_altocumulus_density(ray_pos);
-#endif
-
-		float max_of_density = max_of(vec4(cu_density, cc_density, cb_density, ac_density));
-		float total_density = cu_density + cc_density + cb_density + ac_density;
-
-		if(max_of_density < eps) continue;
-
-		// fade away in the distance to hide the cutoff
-		float distance_to_sample = distance(ray_origin, ray_pos);
-
-#if defined PROGRAM_DEFERRED0
-		vec2 hash = vec2(0.0);
-#else
-		vec2 hash = hash2(fract(ray_pos)); // used to dither the light rays
-#endif
-
-#ifdef CLOUDS_CUMULUS
-		if (cu_density >= eps) {
-			float altitude_fraction = (length(ray_pos) - clouds_cumulus_radius) * rcp(clouds_cumulus_thickness);
-			float cu_distance_fade = smoothstep(0.95, 1.0, distance_to_sample * rcp(max_ray_length));
-			cu_density *= 1.0 - cu_distance_fade;
-
-			float step_optical_depth = cu_density * cu_extinction_coeff * step_length;
-			float step_transmittance = exp(-step_optical_depth);
-
-			float light_optical_depth  = clouds_cumulus_optical_depth(ray_pos, light_dir[0], cu_detail_weights, cu_edge_sharpening, cu_dynamic_thickness, hash.x, cu_lighting_steps);
-			float sky_optical_depth    = clouds_cumulus_optical_depth(ray_pos, sky_dir, cu_detail_weights, cu_edge_sharpening, cu_dynamic_thickness, hash.y, cu_ambient_steps);
-			float ground_optical_depth = mix(cu_density, 1.0, clamp01(altitude_fraction * 2.0 - 1.0)) * altitude_fraction * clouds_cumulus_thickness; // guess optical depth to the ground using altitude fraction and density from this sample
-
-			scattering += clouds_cumulus_scattering(
-				cu_density,
-				light_optical_depth,
-				sky_optical_depth,
-				ground_optical_depth,
-				cu_extinction_coeff,
-				cu_scattering_coeff,
-				step_transmittance,
-				cos_theta.x,
-				altocumulus_shadow,
-				bounced_light.x
-			) * transmittance;
-			transmittance *= step_transmittance;
-		} // cu
-#endif
-
-#ifdef CLOUDS_CUMULUS_CONGESTUS
-		if (cc_density >= eps) {
-			float altitude_fraction = (length(ray_pos) - clouds_cumulus_congestus_radius) * rcp(clouds_cumulus_congestus_thickness);
-			float step_optical_depth = cc_density * clouds_cumulus_congestus_extinction_coeff * step_length;
-			float step_transmittance = exp(-step_optical_depth);
-
-			float light_optical_depth  = clouds_cumulus_congestus_optical_depth(ray_pos, light_dir[0], hash.x, cc_lighting_steps);
-			float sky_optical_depth    = clouds_cumulus_congestus_optical_depth(ray_pos, sky_dir, hash.y, cc_ambient_steps);
-			float ground_optical_depth = mix(cc_density, 1.0, clamp01(altitude_fraction * 2.0 - 1.0)) * altitude_fraction * clouds_cumulus_congestus_thickness;
-
-			scattering += clouds_cumulus_congestus_scattering(
-				cc_density,
-				light_optical_depth,
-				sky_optical_depth,
-				ground_optical_depth,
-				step_transmittance,
-				cos_theta.x,
-				bounced_light.x
-			) * transmittance;
-			transmittance *= step_transmittance;
-		} // cc
-#endif
-
-#ifdef CLOUDS_CUMULONIMBUS
-		if (cb_density >= eps) {
-			float altitude_fraction = (length(ray_pos) - clouds_cumulonimbus_radius) * rcp(clouds_cumulonimbus_thickness2(clouds_cumulonimbus_dist2(ray_pos)));
-			float step_optical_depth = cb_density * clouds_cumulonimbus_extinction_coeff * step_length;
-			float step_transmittance = exp(-step_optical_depth);
-
-			float light_optical_depth  = clouds_cumulonimbus_optical_depth(ray_pos, light_dir[0], hash.x, cb_lighting_steps);
-			float sky_optical_depth    = clouds_cumulonimbus_optical_depth(ray_pos, sky_dir, hash.y, cb_ambient_steps);
-			float ground_optical_depth = mix(cb_density, 1.0, clamp01(altitude_fraction * 2.0 - 1.0)) * altitude_fraction * clouds_cumulonimbus_thickness2(clouds_cumulonimbus_dist2(ray_pos));
-
-			scattering += clouds_cumulonimbus_scattering(
-				cb_density,
-				light_optical_depth,
-				sky_optical_depth,
-				ground_optical_depth,
-				step_transmittance,
-				cos_theta.x,
-				bounced_light.x
-			) * transmittance;
-			transmittance *= step_transmittance;
-		} // cb
-#endif
-
-#ifdef CLOUDS_ALTOCUMULUS
-		if(ac_density >= eps) {
-			float altitude_fraction = (length(ray_pos) - clouds_altocumulus_radius) * rcp(clouds_altocumulus_thickness);
-			float ac_distance_fade = smoothstep(0.95, 1.0, distance_to_sample * rcp(max_ray_length));
-			ac_density *= 1.0 - ac_distance_fade;
-
-			float step_optical_depth = ac_density * ac_extinction_coeff * step_length;
-			float step_transmittance = exp(-step_optical_depth);
-
-			float light_optical_depth  = clouds_altocumulus_optical_depth(ray_pos, light_dir[1], hash.x, ac_lighting_steps);
-			float sky_optical_depth    = clouds_altocumulus_optical_depth(ray_pos, sky_dir, hash.y, cb_ambient_steps);
-			float ground_optical_depth = mix(ac_density, 1.0, clamp01(altitude_fraction * 2.0 - 1.0)) * altitude_fraction * clouds_altocumulus_thickness;
-
-			ac_scattering += clouds_altocumulus_scattering(
-				ac_density,
-				light_optical_depth,
-				sky_optical_depth,
-				ground_optical_depth,
-				ac_extinction_coeff,
-				ac_scattering_coeff,
-				step_transmittance,
-				cos_theta.y,
-				bounced_light.y
-			) * transmittance;
-			transmittance *= step_transmittance;
-		} // ac
-#endif
-
-		// Update distance to cloud
-		distance_sum += distance_to_sample * total_density;
-		distance_weight_sum += total_density;
-
-	} // Loop
-
-	/*bool  ci = false;
-	float mu = 0.0;
-	float rr = 0.0;
-
-#ifdef CLOUDS_CIRRUS
-	if (ci_dists.y >= 0.0 && !(planet_intersected && r < clouds_cirrus_radius)) {
-		float distance_to_sphere = (r < clouds_cirrus_radius) ? ci_dists.y : ci_dists.x;
-		vec3 sphere_pos = air_viewer_pos + ray_dir * distance_to_sphere;
-
-		float cirrus, cirrocumulus;
-		float ci_density = clouds_cirrus_density(sphere_pos.xz, 0.5, cirrus, cirrocumulus);
-		if (ci_density >= eps) {
-			ci = true;
-			float light_optical_depth = clouds_cirrus_optical_depth(sphere_pos, light_dir[2], dither);
-			float view_optical_depth  = ci_density * clouds_cirrus_extinction_coeff * CLOUDS_CIRRUS_THICKNESS * rcp(abs(ray_dir.y) + eps);
-			float view_transmittance  = exp(-view_optical_depth);
-
-			ci_scattering += clouds_cirrus_scattering(ci_density, view_transmittance, light_optical_depth, cos_theta.z) * transmittance;
-
-			// Get main light color for this layer
-			float r_sq = dot(sphere_pos, sphere_pos);
-			float rcp_r = inversesqrt(r_sq);
-			mu = dot(sphere_pos, light_dir[2]) * rcp_r;
-			rr = r_sq * rcp_r - 1500.0 * clamp01(linear_step(0.0, 0.05, cirrocumulus) * (1.0 - linear_step(0.0, 0.1, cirrus)) + cirrocumulus);
-		}
-	} // ci
-#endif*/
-
-	mat3 light_color  = mat3(moonlit.x ? moon_color : sun_color, moonlit.y ? moon_color : sun_color, moonlit.z ? moon_color : sun_color);
-		 light_color[0] *= sunlight_color * atmosphere_transmittance(ray_origin, light_dir[0]);
-		 light_color[1] *= sunlight_color * atmosphere_transmittance(ray_origin, light_dir[1]);
-		 //if (ci) light_color[2] *= sunlight_color * atmosphere_transmittance(mu, rr);
-		 light_color    *= 1.0 - rainStrength;
-		 light_color[1] *= 1.0 + 0.4 * ac_high_coverage * dampen(time_noon);
-
-	// Remap the transmittance so that min_transmittance is 0
-	float clouds_transmittance = linear_step(min_transmittance, 1.0, transmittance);
-
-	vec3 clouds_scattering = scattering.x * light_color[0] + ac_scattering.x * light_color[1];
-	//if (ci) clouds_scattering += ci_scattering.y * light_color[2];
-	clouds_scattering += (scattering.y + ac_scattering.y + ci_scattering.y) * sky_color;
-	clouds_scattering = clouds_aerial_perspective(clouds_scattering, clouds_transmittance, air_viewer_pos, ray_origin, ray_dir, clear_sky);
-
-	return vec4(clouds_scattering, clouds_transmittance);
-}
-#endif
-
-vec4 draw_clouds_add(vec4 clouds, vec4 clouds_add) {
-	clouds.rgb += clouds_add.rgb * clouds.a;
-	clouds.a   *= clouds_add.a;
-	//clouds = vec4(clouds.rgb + clouds_add.rgb * clouds.a, clouds.a * clouds_add.a);
-	return clouds;
-}
 
 // Insertion sort from https://github.com/OpenGLInsights/OpenGLInsightsCode/blob/master/Chapter%2020%20Efficient%20Layered%20Fragment%20Buffer%20Techniques/sorting.glsl
 vec2[5] sort_clouds(vec2[5] cloud_types) {
@@ -1760,22 +1471,37 @@ float abs_min(float a, float b) {
 	return a;
 }
 
-vec4 draw_clouds(vec3 ray_dir, vec3 clear_sky, float dither) {
-	vec4 clouds = vec4(0.0, 0.0, 0.0, 1.0);
+CloudsResult blend_layers(CloudsResult old, CloudsResult new, uint iter) {
+	if (iter < 1) return new;
+
+	bool new_in_front = new.apparent_distance < old.apparent_distance;
+
+	vec3 scattering_behind       = new_in_front ? old.scattering : new.scattering;
+	vec3 scattering_in_front     = new_in_front ? new.scattering : old.scattering;
+	float transmittance_in_front = new_in_front ? new.transmittance : old.transmittance;
 	
-#ifdef CLOUDS_SINGLE_LAYER
-	clouds = draw_clouds_add(clouds, draw_single_cloud_layer(ray_dir, clear_sky, dither));
-#ifdef CLOUDS_CIRRUS
-	if (clouds.a >= 1e-3) clouds = draw_clouds_add(clouds, draw_cirrus_clouds(ray_dir, clear_sky, dither));
-#endif
-	return max0(clouds);
-#endif
+	return CloudsResult(
+		scattering_in_front + transmittance_in_front * scattering_behind,
+		old.transmittance * new.transmittance,
+		min(old.apparent_distance, new.apparent_distance)
+	);
+}
+
+CloudsResult draw_clouds(
+	vec3 air_viewer_pos,
+	vec3 ray_dir,
+	vec3 clear_sky,
+	float distance_to_terrain,
+	float dither
+) {
+	CloudsResult result = clouds_not_hit;
+	float r = length(air_viewer_pos);
 	
-	float pos_cu     = CLOUDS_CUMULUS_ALTITUDE - cameraPosition.y;
-	float pos_cu_con = abs_min(CLOUDS_CUMULUS_CONGESTUS_ALTITUDE - cameraPosition.y, CLOUDS_CUMULUS_CONGESTUS_ALTITUDE * CLOUDS_CUMULUS_CONGESTUS_THICKNESS - cameraPosition.y);
-	float pos_cb     = abs_min(CLOUDS_CUMULONIMBUS_ALTITUDE - cameraPosition.y, CLOUDS_CUMULONIMBUS_ALTITUDE * CLOUDS_CUMULONIMBUS_THICKNESS - cameraPosition.y);
-	float pos_ac     = CLOUDS_ALTOCUMULUS_ALTITUDE - cameraPosition.y;
-	float pos_ci     = CLOUDS_CIRRUS_ALTITUDE - cameraPosition.y;
+	float pos_cu     = abs(clouds_cumulus_radius - r);
+	float pos_cu_con = abs(clouds_cumulus_congestus_radius - r);
+	float pos_cb     = abs(clouds_cumulonimbus_radius - r);
+	float pos_ac     = abs(clouds_altocumulus_radius - r);
+	float pos_ci     = abs(clouds_cirrus_radius - r);
 	
 	pos_cb = mix(pos_cb, 0.0, rainStrength);
 	//pos_cb = 1e6;
@@ -1783,65 +1509,63 @@ vec4 draw_clouds(vec3 ray_dir, vec3 clear_sky, float dither) {
 	if(pos_ac > 0.0) pos_ac = CLOUDS_ALTOCUMULUS_ALTITUDE;
 	if(pos_ci > 0.0) pos_ci = CLOUDS_CIRRUS_ALTITUDE;
 
-	vec2 cloud_types[5] = vec2[](vec2(0., abs(pos_cu_con)), vec2(1., abs(pos_cu)), vec2(2., abs(pos_cb)),vec2(3., abs(pos_ac)), vec2(4., abs(pos_ci)));
+	vec2 cloud_types[5] = vec2[](vec2(0., pos_cu_con), vec2(1., pos_cu), vec2(2., pos_cb),vec2(3., pos_ac), vec2(4., pos_ci));
 
 	cloud_types = sort_clouds(cloud_types);
 
-	for(int i = 0; i < cloud_types.length(); ++i) {
-		switch (int(cloud_types[i].x)) {
+	for(uint i = 0; i < cloud_types.length(); ++i) {
+		switch (int(cloud_types[i].x + 0.5)) {
 #ifdef CLOUDS_CUMULUS_CONGESTUS
 		case 0:
 			if(clouds_cumulus_congestus_amount >= 1e-3) {
-				clouds = draw_clouds_add(clouds, draw_cumulus_congestus_clouds(ray_dir, clear_sky, dither));
-				if (clouds.a < 1e-3) return clouds;
+				result = blend_layers(result, draw_cumulus_congestus_clouds(air_viewer_pos, ray_dir, clear_sky, distance_to_terrain, dither), i);
 			}
 			break;
 #endif
 #ifdef CLOUDS_CUMULUS
 		case 1:
 			if(max(clouds_cumulus_coverage.x, clouds_cumulus_coverage.y) >= 1e-3) {
-				clouds = draw_clouds_add(clouds, draw_cumulus_clouds(ray_dir, clear_sky, dither));
-				if (clouds.a < 1e-3) return clouds;
+				result = blend_layers(result, draw_cumulus_clouds(air_viewer_pos, ray_dir, clear_sky, distance_to_terrain, dither), i);
 			}
 			break;
 #endif
-#ifdef CLOUDS_CUMULONIMBUS
+/*#ifdef CLOUDS_CUMULONIMBUS
 		case 2:
 			if(clouds_cumulonimbus_amount >= 1e-3) {
-				clouds = draw_clouds_add(clouds, draw_cumulonimbus_clouds(ray_dir, clear_sky, dither));
-				if (clouds.a < 1e-3) return clouds;
+				result = blend_layers(result, draw_cumulonimbus_clouds(air_viewer_pos, ray_dir, clear_sky, distance_to_terrain, dither), i);
 			}
 			break;
-#endif
+#endif*/
 #ifdef CLOUDS_ALTOCUMULUS
 		case 3:
 			if(max(clouds_altocumulus_coverage.x, clouds_altocumulus_coverage.y) >= 1e-3) {
-				clouds = draw_clouds_add(clouds, draw_altocumulus_clouds(ray_dir, clear_sky, dither));
-				if (clouds.a < 1e-3) return clouds;
+				result = blend_layers(result, draw_altocumulus_clouds(air_viewer_pos, ray_dir, clear_sky, distance_to_terrain, dither), i);
 			}
 			break;
 #endif
 #ifdef CLOUDS_CIRRUS
 		case 4:
-			if(max(clouds_cirrus_coverage.x, clouds_cirrus_coverage.y) >= 1e-3) {
-				clouds = draw_clouds_add(clouds, draw_cirrus_clouds(ray_dir, clear_sky, dither));
-				if (clouds.a < 1e-3) return clouds;
+			if(/*max(clouds_cirrus_coverage.x, clouds_cirrus_coverage.y)*/ clouds_cirrus_coverage >= 1e-3) {
+				result = blend_layers(result, draw_cirrus_clouds(air_viewer_pos, ray_dir, clear_sky, distance_to_terrain, dither), i);
 			}
 			break;
 #endif
 		default: break;
 		}
+
+		if (result.transmittance < 1e-3) return result;
 	}
 
-	return max0(clouds);
+	return result;
 }
 
-#ifdef CLOUD_SHADOWS
-float render_cloud_shadow_map(vec3 scene_pos) {
+#if defined PROGRAM_PREPARE && defined CLOUD_SHADOWS
+#include "/include/light/cloud_shadows.glsl"
+
+float render_cloud_shadow_map(vec2 uv) {
 	// Transform position from scene-space to clouds-space
-	vec3 ray_origin = scene_pos;
-	vec3 air_viewer_pos = vec3(0.0, planet_radius + eyeAltitude, 0.0);
-	ray_origin.y += eyeAltitude + (planet_radius);
+	vec3 ray_origin = unproject_cloud_shadow_map(uv);
+	     ray_origin = vec3(ray_origin.xz, ray_origin.y + eyeAltitude - SEA_LEVEL).xzy * CLOUDS_SCALE + vec3(0.0, planet_radius, 0.0);
 
 	vec3 pos; float t, density, extinction_coeff;
 	float shadow = 1.0;
@@ -1852,7 +1576,7 @@ float render_cloud_shadow_map(vec3 scene_pos) {
 	vec2  edge_sharpening    = mix(vec2(3.0, 8.0), vec2(1.0, 2.0), clouds_stratus_amount);
 
 	extinction_coeff = mix(0.05, 0.1, smoothstep(0.0, 0.3, abs(sun_dir.y))) * (1.0 - 0.33 * rainStrength) * CLOUDS_CUMULUS_DENSITY;
-	t = intersect_sphere(ray_origin, light_dir,	clouds_cumulus_radius + 0.5 * clouds_cumulus_thickness).y;
+	t = intersect_sphere(ray_origin, light_dir,	clouds_cumulus_radius + 0.25 * clouds_cumulus_thickness).y;
 	pos = ray_origin + light_dir * t;
 	density = clouds_cumulus_density(pos, detail_weights, edge_sharpening, dynamic_thickness);
 	shadow *= exp(-0.50 * extinction_coeff * clouds_cumulus_thickness * rcp(abs(light_dir.y) + eps) * density);

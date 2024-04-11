@@ -1,7 +1,7 @@
 /*
 --------------------------------------------------------------------------------
 
-  Photon Shaders by SixthSurge
+  Photon Shader by SixthSurge
 
   program/post/grade.glsl:
   Apply bloom, color grading and tone mapping then convert to rec. 709
@@ -33,7 +33,7 @@ void main() {
 
 layout (location = 0) out vec3 scene_color;
 
-/* DRAWBUFFERS:0 */
+/* RENDERTARGETS: 0 */
 
 in vec2 uv;
 

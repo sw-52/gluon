@@ -1,7 +1,7 @@
 /*
 --------------------------------------------------------------------------------
 
-  Photon Shaders by SixthSurge
+  Photon Shader by SixthSurge
 
   program/post/temporal_pre.glsl:
   Calculate neighborhood limits for TAAU
@@ -35,7 +35,7 @@ void main() {
 layout (location = 0) out vec3 min_color;
 layout (location = 1) out vec3 max_color;
 
-/* DRAWBUFFERS:67 */
+/* RENDERTARGETS: 13,14 */
 
 in vec2 uv;
 

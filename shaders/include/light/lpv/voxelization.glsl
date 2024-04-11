@@ -23,9 +23,9 @@ bool is_voxelized(uint block_id, bool vertex_at_grid_corner) {
 	bool is_transparent_block =
 		block_id == 1u  || // Water
 	    block_id == 18u || // Transparent metal objects
-	    block_id == 80u;   // Miscellaneous transparent
+	    block_id == 256u;  // Miscellaneous transparent
 	
-	bool is_light_emitting_block = 32u <= block_id && block_id < 64u;
+	bool is_light_emitting_block = (32u <= block_id && block_id < 96u) || (264u <= block_id && block_id < 332u) ;
 
 	return (vertex_at_grid_corner || is_light_emitting_block) && is_terrain && !is_transparent_block;
 }
@@ -72,13 +72,13 @@ void update_voxel_map(uint block_id) {
 	    block_id == 14u || // Strong SSS
 	    block_id == 15u    // Weak SSS
 	) {
-		block_id = 79; // light gray tint
+		block_id = 79u; // light gray tint
 	}
 
 	// Mark transparent light sources
 	block_id = (vertex_at_grid_corner)
 		? block_id
-		: clamp(block_id + 128u, 0u, 255u);
+		: clamp(block_id + 1024u, 0u, 255u);
 
 	if (is_voxelized && is_inside_voxel_volume(voxel_pos)) {
 		imageStore(voxel_img, ivec3(voxel_pos), uvec4(block_id, 0u, 0u, 0u));

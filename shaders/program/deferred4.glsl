@@ -127,7 +127,7 @@ void main() {
 	float aurora_amount = get_aurora_amount();
 	mat2x3 aurora_colors = get_aurora_colors();
 
-	sky_samples[0] += aurora_amount * AURORA_GROUND_LIGHTING * mix(aurora_colors[0], aurora_colors[1], 0.25);
+	sky_samples[0] += aurora_amount * AURORA_GROUND_LIGHTING * mix(aurora_colors[0], aurora_colors[1], 0.25) * mix(AURORA_BRIGHTNESS, AURORA_BRIGHTNESS_SNOW, biome_may_snow);
 	#endif
 #endif
 
@@ -487,7 +487,7 @@ void main() {
 		const float cloud_shadows = 1.0;
 #endif
 
-#if defined SHADOW && (defined WORLD_OVERWORLD || defined WORLD_END)
+#if defined SHADOW && (defined WORLD_OVERWORLD || defined WORLD_END || defined WORLD_SPACE)
 		float sss_depth;
 		float shadow_distance_fade;
 		vec3 shadows;
@@ -532,7 +532,7 @@ void main() {
 
 		// Specular highlight
 
-#if defined WORLD_OVERWORLD || defined WORLD_END
+#if defined WORLD_OVERWORLD || defined WORLD_END || defined WORLD_SPACE
 		scene_color += get_specular_highlight(material, NoL, NoV, NoH, LoV, LoH) * light_color * shadows * ao;
 #endif
 

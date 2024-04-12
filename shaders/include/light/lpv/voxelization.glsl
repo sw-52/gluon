@@ -72,13 +72,16 @@ void update_voxel_map(uint block_id) {
 	    block_id == 14u || // Strong SSS
 	    block_id == 15u    // Weak SSS
 	) {
-		block_id = 79u; // light gray tint
+		block_id = 179u; // light gray tint
 	}
 
 	// Mark transparent light sources
-	block_id = (vertex_at_grid_corner)
-		? block_id
-		: clamp(block_id + 1024u, 0u, 255u);
+	block_id = (!vertex_at_grid_corner
+		       || block_id == 34u // Weak white light, transparent
+		       || block_id == 37u // Weak golden light, transparent
+		    ) && block_id < 1024u
+		? min(block_id + 1024u, 2047u)
+		: block_id;
 
 	if (is_voxelized && is_inside_voxel_volume(voxel_pos)) {
 		imageStore(voxel_img, ivec3(voxel_pos), uvec4(block_id, 0u, 0u, 0u));

@@ -279,7 +279,7 @@ vec3 draw_sky(vec3 ray_dir) {
 
 	// Sun and stars
 
-#if defined PROGRAM_DEFERRED3
+#if defined PROGRAM_DEFERRED4
 	vec4 vanilla_sky = texelFetch(colortex3, ivec2(gl_FragCoord.xy), 0);
 	vec3 vanilla_sky_color = from_srgb(vanilla_sky.rgb);
 	uint vanilla_sky_id = uint(255.0 * vanilla_sky.a);

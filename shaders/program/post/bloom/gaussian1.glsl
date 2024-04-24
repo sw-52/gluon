@@ -1,7 +1,7 @@
 /*
 --------------------------------------------------------------------------------
 
-  Photon Shaders by SixthSurge
+  Photon Shader by SixthSurge
 
   program/post/bloom/gaussian0.fsh
   1D vertical gaussian blur pass for bloom tiles
@@ -39,7 +39,7 @@ void main() {
 
 layout (location = 0) out vec3 bloom_tiles;
 
-/* DRAWBUFFERS:0 */
+/* RENDERTARGETS: 0 */
 
 in vec2 uv;
 

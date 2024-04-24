@@ -94,7 +94,7 @@ void decode_specular_map(vec4 specular_map, inout Material material, out bool pa
 		decode_specular_map(specular_map, material);
 }
 
-Material material_from(vec3 albedo_srgb, uint material_mask, vec3 world_pos, inout vec2 light_levels) {
+Material material_from(vec3 albedo_srgb, uint material_mask, vec3 world_pos, vec3 normal, inout vec2 light_levels) {
 	vec3 block_pos = fract(world_pos);
 
 	// Create material with default values
@@ -273,22 +273,81 @@ Material material_from(vec3 albedo_srgb, uint material_mask, vec3 world_pos, ino
 						}
 					} else { // 18-20
 						if (material_mask == 18u) { // 18
-
+							// Metals
+							#ifdef HARDCODED_SPECULAR
+							float smoothness = sqrt(linear_step(0.1, 0.9, hsl.z));
+							material.roughness = max(sqr(1.0 - smoothness), 0.04);
+							material.f0 = material.albedo;
+							material.is_metal = true;
+							material.ssr_multiplier = 1.0;
+							#endif
 						} else { // 19
-
+							// Warped stem
+							#ifdef HARDCODED_EMISSION
+							float emission_amount = mix(
+								1.0,
+								float(any(lessThan(
+									vec4(block_pos.yz, 1.0 - block_pos.yz),
+									vec4(rcp(16.0) - 1e-3)
+								))),
+								step(0.5, abs(normal.x))
+							);
+							float blue = isolate_hue(hsl, 200.0, 60.0);
+							material.emission = albedo_sqrt * hsl.y * blue * emission_amount;
+							#endif
 						}
 					}
 				} else { // 20-24
 					if (material_mask < 22u) { // 20-22
 						if (material_mask == 20u) { // 20
-
+							// Warped stem
+							#ifdef HARDCODED_EMISSION
+							float emission_amount = mix(
+								1.0,
+								float(any(lessThan(
+									vec4(block_pos.xz, 1.0 - block_pos.xz),
+									vec4(rcp(16.0) - 1e-3)
+								))),
+								step(0.5, abs(normal.y))
+							);
+							float blue = isolate_hue(hsl, 200.0, 60.0);
+							material.emission = albedo_sqrt * hsl.y * blue * emission_amount;
+							#endif
 						} else { // 21
-
+							// Warped stem
+							#ifdef HARDCODED_EMISSION
+							float emission_amount = mix(
+								1.0,
+								float(any(lessThan(
+									vec4(block_pos.xy, 1.0 - block_pos.xy),
+									vec4(rcp(16.0) - 1e-3)
+								))),
+								step(0.5, abs(normal.z))
+							);
+							float blue = isolate_hue(hsl, 200.0, 60.0);
+							material.emission = albedo_sqrt * hsl.y * blue * emission_amount;
+							#endif
 						}
 					} else { // 22-24
 						if (material_mask == 22u) { // 22
+							// Warped hyphae
+							#ifdef HARDCODED_EMISSION
+							float blue = isolate_hue(hsl, 200.0, 60.0);
+							material.emission = albedo_sqrt * hsl.y * blue;
+							#endif
 						} else { // 23
-
+							// Crimson stem
+							#ifdef HARDCODED_EMISSION
+							float emission_amount = mix(
+								1.0,
+								float(any(lessThan(
+									vec4(block_pos.yz, 1.0 - block_pos.yz),
+									vec4(rcp(16.0) - 1e-3)
+								))),
+								step(0.5, abs(normal.x))
+							);
+							material.emission = albedo_sqrt * linear_step(0.33, 0.5, hsl.z) * emission_amount;
+							#endif
 						}
 					}
 				}
@@ -296,13 +355,38 @@ Material material_from(vec3 albedo_srgb, uint material_mask, vec3 world_pos, ino
 				if (material_mask < 28u) { // 24-28
 					if (material_mask < 26u) { // 24-26
 						if (material_mask == 24u) { // 24
-
+							// Crimson stem
+							#ifdef HARDCODED_EMISSION
+							float emission_amount = mix(
+								1.0,
+								float(any(lessThan(
+									vec4(block_pos.xz, 1.0 - block_pos.xz),
+									vec4(rcp(16.0) - 1e-3)
+								))),
+								step(0.5, abs(normal.y))
+							);
+							material.emission = albedo_sqrt * linear_step(0.33, 0.5, hsl.z) * emission_amount;
+							#endif
 						} else { // 25
-
+							// Crimson stem
+							#ifdef HARDCODED_EMISSION
+							float emission_amount = mix(
+								1.0,
+								float(any(lessThan(
+									vec4(block_pos.xy, 1.0 - block_pos.xy),
+									vec4(rcp(16.0) - 1e-3)
+								))),
+								step(0.5, abs(normal.z))
+							);
+							material.emission = albedo_sqrt * linear_step(0.33, 0.5, hsl.z) * emission_amount;
+							#endif
 						}
 					} else { // 26-28
 						if (material_mask == 26u) { // 26
-
+							// Crimson hyphae
+							#ifdef HARDCODED_EMISSION
+							material.emission = albedo_sqrt * linear_step(0.33, 0.5, hsl.z);
+							#endif
 						} else { // 27
 
 						}
@@ -358,7 +442,7 @@ Material material_from(vec3 albedo_srgb, uint material_mask, vec3 world_pos, ino
 						if (material_mask == 36u) { // 36
 							#ifdef HARDCODED_EMISSION
 							// Medium golden light
-							material.emission  = 0.85 * albedo_sqrt * linear_step(0.77, 0.85, hsl.z);
+							material.emission  = 0.85 * albedo_sqrt * linear_step(0.78, 0.85, hsl.z);
 							#endif
 						} else { // 37
 							#ifdef HARDCODED_EMISSION

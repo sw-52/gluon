@@ -9,7 +9,7 @@
 uint weather_day_index(int world_day) {
 #if WEATHER_DAY == -1
 	// Start at noon
-	world_day -= int(worldTime < 6000);
+	world_day -= int(worldTime <= 6000);
 
 	const uint day_count = 12;
 
@@ -24,12 +24,6 @@ uint weather_day_index(int world_day) {
 
 float weather_mix_factor() {
 	return cubic_smooth(fract(float(worldTime) * rcp(24000.0) - 0.25));
-}
-
-float daily_weather_overcastness(int world_day) {
-	const float[] overcastness = float[12](WEATHER_D0_OVERCASTNESS, WEATHER_D1_OVERCASTNESS, WEATHER_D2_OVERCASTNESS, WEATHER_D3_OVERCASTNESS, WEATHER_D4_OVERCASTNESS, WEATHER_D5_OVERCASTNESS, WEATHER_D6_OVERCASTNESS, WEATHER_D7_OVERCASTNESS, WEATHER_D8_OVERCASTNESS, WEATHER_D9_OVERCASTNESS, WEATHER_D10_OVERCASTNESS, WEATHER_D11_OVERCASTNESS);
-
-	return overcastness[weather_day_index(world_day)];
 }
 
 float daily_weather_fogginess(int world_day) {

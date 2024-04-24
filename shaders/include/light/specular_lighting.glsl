@@ -2,6 +2,7 @@
 #define INCLUDE_LIGHT_SPECULAR_LIGHTING
 
 #include "/include/light/bsdf.glsl"
+#include "/include/misc/distant_horizons.glsl"
 #include "/include/misc/material.glsl"
 #include "/include/misc/raytracer.glsl"
 #include "/include/sky/projection.glsl"
@@ -185,11 +186,16 @@ vec3 trace_specular_ray(
 #ifdef ENVIRONMENT_REFLECTIONS
 	vec3 hit_pos;
 	bool hit = raymarch_depth_buffer(
-#ifdef SSR_PREVIOUS_FRAME
+	#ifdef DISTANT_HORIZONS
+		combined_depth_buffer,
+	#else
+		#ifdef SSR_PREVIOUS_FRAME
 		depthtex0,
-#else
+		#else
 		depthtex1,
-#endif
+		#endif
+	#endif
+		combined_projection_matrix,
 		screen_pos,
 		view_pos,
 		view_dir,
@@ -214,7 +220,7 @@ vec3 trace_specular_ray(
 		float border_attenuation = (hit_pos.x * hit_pos.y - hit_pos.x) * (hit_pos.x * hit_pos.y - hit_pos.y);
 		      border_attenuation = dampen(linear_step(0.0, border_attenuation_factor, border_attenuation));
 
-#ifdef SSR_PREVIOUS_FRAME
+#if defined SSR_PREVIOUS_FRAME && !defined DISTANT_HORIZONS
 	#ifdef VL
 		// Un-apply volumetric fog scattering using fog from the current frame
 		vec2 fog_uv = clamp(hit_pos.xy * VL_RENDER_SCALE, vec2(0.0), floor(view_res * VL_RENDER_SCALE - 1.0) * view_pixel_size);
@@ -247,7 +253,8 @@ vec3 get_specular_reflections(
 	vec3 flat_normal,
 	vec3 world_dir,
 	vec3 tangent_dir,
-	float skylight
+	float skylight,
+	bool is_water
 ) {
 	vec3 albedo_tint = material.is_hardcoded_metal ? material.albedo : vec3(1.0);
 
@@ -255,8 +262,13 @@ vec3 get_specular_reflections(
 
 	float dither = r1(frameCounter, texelFetch(noisetex, ivec2(gl_FragCoord.xy) & 511, 0).b);
 
+#ifdef DISTANT_HORIZONS
+	// Convert screen depth to combined depth
+	screen_pos = view_to_screen_space(combined_projection_matrix, view_pos, true);
+#endif
+
 #if defined SSR_ROUGHNESS_SUPPORT && defined SPECULAR_MAPPING
-	if (material.roughness > 5e-2) { // Rough reflection
+	if (!is_water) { // Rough reflection
 	 	float mip_level = 8.0 * dampen(material.roughness);
 
 		vec3 reflection = vec3(0.0);
@@ -266,7 +278,7 @@ vec3 get_specular_reflections(
 			hash.x = interleaved_gradient_noise(gl_FragCoord.xy,                    frameCounter * SSR_RAY_COUNT + i);
 			hash.y = interleaved_gradient_noise(gl_FragCoord.xy + vec2(97.0, 23.0), frameCounter * SSR_RAY_COUNT + i);
 
-			vec3 microfacet_normal = tbn_matrix * sample_ggx_vndf(-tangent_dir, vec2(material.roughness), hash);
+			vec3 microfacet_normal = tbn_matrix * sample_ggx_vndf(-tangent_dir, vec2(alpha_squared), hash);
 			vec3 ray_dir = reflect(world_dir, microfacet_normal);
 
 			float NoL = dot(normal, ray_dir);

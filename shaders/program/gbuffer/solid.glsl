@@ -1,7 +1,7 @@
 /*
 --------------------------------------------------------------------------------
 
-  Photon Shaders by SixthSurge
+  Photon Shader by SixthSurge
 
   program/gbuffer/solid.glsl:
   Handle terrain, entities, the hand, beacon beams and spider eyes
@@ -17,6 +17,7 @@
 
 out vec2 uv;
 out vec2 light_levels;
+out vec3 scene_pos;
 out vec4 tint;
 
 flat out uint material_mask;
@@ -29,12 +30,12 @@ flat out vec2 atlas_tile_offset;
 flat out vec2 atlas_tile_scale;
 #endif
 
-#if defined DIRECTIONAL_LIGHTMAPS
-out vec3 scene_pos;
-#endif
-
 #if defined PROGRAM_GBUFFERS_TERRAIN
 out float vanilla_ao;
+#endif
+
+#if defined PROGRAM_GBUFFERS_ENTITIES || defined PROGRAM_GBUFFERS_HAND
+out vec2 uv_local;
 #endif
 
 // --------------
@@ -121,6 +122,11 @@ void main() {
 	material_mask = 32;
 #endif
 
+#if defined PROGRAM_GBUFFERS_ENTITIES || defined PROGRAM_GBUFFERS_HAND
+	// Calculate local uv used to fix hardcoded emission on some handheld/dropped items
+	uv_local = sign(uv - mc_midTexCoord) * 0.5 + 0.5;
+#endif
+
 	bool is_top_vertex = uv.y < mc_midTexCoord.y;
 
 	vec3 pos = transform(gl_ModelViewMatrix, gl_Vertex.xyz);
@@ -130,9 +136,7 @@ void main() {
 	     pos = pos - cameraPosition;
 		 pos = world_curvature(pos);
 
-#if defined DIRECTIONAL_LIGHTMAPS
 	scene_pos = pos;
-#endif
 
 #if defined POM && defined PROGRAM_GBUFFERS_TERRAIN
 	tangent_pos = (pos - gbufferModelViewInverse[3].xyz) * tbn;
@@ -162,18 +166,19 @@ void main() {
 layout (location = 0) out vec4 gbuffer_data_0; // albedo, block ID, flat normal, light levels
 layout (location = 1) out vec4 gbuffer_data_1; // detailed normal, specular map (optional)
 
-/* DRAWBUFFERS:1 */
+/* RENDERTARGETS: 1 */
 
 #ifdef NORMAL_MAPPING
-/* DRAWBUFFERS:12 */
+/* RENDERTARGETS: 1,2 */
 #endif
 
 #ifdef SPECULAR_MAPPING
-/* DRAWBUFFERS:12 */
+/* RENDERTARGETS: 1,2 */
 #endif
 
 in vec2 uv;
 in vec2 light_levels;
+in vec3 scene_pos;
 in vec4 tint;
 
 flat in uint material_mask;
@@ -186,12 +191,12 @@ flat in vec2 atlas_tile_offset;
 flat in vec2 atlas_tile_scale;
 #endif
 
-#if defined DIRECTIONAL_LIGHTMAPS
-in vec3 scene_pos;
-#endif
-
 #if defined PROGRAM_GBUFFERS_TERRAIN
 in float vanilla_ao;
+#endif
+
+#if defined PROGRAM_GBUFFERS_ENTITIES || defined PROGRAM_GBUFFERS_HAND
+in vec2 uv_local;
 #endif
 
 // ------------
@@ -230,7 +235,12 @@ uniform vec2 taa_offset;
 uniform vec3 light_dir;
 
 #if defined PROGRAM_GBUFFERS_ENTITIES
+uniform int entityId;
 uniform vec4 entityColor;
+#endif
+
+#if defined PROGRAM_GBUFFERS_PARTICLES
+	#define NO_NORMAL
 #endif
 
 #if defined PROGRAM_GBUFFERS_TERRAIN && defined POM
@@ -241,6 +251,7 @@ uniform vec4 entityColor;
 #include "/include/light/directional_lightmaps.glsl"
 #endif
 
+#include "/include/misc/material_fix.glsl"
 #include "/include/utility/dithering.glsl"
 #include "/include/utility/encoding.glsl"
 #include "/include/utility/fast_math.glsl"
@@ -399,7 +410,7 @@ void main() {
 
 #if defined PROGRAM_GBUFFERS_ENTITIES
 	if (material_mask == 102) base_color = vec4(1.0);
-	if (base_color.a < 0.1 && material_mask != 101) { discard; return; } // Save transparent quad in boats, which material_masks out water
+	if (base_color.a < 0.1 && material_mask != 101) { discard; return; } // Save transparent quad in boats, which masks out water
 #else
 	if (base_color.a < 0.1) { discard; return; }
 #endif
@@ -449,13 +460,28 @@ void main() {
 	#endif
 #endif
 
+#if defined NO_NORMAL
+	// No normal vector => make one from screen-space partial derivatives
+	vec3 particle_normal = normalize(cross(dFdx(scene_pos), dFdy(scene_pos)));
+	#define flat_normal particle_normal
+	#define detailed_normal particle_normal
+#else
+	#define flat_normal tbn[2]
+	#define detailed_normal normal
+#endif
+
+#if defined PROGRAM_GBUFFERS_ENTITIES || defined PROGRAM_GBUFFERS_HAND
+	uint new_material_mask = fix_material_mask();
+	#define material_mask new_material_mask
+#endif
+
 	gbuffer_data_0.x  = pack_unorm_2x8(base_color.rg);
 	gbuffer_data_0.y  = pack_unorm_2x8(base_color.b, clamp01(float(material_mask) * rcp(255.0)));
-	gbuffer_data_0.z  = pack_unorm_2x8(encode_unit_vector(tbn[2]));
+	gbuffer_data_0.z  = pack_unorm_2x8(encode_unit_vector(flat_normal));
 	gbuffer_data_0.w  = pack_unorm_2x8(dither_8bit(adjusted_light_levels, dither));
 
 #ifdef NORMAL_MAPPING
-	gbuffer_data_1.xy = encode_unit_vector(normal);
+	gbuffer_data_1.xy = encode_unit_vector(detailed_normal);
 #endif
 
 #ifdef SPECULAR_MAPPING

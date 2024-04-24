@@ -1,7 +1,7 @@
 /*
 --------------------------------------------------------------------------------
 
-  Photon Shaders by SixthSurge
+  Photon Shader by SixthSurge
 
   program/gbuffer/basic.glsl:
   Handle lines
@@ -29,7 +29,7 @@ in ivec2 vaUV2;
 uniform mat4 projectionMatrix;
 uniform mat4 modelViewMatrix;
 
-#if BOX_LINE_WIDTH != 2.0
+#if BOX_LINE_WIDTH != 2
 uniform int renderStage;
 #endif
 #endif
@@ -71,8 +71,8 @@ void main() {
 	vec2 line_screen_dir = normalize((ndc2.xy - ndc1.xy) * view_res);
 
 	vec2 line_offset =
-#if BOX_LINE_WIDTH != 2.0
-		vec2(-line_screen_dir.y, line_screen_dir.x) * view_pixel_size * ((renderStage == MC_RENDER_STAGE_OUTLINE) ? BOX_LINE_WIDTH : 2.0);
+#if BOX_LINE_WIDTH != 2
+		vec2(-line_screen_dir.y, line_screen_dir.x) * view_pixel_size * ((renderStage == MC_RENDER_STAGE_OUTLINE) ? float(BOX_LINE_WIDTH) : 2.0);
 #else
 		vec2(-line_screen_dir.y, line_screen_dir.x) * view_pixel_size * 2.0;
 #endif
@@ -119,7 +119,7 @@ layout (location = 0) out vec4 scene_color;
 layout (location = 1) out vec4 gbuffer_data_0; // albedo, block ID, flat normal, light levels
 layout (location = 2) out vec4 gbuffer_data_1; // detailed normal, specular map (optional)
 
-/* DRAWBUFFERS:012 */
+/* RENDERTARGETS: 0,1,2 */
 
 flat in vec2 light_levels;
 flat in vec4 tint;

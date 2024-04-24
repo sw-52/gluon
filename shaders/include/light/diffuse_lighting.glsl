@@ -19,14 +19,13 @@
 #endif
 
 #ifndef WORLD_OVERWORLD
-	#undef OVERCAST_SKY_AFFECTS_LIGHTING
 	#undef CLOUD_SHADOWS
 #endif
 
 const float sss_density          = 14.0;
 const float sss_scale            = 5.0 * SSS_INTENSITY;
 const float night_vision_scale   = 1.5;
-const float metal_diffuse_amount = 0.25; // Scales diffuse lighting on metals, ideally this would be zero but purely specular metals don't play well with SSR
+const float metal_diffuse_amount = 0.1; // Scales diffuse lighting on metals, ideally this would be zero but purely specular metals don't play well with SSR
 
 float get_blocklight_falloff(float blocklight, float skylight, float ao) {
 	float falloff  = pow8(blocklight) + 0.18 * sqr(blocklight) + 0.16 * dampen(blocklight);                // Base falloff
@@ -124,11 +123,6 @@ vec3 get_diffuse_lighting(
 	diffuse *= 0.4 + 0.6 * sqr(ao);
 	#endif
 
-	#ifdef OVERCAST_SKY_AFFECTS_LIGHTING
-	bounced *= 1.0 - overcastness;
-	sss     *= 1.0 - 0.5 * overcastness;
-	#endif
-
 	#ifdef CLOUD_SHADOWS
 	bounced *= cloud_shadows;
 	sss     *= cloud_shadows;
@@ -152,10 +146,6 @@ vec3 get_diffuse_lighting(
 
 	lighting += light_color * diffuse;
 
-	#ifdef OVERCAST_SKY_AFFECTS_LIGHTING
-	lighting *= 1.0 - 0.5 * overcastness;
-	#endif
-
 	#ifdef CLOUD_SHADOWS
 	lighting *= cloud_shadows;
 	#endif
@@ -164,7 +154,7 @@ vec3 get_diffuse_lighting(
 
 	// Skylight
 
-#if defined WORLD_OVERWORLD && defined PROGRAM_DEFERRED3
+#if defined WORLD_OVERWORLD && defined PROGRAM_DEFERRED4
 	#ifdef SH_SKYLIGHT
 	vec3 skylight = sh_evaluate_irradiance(sky_sh, normal, ao);
 	#else

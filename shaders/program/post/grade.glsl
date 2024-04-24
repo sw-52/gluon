@@ -1,7 +1,7 @@
 /*
 --------------------------------------------------------------------------------
 
-  Photon Shaders by SixthSurge
+  Photon Shader by SixthSurge
 
   program/post/grade.glsl:
   Apply bloom, color grading and tone mapping then convert to rec. 709
@@ -33,7 +33,7 @@ void main() {
 
 layout (location = 0) out vec3 scene_color;
 
-/* DRAWBUFFERS:0 */
+/* RENDERTARGETS: 0 */
 
 in vec2 uv;
 
@@ -192,6 +192,8 @@ vec3 grade_input(vec3 rgb) {
 	rgb = rgb * rec2020_to_xyz;
 	rgb = rgb * cat;
 	rgb = rgb * xyz_to_rec2020;
+
+	rgb = max0(rgb);
 #endif
 
 	return rgb;
@@ -281,7 +283,7 @@ vec3 tonemap_hejl_2015(vec3 rgb) {
 vec3 tonemap_hejl_burgess(vec3 rgb) {
 	rgb = rgb * min(vec3(1.0), 1.0 - 0.8 * exp(rcp(-0.004) * rgb));
 	rgb = (rgb * (6.2 * rgb + 0.5)) / (rgb * (6.2 * rgb + 1.7) + 0.06);
-	return srgb_eotf_inv(rgb); // Revert built-in s_r_g_b conversion
+	return srgb_eotf_inv(rgb); // Revert built-in sRGB conversion
 }
 
 // Timothy Lottes 2016, "Advanced Techniques and Optimization of HDR Color Pipelines"

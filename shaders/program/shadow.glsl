@@ -1,7 +1,7 @@
 /*
 --------------------------------------------------------------------------------
 
-  Photon Shaders by SixthSurge
+  Photon Shader by SixthSurge
 
   program/shadow.glsl:
   Render shadow map
@@ -135,10 +135,9 @@ void main() {
 
 layout (location = 0) out vec3 shadowcolor0_out;
 
-/* DRAWBUFFERS:0 */
+/* RENDERTARGETS: 0 */
 
 in vec2 uv;
-in vec3 world_pos;
 
 flat in uint material_mask;
 flat in vec3 tint;

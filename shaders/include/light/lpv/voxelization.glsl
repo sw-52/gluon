@@ -56,16 +56,16 @@ void update_voxel_map(uint block_id) {
 		 block_pos = fract(block_pos + cameraPosition);
 	bool vertex_at_grid_corner = is_corner(block_pos, rcp(16.0) - 1e-3);
 
-	bool is_voxelized = is_voxelized(block_id, vertex_at_grid_corner);
-
-	// Prevent blocks that aren't part of another category in shaders.properties from being treated as air
-	block_id = max(block_id, 1u);
-
 	// Warped and crimson stem emission
 	uint is_warped_stem  = uint(19 <= block_id && block_id < 23);
 	uint is_crimson_stem = uint(23 <= block_id && block_id < 27);
 	block_id = block_id * (1u - is_warped_stem) + 46 * is_warped_stem;
 	block_id = block_id * (1u - is_crimson_stem) + 58 * is_crimson_stem;
+
+	bool is_voxelized = is_voxelized(block_id, vertex_at_grid_corner);
+
+	// Prevent blocks that aren't part of another category in shaders.properties from being treated as air
+	block_id = max(block_id, 1u);
 
 	// SSS blocks
 	if (block_id == 5u  || // Leaves

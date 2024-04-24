@@ -866,7 +866,7 @@ CloudsResult draw_cumulonimbus_clouds(
 	vec2 cylinder_dists = intersect_cylindrical_shell(air_viewer_pos, ray_dir, clouds_cumulonimbus_distance, clouds_cumulonimbus_end_distance);
 	vec2 dists          = vec2(max(sphere_dists.x, cylinder_dists.x), min(sphere_dists.y, cylinder_dists.y));
 
-	bool planet_intersected = intersect_sphere(air_viewer_pos, ray_dir, min(length(air_viewer_pos) - 10.0, planet_radius)).y >= 0.0;
+	bool planet_intersected = intersect_sphere(air_viewer_pos, ray_dir, min(r - 10.0, planet_radius)).y >= 0.0;
 	bool terrain_intersected = distance_to_terrain >= 0.0 && r < clouds_cumulonimbus_radius && distance_to_terrain * CLOUDS_SCALE < dists.y;
 
 	if (dists.y < 0.0                                        // volume not intersected

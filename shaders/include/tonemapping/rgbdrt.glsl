@@ -14,12 +14,16 @@
     -------------------------------------------------
 */
 
+//
+// Converted to GLSL by sw-52
+//
+
 #define average 1
 #define dim     2
 #define dark    3
 
-#define Lp 100.0
-#define surround dim
+#define Lp RGBDRT_LP // 100.0
+#define surround RGBDRT_SURROUND // dim [average dim dark]
 #define invert 0
 
 
@@ -70,34 +74,34 @@ vec3 rgbdrtransform(vec3 rgb) {
       */
 
     float su;
-    if (surround == average)    su = 0.9f;
-    else if (surround == dim)   su = 0.95f;
-    else if (surround == dark)  su = 1.0f;
+    if (surround == average)    su = 0.9;
+    else if (surround == dim)   su = 0.95;
+    else if (surround == dark)  su = 1.0;
 
     const int eotf = 0;
 
     // Display scale: remap peak white depending on output inverse EOTF
-    const float ds = eotf == 4 ? 0.01f : eotf == 5 ? 0.1f : 100.0f/Lp;
+    const float ds = eotf == 4 ? 0.01 : eotf == 5 ? 0.1 : 100.0 / Lp;
 
     /* Tonescale
           Uses the "Michaelis-Menten Spring Dual-Contrast" Tonescale function
           https://colab.research.google.com/drive/10C3HvDuoAhYad1qOG2r0v8fGR-5VdpO5
       */
     // Calculate tonescale parameters
-    const float fl = 0.01; // flare
-    const float c0 = 1.2; // pre-tonemap contrast
-    const float cs = pow(0.18, 1.0 - c0);  // pivoted contrast scale
-    const float c1 = 1.1; // post-tonemap contrast
+    const float fl = RGBDRT_FLARE; // flare  // 0.01
+    const float c0 = RGBDRT_PRE_CONTRAST; // pre-tonemap contrast  // 1.2
+    const float cs = pow(RGBDRT_CONTRAST_PIVOT, 1.0 - c0);  // pivoted contrast scale  // 0.18
+    const float c1 = RGBDRT_POST_CONTRAST; // post-tonemap contrast  // 1.1
     float p = c1 * su; // surround compensation, unconstrained
 
-    // boost peak to clip : ~32@100nits, ~75~1000nits, 100@4000nits
-    const float w1 = pow(0.595 * Lp/10000.0, 0.931) + 1.037;
-    const float s1 = w1 * Lp/100.0; // scale y: 1@100nits, 40@4000nits
+    // boost peak to clip : ~32@100nits, ~75@1000nits, 100@4000nits
+    const float w1 = pow(0.595 * Lp / 10000.0, 0.931) + 1.037;
+    const float s1 = w1 * Lp / 100.0; // scale y: 1@100nits, 40@4000nits
 
     const float ex = -0.26; // 0.18 -> 0.1 @ 100nits
-    const float eb = 0.08; // exposure boost with > Lp
-    const float e0 = pow(2.0f, ex + eb * log2(s1));
-    const float s0 = pow(s1/e0, 1.0f/c1);
+    const float eb = RGBDRT_EXPOSURE_BOOST; // exposure boost with > Lp  // 0.08
+    const float e0 = pow(2.0, ex + eb * log2(s1));
+    const float s0 = pow(s1 / e0, 1.0 / c1);
 
 
 
@@ -111,9 +115,9 @@ vec3 rgbdrtransform(vec3 rgb) {
         rgb = max(vec3(0.0), rgb);
 
         // Tonescale
-        rgb.x = rgb.x < 0.18f ? cs * pow(rgb.x, c0) : c0*(rgb.x - 0.18f) + 0.18f;
-        rgb.y = rgb.y < 0.18f ? cs * pow(rgb.y, c0) : c0*(rgb.y - 0.18f) + 0.18f;
-        rgb.z = rgb.z < 0.18f ? cs * pow(rgb.z, c0) : c0*(rgb.z - 0.18f) + 0.18f;
+        rgb.x = rgb.x < 0.18 ? cs * pow(rgb.x, c0) : c0 * (rgb.x - 0.18) + 0.18;
+        rgb.y = rgb.y < 0.18 ? cs * pow(rgb.y, c0) : c0 * (rgb.y - 0.18) + 0.18;
+        rgb.z = rgb.z < 0.18 ? cs * pow(rgb.z, c0) : c0 * (rgb.z - 0.18) + 0.18;
         rgb = s1 * pow(rgb / (rgb + s0), vec3(p));
         rgb = rgb * rgb / (rgb + fl);
 
@@ -124,14 +128,14 @@ vec3 rgbdrtransform(vec3 rgb) {
 
         // Inverse EOTF
         rgb = clamp(rgb, 0.0, 1.0);
-        float eotf_p = 2.0f + eotf * 0.2f;
-        if ((eotf > 0) && (eotf < 4)) rgb = pow(rgb, vec3(1.0f / eotf_p));
+        float eotf_p = 2.0 + eotf * 0.2;
+        if ((eotf > 0) && (eotf < 4)) rgb = pow(rgb, vec3(1.0 / eotf_p));
 
     } else {
         /* Inverse Display Rendering
                  ----------------------------------------------------------- */
 
-        float eotf_p = 2.0f + eotf * 0.2f;
+        float eotf_p = 2.0 + eotf * 0.2;
         if ((eotf > 0) && (eotf < 4)) rgb = pow(rgb, vec3(eotf_p));
 
         rgb /= ds;
@@ -140,11 +144,11 @@ vec3 rgbdrtransform(vec3 rgb) {
         rgb = rgb * inverse(matrix_rgbdt_to_xyz);
 
         // Tonescale
-        rgb = (rgb + sqrt(rgb * (4.0f * fl + rgb))) / 2.0f;
-        rgb = s0/(pow(s1/rgb, vec3(1.0f/p)) - 1.0f);
-        rgb.x = rgb.x < 0.18f ? pow(rgb.x/cs, 1.0f/c0) : (rgb.x - 0.18f)/c0 + 0.18f;
-        rgb.y = rgb.y < 0.18f ? pow(rgb.y/cs, 1.0f/c0) : (rgb.y - 0.18f)/c0 + 0.18f;
-        rgb.z = rgb.z < 0.18f ? pow(rgb.z/cs, 1.0f/c0) : (rgb.z - 0.18f)/c0 + 0.18f;
+        rgb = (rgb + sqrt(rgb * (4.0 * fl + rgb))) / 2.0;
+        rgb = s0 / (pow(s1 / rgb, vec3(1.0 / p)) - 1.0);
+        rgb.x = rgb.x < 0.18 ? pow(rgb.x / cs, 1.0 / c0) : (rgb.x - 0.18) / c0 + 0.18;
+        rgb.y = rgb.y < 0.18 ? pow(rgb.y / cs, 1.0 / c0) : (rgb.y - 0.18) / c0 + 0.18;
+        rgb.z = rgb.z < 0.18 ? pow(rgb.z / cs, 1.0 / c0) : (rgb.z - 0.18) / c0 + 0.18;
 
         rgb = rgb * matrix_rgbdt_to_xyz;
         rgb = rgb * xyz_to_in;

@@ -43,6 +43,7 @@ screen.jjs_zcam_settings               = justjohn's ZCAM Tonemap Settings
 screen.bottosson_settings              = BOttosson Tonemap Settings
 screen.melon_tonemap_settings          = Melon Tonemap Settings
 screen.opendrt_settings                = OpenDRT Settings
+screen.rgbdrt_settings                 = rgbDRT Settings
 screen.jzdt_settings                   = JzDT Settings
 
 screen.aurora                          = Aurora
@@ -974,6 +975,18 @@ value.BOTTOSSON_APPR.BOTTOSSON_APPR_SEPARATE_BW = Achromatic Separation
 option.MELON_TONEMAP_HUESHIFT       = Bright Hue Shift
 option.MELON_TONEMAP_WHITESHIFT     = Bright White Shift
 option.MELON_TONEMAP_SHIFT_STRENGTH = Bright Shift Strength
+
+option.RGBDRT_LP             = Lp
+option.RGBDRT_SURROUND       = Surround Compensation
+option.RGBDRT_FLARE          = Flare Compensation
+option.RGBDRT_PRE_CONTRAST   = Pre-Tonemap Contrast
+option.RGBDRT_CONTRAST_PIVOT = Contrast Pivot
+option.RGBDRT_POST_CONTRAST  = Post-Tonemap Contrast
+option.RGBDRT_EXPOSURE_BOOST = Exposure Boost
+
+value.RGBDRT_SURROUND.average = Average
+value.RGBDRT_SURROUND.dim     = Dim
+value.RGBDRT_SURROUND.dark    = Dark
 
 option.OPENDRT_EXPOSURE        = Tonemap Exposure
 option.OPENDRT_DECHROMA        = Dechroma

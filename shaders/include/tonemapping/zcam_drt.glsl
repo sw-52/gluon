@@ -3,16 +3,17 @@
 
 /*
  *  Source: https://github.com/alexfry/output-transforms-dev/blob/main/display-transforms/nuke/ZCAM_DRT_v013.blink
+ *
  *  Converted to GLSL and C# by sw-52
  *
- *  LICENSE: /shaders/include/tonemapping/aces/license.md
+ *  LICENSE: "/include/tonemapping/aces/license.md"
  */
 
 // "safe" power function to avoid NANs or INFs when taking a fractional power of a negative base
 // this one initially returned -pow(abs(b), e) for negative b
 // but this ended up producing undesirable results in some cases
 // so now it just returns 0.0 instead
-#define spow(x, y) ((x < 0.0 && y != floor(y)) ? 0.0 : pow(x, y))
+#define spow(x, y) (((x) < 0.0 && (y) != floor(y)) ? 0.0 : pow(x, y))
 
 /*float spow(float base, float exponent) {
     if (base < 0.0 && exponent != floor(exponent)) return 0.0;
@@ -46,7 +47,7 @@ const int primaries_in = 3;
 // 0: SSTS
 // 1: MMSDC
 // 2: Daniele Compression Curve
-const int toneScaleMode = 0;
+const int toneScaleMode = ZCAMDRT_TONESCALE_MODE; // 0 // [0 1 2]
 
 
 //
@@ -59,7 +60,7 @@ const int toneScaleMode = 0;
 // 2: Bradford
 // 3: CAT02
 // 4: Zhai2018 (two-step)
-const int catType = 0;
+const int catType = ZCAMDRT_CAT_TYPE; // 0 // [0 1 2 3 4]
 
 // Disable Degree of Adaptation Model for Zhai2018 CAT
 // This is only effective if the limit primaries have a non-D65 white point
@@ -69,18 +70,18 @@ const bool discountIlluminant = true;
 // disable the degree of adaptation model for the Zhai2018 CAT\nthis is only effective if the limiting primaries do not use a D65 white point
 
 // Reference Luminance in Cd/sqm
-const float referenceLuminance = 100.0; // [0 - 200]
+const float referenceLuminance = ZCAMDRT_REF_LUMINANCE; // [0 - 200] // 100.0
 // the ZCAM reference luminance in Cd/sqm
 
 // Background Luminance in Cd/sqm
-const float backgroundLuminance = 10.0; // [0 - 100]
+const float backgroundLuminance = ZCAMDRT_BG_LUMINANCE; // [0 - 100] // 10.0
 // the ZCAM background luminance in Cd/sqm
 
 // Viewing Conditions (for output)
 // 0: Dark
 // 1: Dim
 // 2: Average
-const int viewingConditions = 2;
+const int viewingConditions = ZCAMDRT_SURROUND; // 2 [0 1 2]
 const float viewingConditionsCoeff = viewingConditions == 0 ? 0.8 : viewingConditions == 1 ? 0.9 : 1.0;
 
 //
@@ -88,7 +89,11 @@ const float viewingConditionsCoeff = viewingConditions == 0 ? 0.8 : viewingCondi
 //
 
 // Toggle SSTS Tone Mapping
-const bool applyTonecurve = true;
+#ifdef ZCAMDRT_APPLY_TONECURVE
+const bool applyTonecurve = true; // ZCAMDRT_APPLY_TONECURVE
+#else
+const bool applyTonecurve = false;
+#endif
 // toggle the SingleStageToneScale transform
 
 // SSTS Luminances Min/Mid/Peak
@@ -96,11 +101,15 @@ const vec3 sstsLuminance = vec3(eps, 10.0, 100.0);
 // min, mid & peak luminance values in Cd/sqm as parameters for the SSTS
 
 // Toggle Highlight De-Saturation
-const bool applyHighlightDesat = true;
+#ifdef ZCAMDRT_HIGHLIGHT_DESAT
+const bool applyHighlightDesat = true; // ZCAMDRT_HIGHLIGHT_DESAT
+#else
+const bool applyHighlightDesat = false;
+#endif
 // toggle de-saturating the highlights above SSTS mid luminance based on how much the SSTS has compressed them
 
 // Scale the De-Saturation Applied to the Highlights
-const float desatHighlights = 1.5; // [0 - 5] // 3.5
+const float desatHighlights = ZCAMDRT_HIGHLIGHT_DESAT_SCALE; //  [0 - 5] // 3.5 // custom 1.5
 // the amount of desaturation applied to the highlights
 
 //
@@ -114,38 +123,43 @@ const float desatHighlights = 1.5; // [0 - 5] // 3.5
 // 3: Rec.2020-D65
 // 4: P3-D65
 // 5: P3-DCI
-const int primaries_limit = 3;
+const int primaries_limit = ZCAMDRT_TARGET_GAMUT; // 3
 
 
 // Toggle Gamut Compression
-const bool applyGamutCompression = true;
+#ifdef ZCAMDRT_GAMUT_COMPRESS
+const bool applyGamutCompression = true; // ZCAMDRT_GAMUT_COMPRESS
+#else
+const bool applyGamutCompression = false;
+#endif
 // toggle the gamut compression towards the limiting primaries
 
 // Blend Between Compressing towards
 // Target Gamut Cusp Luminance (0.0)
 // and SSTS Mid Luminance (1.0)
-const float cuspMidBlend = 0.0; // [0 - 1] // 0.5
+const float cuspMidBlend = ZCAMDRT_CUSP_MID_BLEND; // [0 - 1] // 0.5  // custom 0.0
 // blend the lightness (J) of the focal point of the compression between the lightness of the gamut cusp at the given hue (0.0)  and the mid luminance of the SSTS (1.0)
 
 // the distance of the compression focal point
 // from the achromatic axis
 // normalised to the distance of the gamut cusp
-const float focusDistance = 1.5; // [0 - 2] // 0.5
+const float focusDistance = ZCAMDRT_FOCUS_DISTANCE; // [0 - 2] // 0.5 // custom 1.5
 // the distance from the achromatic axis of the focal point of the compression where 0.0 is at the achromatic axis and 1.0 the distance of the gamut cusp at the given hue but on the opposite side of the achomatic axis
 
 // Gamut Compression Fuction Parameters
 // Threshold / Limit / Power
-const vec3 compressionFuncParams = vec3(0.75, 1.2, 1.2);
+const vec3 compressionFuncParams = vec3(ZCAMDRT_COMPRESS_THRESHOLD, ZCAMDRT_COMPRESS_LIMIT, ZCAMDRT_COMPRESS_POWER); // [0 - 2] // vec3(0.75, 1.2, 1.2)
 // the threshold, limit and power parameters for the PowerP compression function\nvalues below the threshold will not be compressed and values at the limit will be compressed towards the gamut boundary while the power values defines the shape of the curve
 
 // How much the edges of the target RGB cube are smoothed when finding the gamut boundary
 // in order to reduce visible contours at the gamut cusps
-const float smoothCusps = 0.8; // [0 - 1] // 0.0
+const float smoothCusps = ZCAMDRT_SMOOTH_CUSPS; // [0 - 1] // 0.0 // custom 0.8
 // the amount by how much to smooth the edges and corners of the limiting gamut cube, except the black & white corners.
 
 // When solving for the target gamut boundary
 // how many search interval halving steps to perform
-const int boundarySolvePrecision = 10;
+const int boundarySolvePrecision = ZCAMDRT_SOLVE_PRECISION; // 10 // [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 25 30 40 50 75 100 150 200]
+const int boundaryWhileMax = ZCAMDRT_SOLVE_PRECISION_2; //  3 // [1 2 3 4 5 6 7 8 9 10]
 // the number of iterations used for finding the gamut boundary using the interval bisection method
 
 // Number of iterations to converge on the uncompressed J value
@@ -292,7 +306,7 @@ const vec4 ssts_bendsHigh = vec4(ssts_max_stop_sdr, 0.89, ssts_max_stop_rrt, 0.9
 // m = (t.w-t.y)/(t.z-t.x)
 // c = (t.y - ((t.w-t.y)/(t.z-t.x) * t.x))
 // y = f * (t.w-t.y)/(t.z-t.x) + (t.y - ((t.w-t.y)/(t.z-t.x) * t.x))
-#define lerp1D(t, f) (f * (t.w-t.y)/(t.z-t.x) + (t.y - ((t.w-t.y)/(t.z-t.x) * t.x)))
+#define lerp1D(t, f) ((f) * ((t).w - (t).y) / ((t).z - (t).x) + ((t).y - (((t).w - (t).y) / ((t).z - (t).x) * (t).x)))
 
 
 
@@ -388,14 +402,18 @@ const float focusDistanceClamped = max(0.01, focusDistance);
 // values of v above  'treshold' are compressed by a 'power' function
 // so that an input value of 'limit' results in an output of 1.0
 float compressPowerP(float v, float threshold, float limit, float power, bool inverse) {
-    float s = (limit-threshold)/pow(pow((1.0f-threshold)/(limit-threshold),-power)-1.0f,1.0f/power);
+    float s = (limit - threshold) / pow(pow((1.0 - threshold) / (limit - threshold), -power) - 1.0, 1.0 / power);
 
     float vCompressed;
 
     if (inverse) {
-        vCompressed = (v<threshold||limit<1.0001f||v>threshold+s)?v:threshold+s*pow(-(pow((v-threshold)/s,power)/(pow((v-threshold)/s,power)-1.0f)),1.0f/power);
+        vCompressed = (v < threshold || limit < 1.0001 || v > threshold + s)
+            ? v
+            : threshold + s * pow(-(pow((v - threshold) / s, power) / (pow((v - threshold) / s, power) - 1.0)), 1.0 / power);
     } else {
-        vCompressed = (v<threshold||limit<1.0001f)?v:threshold+s*((v-threshold)/s)/(pow(1.0f+pow((v-threshold)/s,power),1.0f/power));
+        vCompressed = (v < threshold || limit < 1.0001)
+            ? v
+            : threshold + s * ((v - threshold) / s) / (pow(1.0 + pow((v - threshold) / s,power), 1.0 / power));
     }
 
     return vCompressed;
@@ -490,9 +508,9 @@ vec3 XYZ_to_Izazbz(vec3 XYZD65) {
 vec3 Izazbz_to_XYZ(vec3 Izazbz) {
     vec3 LMSp = Izazbz * inverse(LMS_to_Izazbz); //chckm1
     vec3 LMS = vec3(0.0);
-    LMS.x = 10000.0 * spow((zcam_c1 - spow(LMSp.x, 1.0 / zcam_rho)) / (zcam_c3 * spow(LMSp.x,1.0 / zcam_rho) - zcam_c2), 1.0 / zcam_eta);
-    LMS.y = 10000.0 * spow((zcam_c1 - spow(LMSp.y, 1.0 / zcam_rho)) / (zcam_c3 * spow(LMSp.y,1.0 / zcam_rho) - zcam_c2), 1.0 / zcam_eta);
-    LMS.z = 10000.0 * spow((zcam_c1 - spow(LMSp.z, 1.0 / zcam_rho)) / (zcam_c3 * spow(LMSp.z,1.0 / zcam_rho) - zcam_c2), 1.0 / zcam_eta);
+    LMS.x = 10000.0 * spow((zcam_c1 - spow(LMSp.x, 1.0 / zcam_rho)) / (zcam_c3 * spow(LMSp.x, 1.0 / zcam_rho) - zcam_c2), 1.0 / zcam_eta);
+    LMS.y = 10000.0 * spow((zcam_c1 - spow(LMSp.y, 1.0 / zcam_rho)) / (zcam_c3 * spow(LMSp.y, 1.0 / zcam_rho) - zcam_c2), 1.0 / zcam_eta);
+    LMS.z = 10000.0 * spow((zcam_c1 - spow(LMSp.z, 1.0 / zcam_rho)) / (zcam_c3 * spow(LMSp.z, 1.0 / zcam_rho) - zcam_c2), 1.0 / zcam_eta);
     vec3 XYZpD65 = LMS * inverse(XYZ_to_LMS_ZCAM); //chckm1
     vec3 XYZD65 = XYZpD65;
     XYZD65.x = (XYZpD65.x + (zcam_cb - 1.0) * XYZpD65.z) / zcam_cb;
@@ -504,12 +522,14 @@ vec3 Izazbz_to_XYZ(vec3 Izazbz) {
 // needs the Iz values of the reference white and the viewing conditions parameters
 vec3 Izazbz_to_JMh(vec3 Izazbz, float refWhiteIz, int viewingConditions) {
     vec3 JMh = vec3(0.0);
-    float zcam_F_s = zcam_viewing_conditions_coeff;
+    const float zcam_F_s = zcam_viewing_conditions_coeff;
 
-    JMh.z = mod(degrees(atan(Izazbz.z,Izazbz.y)) + 360.0, 360.0);
+    JMh.z = mod(degrees(atan(Izazbz.z, Izazbz.y)) + 360.0, 360.0);
     float ez = 1.015 + cos(radians(89.038 + JMh.z));
-    float Qz  = 2700.0 * spow(Izazbz.x,   (1.6 * zcam_F_s) / pow(zcam_F_b, 0.12)) * pow(zcam_F_s, 2.2) * pow(zcam_F_b, 0.5) * pow(zcam_F_L, 0.2);
-    float Qzw = 2700.0 * spow(refWhiteIz, (1.6 * zcam_F_s) / pow(zcam_F_b, 0.12)) * pow(zcam_F_s, 2.2) * pow(zcam_F_b, 0.5) * pow(zcam_F_L, 0.2);
+    const float Qz_exponent = (1.6 * zcam_F_s) / pow(zcam_F_b, 0.12);
+    const float Qz_mult = 2700.0 * pow(zcam_F_s, 2.2) * pow(zcam_F_b, 0.5) * pow(zcam_F_L, 0.2);
+    float Qz  = spow(Izazbz.x,   Qz_exponent) * Qz_mult;
+    float Qzw = spow(refWhiteIz, Qz_exponent) * Qz_mult;
     JMh.x = 100.0 * (Qz / Qzw);
     JMh.y = 100.0 * spow((spow(Izazbz.y, 2.0) + spow(Izazbz.z, 2.0)), 0.37) * ((spow(ez, 0.068) * pow(zcam_F_L, 0.2)) / (pow(zcam_F_b, 0.1) * pow(refWhiteIz, 0.78)));
 
@@ -520,14 +540,14 @@ vec3 Izazbz_to_JMh(vec3 Izazbz, float refWhiteIz, int viewingConditions) {
 // convert the ZCAM J (lightness), M (colorfulness) and h (hue) correlates to the ZCAM intermediate Izazbz colorspace
 // needs the Iz values of the reference white and the viewing conditions parameters
 vec3 JMh_to_Izazbz(vec3 JMh, float refWhiteIz, int viewingConditions) {
-    float zcam_F_s = zcam_viewing_conditions_coeff;
-    float Qzm = spow(zcam_F_s, 2.2f) * spow(zcam_F_b, 0.5f) * spow(zcam_F_L, 0.2f);
-    float Qzw = 2700.0f * spow(refWhiteIz, (1.6f * zcam_F_s) / spow(zcam_F_b, 0.12f)) * Qzm;
-    float Izp = spow(zcam_F_b, 0.12f) / (1.6f * zcam_F_s);
-    float Izd = 2700.0f * 100.0f * Qzm;
-    float ez = 1.015f + cos(radians(89.038f+JMh.z));
+    const float zcam_F_s = zcam_viewing_conditions_coeff;
+    const float Qzm = spow(zcam_F_s, 2.2) * spow(zcam_F_b, 0.5) * spow(zcam_F_L, 0.2);
+    float Qzw = 2700.0 * spow(refWhiteIz, (1.6 * zcam_F_s) / spow(zcam_F_b, 0.12)) * Qzm;
+    const float Izp = spow(zcam_F_b, 0.12) / (1.6 * zcam_F_s);
+    const float Izd = 2700.0 * 100.0 * Qzm;
+    float ez = 1.015 + cos(radians(89.038 + JMh.z));
     float hzr = radians(JMh.z);
-    float Czp = spow((JMh.y * spow(refWhiteIz, 0.78f) * spow(zcam_F_b, 0.1f)) / (100.0f * spow(ez, 0.068f) * spow(zcam_F_L, 0.2f)), 50.0f / 37.0f);
+    float Czp = spow((JMh.y * spow(refWhiteIz, 0.78) * spow(zcam_F_b, 0.1)) / (100.0 * spow(ez, 0.068) * spow(zcam_F_L, 0.2)), 50.0 / 37.0);
 
     return vec3(spow((JMh.x * Qzw) / Izd, Izp), Czp * cos(hzr), Czp * sin(hzr));
 }
@@ -582,7 +602,7 @@ float ACEScct_to_linear(float v) {
 
 // encode linear values as ACEScct
 float linear_to_ACEScct(float v) {
-    return v > 0.0078125f ? (log2(v) + 9.72) / 17.52 : 10.5402377416545 * v + 0.0729055341958355;
+    return v > 0.0078125 ? (log2(v) + 9.72) / 17.52 : 10.5402377416545 * v + 0.0729055341958355;
 }
 
 
@@ -652,10 +672,10 @@ float luminanceToEncoding(int encoding, float v) {
         return linear_to_sRGB(v / referenceLuminance);
     } else if (encoding == 3) {
         // BT.1886 (Gamma 2.4)
-        return spow(v / referenceLuminance, 1.0f/2.4f);
+        return spow(v / referenceLuminance, 1.0 / 2.4);
     } else if (encoding == 4) {
         // Gamma 2.6
-        return spow(v / referenceLuminance, 1.0f/2.6f);
+        return spow(v / referenceLuminance, 1.0 / 2.6);
     } else if (encoding == 5) {
         // ST2084
         return linear_to_ST2084(v);
@@ -687,7 +707,7 @@ vec3 input_RGB_to_Izazbz(vec3 inputRGB) {
 
     // assuming 'fully adapted', dark' viewing conditions for input image (does that make sense?)
     return XYZ_to_Izazbz(apply_CAT(luminanceXYZ, inWhite, d65White, catType, 1.0));
-    // return apply_CAT(luminanceXYZ, inWhite, d65White, catType, 1.0f);
+    // return apply_CAT(luminanceXYZ, inWhite, d65White, catType, 1.0);
 }
 
 // convert values in the ZCAM intermediate Izazbz colorspace to RGB values in the input colorspace
@@ -755,7 +775,11 @@ vec3 RGB_to_HSV(vec3 RGB) {
     float delta = cmax - cmin;
 
     vec3 HSV;
-    HSV.x = delta == 0.0?0.0:cmax==RGB.x?(mod((RGB.y - RGB.z)/delta+6.0f,6.0f))/6.0f:cmax==RGB.y?(((RGB.z-RGB.x)/delta+2.0f)/6.0f):(((RGB.x-RGB.y)/delta+4.0f)/6.0f);
+    HSV.x = delta == 0.0 ? 0.0
+           : cmax == RGB.x ? (mod((RGB.y - RGB.z) / delta + 6.0, 6.0)) / 6.0
+           : cmax == RGB.y ? (((RGB.z - RGB.x) / delta + 2.0) / 6.0)
+           :                 (((RGB.x - RGB.y) / delta + 4.0) / 6.0);
+
     HSV.y = cmax == 0.0 ? 0.0 : delta / cmax;
     HSV.z = cmax;
     return HSV;
@@ -821,7 +845,7 @@ vec2 findBoundary(
 
     vec2 achromaticIntercept = vec2(JMFocus.x - (((JMSource.x-JMFocus.x) / (JMSource.y-JMFocus.y)) * JMFocus.y), 0.0);
 
-    if (achromaticIntercept.x <= 0.0f || achromaticIntercept.x >= limitJmax) return achromaticIntercept;
+    if (achromaticIntercept.x <= 0.0 || achromaticIntercept.x >= limitJmax) return achromaticIntercept;
 
     float stepSize = startStepSize;
     vec2 unitVector = normalize(achromaticIntercept - JMFocus);
@@ -829,8 +853,8 @@ vec2 findBoundary(
     int searchOutwards = 1;
 
     for (int i = 0; i < prec; ++i) {
-        for (int wloop = 0; wloop < 1e4; ++i) {
-            JMtest = JMtest + unitVector * stepSize;
+        for (int j = 0; j < boundaryWhileMax; ++j) {
+            JMtest += unitVector * stepSize;
             int inside = isInsideCube(
                 (ZCAM_JMh_to_XYZ(vec3(JMtest.x, JMtest.y, h), XYZw, XYZd65, viewingConditions) / referenceLuminance) * XYZ_to_RGB, //chckm1
                 boundaryRGB,
@@ -840,20 +864,20 @@ vec2 findBoundary(
             if (searchOutwards == 1) {
                 if (JMtest.x < 0.0 || JMtest.x > limitJmax || JMtest.y > limitMmax || inside != 1) {
                     searchOutwards = 0;
-                    stepSize = -abs(stepSize) / 2.0f;
+                    stepSize = -abs(stepSize) / 2.0;
                     break;
                 }
             } else {
                 if (JMtest.y < 0.0 || inside == 1) {
                     searchOutwards = 1;
-                    stepSize = abs(stepSize) / 2.0f;
+                    stepSize = abs(stepSize) / 2.0;
                     break;
                 }
             }
         }
     }
 
-    vec2 JMboundary = vec2(clamp(JMtest.x, 0.0f, limitJmax), clamp(JMtest.y, 0.0f, limitMmax));
+    vec2 JMboundary = vec2(clamp(JMtest.x, 0.0, limitJmax), clamp(JMtest.y, 0.0, limitMmax));
 
     return JMboundary;
 }
@@ -869,22 +893,25 @@ float forwardSSTS(float x, vec3 minPt, vec3 midPt, vec3 maxPt) {
     if (logx <= log10(minPt.x)) {
         logy = logx * minPt.z + (log10(minPt.y) - minPt.z * log10(minPt.x));
     } else if ((logx > log10(minPt.x)) && (logx < log10(midPt.x))) {
-        float knot_coord = 3.0f * (logx-log10(minPt.x)) / (log10(midPt.x) - log10(minPt.x));
+        float knot_coord = 3.0 * (logx - log10(minPt.x)) / (log10(midPt.x) - log10(minPt.x));
         int j = int(knot_coord);
         float t = knot_coord - float(j);
-        vec3 cf = vec3(ssts_coefsLow[j/3][j%3], ssts_coefsLow[(j+1)/3][(j+1)%3], ssts_coefsLow[(j+2)/3][(j+2)%3]);
-        vec3 monomials = vec3(t * t, t, 1.0f );
+        vec3 cf = vec3(ssts_coefsLow[j / 3][j % 3], ssts_coefsLow[(j + 1) / 3][(j + 1) % 3], ssts_coefsLow[(j + 2) / 3][(j + 2) % 3]);
+        vec3 monomials = vec3(t * t, t, 1.0);
         logy = dot(monomials, cf * ssts_m1); //chckm1
     } else if ((logx >= log10(midPt.x)) && (logx < log10(maxPt.x))) {
-        float knot_coord = 3.0f * (logx-log10(midPt.x)) / (log10(maxPt.x) - log10(midPt.x));
+        float knot_coord = 3.0 * (logx-log10(midPt.x)) / (log10(maxPt.x) - log10(midPt.x));
         int j = int(knot_coord);
         float t = knot_coord - float(j);
-        vec3 cf = vec3(ssts_coefsHigh[j/3][j%3], ssts_coefsHigh[(j+1)/3][(j+1)%3], ssts_coefsHigh[(j+2)/3][(j+2)%3]);
-        vec3 monomials = vec3(t * t, t, 1.0f);
+        vec3 cf = vec3(ssts_coefsHigh[j / 3][j % 3], ssts_coefsHigh[(j + 1) / 3][(j + 1) % 3], ssts_coefsHigh[(j + 2) / 3][(j + 2) % 3]);
+        vec3 monomials = vec3(t * t, t, 1.0);
         logy = dot(monomials, cf * ssts_m1); //chckm1
     } else {
         logy = logx * maxPt.z + (log10(maxPt.y) - maxPt.z * log10(maxPt.x));
     }
+
+    // Fix NaNs in bright spots
+    logy = min(logy, 10.0 - HALF_MIN);
 
     return spow(10.0, logy);
 }
@@ -892,10 +919,10 @@ float forwardSSTS(float x, vec3 minPt, vec3 midPt, vec3 maxPt) {
 // Michalis Menton Dual Spring Curve
 float forwardMmTonescale(float x) {
     float tc = 0.0;
-    if (x<0.18) tc = cs * spow(x,c0);
-    else        tc = c0 * (x-0.18) + 0.18;
+    if (x < 0.18) tc = cs * spow(x, c0);
+    else        tc = c0 * (x - 0.18) + 0.18;
 
-    float ts = s1 * spow((tc/(s0 + tc)), p);
+    float ts = s1 * spow((tc / (s0 + tc)), p);
     float tf = ts * ts / (ts + fl);
     float ccf = spow(s0 / (x + s0), dch) * sat;
 
@@ -906,7 +933,7 @@ float forwardMmTonescale(float x) {
 // https://www.desmos.com/calculator/fihdxfot6s
 float forwardDanieleCompressionCurve(float x) {
     float m0 = n / nr;
-    float m  = 0.5 * (m0 + sqrt(m0 * (m0 + 4 * t_1)));
+    float m  = 0.5 * (m0 + sqrt(m0 * (m0 + 4.0 * t_1)));
     float s_1 = w * pow(m, rcp(g));
 
     // Scale Data
@@ -924,20 +951,20 @@ float forwardDanieleCompressionCurve(float x) {
 
 // apply the inverse ACES SingleStageToneScale (SSTS) transfomr to the 'x' luminance value and return an linear value
 float inverseSSTS(float y, vec3 minPt, vec3 midPt, vec3 maxPt) {
-    float KNOT_INC_LOW  = (log10(midPt.x) - log10(minPt.x)) / 3.0f;
-    float KNOT_INC_HIGH = (log10(maxPt.x) - log10(midPt.x)) / 3.0f;
+    float KNOT_INC_LOW  = (log10(midPt.x) - log10(minPt.x)) / 3.0;
+    float KNOT_INC_HIGH = (log10(maxPt.x) - log10(midPt.x)) / 3.0;
 
     // KNOT_Y is luminance of the spline at each knot
     float KNOT_Y_LOW[4];
 
     for (int i = 0; i < 4; i++) {
-        KNOT_Y_LOW[i] = (ssts_coefsLow[i/3][i%3] + ssts_coefsLow[(i+1)/3][(i+1)%3]) / 2.0f;
+        KNOT_Y_LOW[i] = (ssts_coefsLow[i/3][i%3] + ssts_coefsLow[(i+1)/3][(i+1)%3]) / 2.0;
     }
 
     float KNOT_Y_HIGH[4];
 
     for (int i = 0; i < 4; i++) {
-        KNOT_Y_HIGH[i] = (ssts_coefsHigh[i/3][i%3] + ssts_coefsHigh[(i+1)/3][(i+1)%3]) / 2.0f;
+        KNOT_Y_HIGH[i] = (ssts_coefsHigh[i/3][i%3] + ssts_coefsHigh[(i+1)/3][(i+1)%3]) / 2.0;
     }
 
     float logy = log10(max(y, 0.0000000001));
@@ -1025,8 +1052,8 @@ float inverseSSTS(float y, vec3 minPt, vec3 midPt, vec3 maxPt) {
 // note that the PQ fuction used for Iz differs from the ST2084 function by replacing m_2 with rho
 // it also includes a luminance shift caused by the 2nd row-sum of the XYZ to LMS matrix not adding up to 1.0
 float IzToLuminance(float Iz) {
-    float V_p = spow(Iz, 1.0f / zcam_rho);
-    float luminance = spow((max(0.0f, V_p - st2084_c_1) / (st2084_c_2 - st2084_c_3 * V_p)), st2084_m_1_d)*st2084_L_p * zcam_luminance_shift;
+    float V_p = spow(Iz, 1.0 / zcam_rho);
+    float luminance = spow((max(0.0, V_p - st2084_c_1) / (st2084_c_2 - st2084_c_3 * V_p)), st2084_m_1_d)*st2084_L_p * zcam_luminance_shift;
     return luminance;
 }
 
@@ -1035,7 +1062,7 @@ float IzToLuminance(float Iz) {
 // it also includes a luminance shift caused by the 2nd row-sum of the XYZ to LMS matrix not adding up to 1.0
 float luminanceToIz(float luminance) {
     float Y_p = spow((luminance/zcam_luminance_shift) / st2084_L_p, st2084_m_1);
-    float Iz = spow((st2084_c_1 + st2084_c_2 * Y_p) / (st2084_c_3 * Y_p + 1.0f), zcam_rho);
+    float Iz = spow((st2084_c_1 + st2084_c_2 * Y_p) / (st2084_c_3 * Y_p + 1.0), zcam_rho);
     return Iz;
 }
 
@@ -1054,7 +1081,7 @@ float highlightDesatFactor(float Iz, float IzTS) {
 
     float IzAligned = Iz + IzMidTS - IzMid;
 
-    float desatFactor = 1.0f - clamp01(compressPowerP(
+    float desatFactor = 1.0 - clamp01(compressPowerP(
         (log10(max(HALF_MIN, IzAligned)) - log10(max(HALF_MIN, IzTS))) * desatHighlights,
         compressionFuncParams.x,
         HALF_MAX,
@@ -1083,7 +1110,7 @@ vec3 forwardTonescale(vec3 inputIzazbz, mat3 ssts_params) {
     } else if (toneScaleMode == 2) {
         luminanceTS = forwardDanieleCompressionCurve(linear) * mmScaleFactor;
     } else {
-        luminanceTS =  forwardSSTS(linear, ssts_params[0], ssts_params[1], ssts_params[2]);
+        luminanceTS = forwardSSTS(linear, ssts_params[0], ssts_params[1], ssts_params[2]);
     }
 
     float IzTS = luminanceToIz(luminanceTS);
@@ -1153,7 +1180,7 @@ vec3 compressGamut(vec3 inputJMh, bool invert, float distanceGainCalcJ, vec3[gam
 vec3 compressGamutForward(vec3 JMh, vec3[gamutCuspTableSize] gamutCuspTable, float limitJmax, float limitMmax) {
     vec3 JMhcompressed = compressGamut(JMh, false, JMh.x, gamutCuspTable, limitJmax, limitMmax);
     // Hack to deal with weird zero values on output
-    // JMhcompressed.x = min(300.0f,JMhcompressed.x);
+    // JMhcompressed.x = min(300.0, JMhcompressed.x);
     return JMhcompressed;
 }
 
@@ -1468,7 +1495,7 @@ vec3 zcamdrtransform(vec3 srcRGB) {
     vec3 JMh = forwardTonescale(inputIzazbz, ssts_params);
     JMh = compressGamutForward(JMh, gamutCuspTable, limitJmax, limitMmax);
     dstRGB = JMh_to_output_RGB(JMh);
-    // dstRGB = Izazbz_to_JMh(inputIzazbz, 0.31334f, 0);
+    // dstRGB = Izazbz_to_JMh(inputIzazbz, 0.31334, 0);
 
     return dstRGB;
 }

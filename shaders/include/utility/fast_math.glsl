@@ -70,6 +70,10 @@ float pow1d5(float x) {
 	return x * sqrt(x);
 }
 
+vec3 pow1d5(vec3 x) {
+	return x * sqrt(x);
+}
+
 float rcp_length(vec2 v) { return inversesqrt(dot(v, v)); }
 float rcp_length(vec3 v) { return inversesqrt(dot(v, v)); }
 

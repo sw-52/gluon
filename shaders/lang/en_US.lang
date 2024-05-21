@@ -44,6 +44,7 @@ screen.bottosson_settings              = BOttosson Tonemap Settings
 screen.melon_tonemap_settings          = Melon Tonemap Settings
 screen.opendrt_settings                = OpenDRT Settings
 screen.rgbdrt_settings                 = rgbDRT Settings
+screen.zcamdrt_settings                = ZCAM DRT Settings
 screen.jzdt_settings                   = JzDT Settings
 
 screen.aurora                          = Aurora
@@ -987,6 +988,49 @@ option.RGBDRT_EXPOSURE_BOOST = Exposure Boost
 value.RGBDRT_SURROUND.average = Average
 value.RGBDRT_SURROUND.dim     = Dim
 value.RGBDRT_SURROUND.dark    = Dark
+
+
+option.ZCAMDRT_TONESCALE_MODE  = Tonescale Mode
+option.ZCAMDRT_TONESCALE_MODE.comment = \n ACES SSTS - ACES Single Stage Tone Scale\n MMSDC - Michaelis-Menten Dual Spring Curve\n Daniele Curve - Daniele's Compression Curve
+option.ZCAMDRT_CAT_TYPE        = Chromatic Adaptation Transform
+option.ZCAMDRT_TARGET_GAMUT    = Target Gamut
+option.ZCAMDRT_REF_LUMINANCE   = Reference Luminance
+option.ZCAMDRT_REF_LUMINANCE.comment = The ZCAM reference luminance in Cd/sqm
+option.ZCAMDRT_BG_LUMINANCE    = Background Luminance
+option.ZCAMDRT_BG_LUMINANCE.comment = The ZCAM background luminance in Cd/sqm
+option.ZCAMDRT_SURROUND        = Viewing Conditions
+option.ZCAMDRT_APPLY_TONECURVE = Apply Tonescale
+option.ZCAMDRT_HIGHLIGHT_DESAT = Highlight De-Saturation
+option.ZCAMDRT_HIGHLIGHT_DESAT_SCALE = De-Saturation Scale
+option.ZCAMDRT_CUSP_MID_BLEND  = Cusp - Mid Luminance Blend
+option.ZCAMDRT_CUSP_MID_BLEND.comment = \nBlend Between Compressing towards\n  Target Gamut Cusp Luminance (0.00)\n  and SSTS Mid Luminance (1.00)
+option.ZCAMDRT_FOCUS_DISTANCE  = Focus Distance
+option.ZCAMDRT_FOCUS_DISTANCE.comment = \nThe distance of the compression focal point\n from the achromatic axis (0.00)\n normalised to the distance of the gamut cusp (1.00)
+option.ZCAMDRT_COMPRESS_THRESHOLD = Gamut Compression Threshold
+option.ZCAMDRT_COMPRESS_LIMIT  = Gamut Compression Limit
+option.ZCAMDRT_COMPRESS_POWER  = Gamut Compression Power
+option.ZCAMDRT_SMOOTH_CUSPS    = Smooth Gamut Cusps
+option.ZCAMDRT_SMOOTH_CUSPS.comment = \nHow much the edges of the target RGB cube are smoothed when finding the gamut boundary\n in order to reduce visible contours at the gamut cusps
+option.ZCAMDRT_SOLVE_PRECISION = Boundary Solve Precision
+option.ZCAMDRT_SOLVE_PRECISION_2 = Secondary Solve Precision
+
+value.ZCAMDRT_TONESCALE_MODE.ZCAMDRT_TONESCALE_MODE_SSTS = §fACES SSTS
+value.ZCAMDRT_TONESCALE_MODE.ZCAMDRT_TONESCALE_MODE_MMSDC = §fMMSDC
+value.ZCAMDRT_TONESCALE_MODE.ZCAMDRT_TONESCALE_MODE_DANIELE = §fDaniele Curve
+
+value.ZCAMDRT_CAT_TYPE.ZCAMDRT_CAT_TYPE_NONE = §fNone
+value.ZCAMDRT_CAT_TYPE.ZCAMDRT_CAT_TYPE_XYZ_SCALING = §aXYZ Scaling
+value.ZCAMDRT_CAT_TYPE.ZCAMDRT_CAT_TYPE_BRADFORD = §aBradford
+value.ZCAMDRT_CAT_TYPE.ZCAMDRT_CAT_TYPE_CAT02 = §aCAT02
+value.ZCAMDRT_CAT_TYPE.ZCAMDRT_CAT_TYPE_ZHAI2018 = §aZhai2018 §7(two-step)
+
+value.ZCAMDRT_TARGET_GAMUT.2 = sRGB / Rec.709 - D65
+value.ZCAMDRT_TARGET_GAMUT.3 = Rec.2020 - D65
+
+value.ZCAMDRT_SURROUND.0 = Dark
+value.ZCAMDRT_SURROUND.1 = Dim
+value.ZCAMDRT_SURROUND.2 = Average
+
 
 option.OPENDRT_EXPOSURE        = Tonemap Exposure
 option.OPENDRT_DECHROMA        = Dechroma

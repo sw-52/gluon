@@ -250,7 +250,13 @@ vec3 calculate_shadows(
 	if (NoL < 1e-3) return vec3(0.0); // now we can exit early for SSS blocks
 	if (blocker_search_result.x < eps) return vec3(distant_shadow); // blocker search empty handed => no occluders
 
-	float penumbra_size  = 16.0 * SHADOW_PENUMBRA_SCALE * (shadow_screen_pos.z - blocker_search_result.x) / blocker_search_result.x;
+#ifdef WORLD_SPACE
+	float penumbra_scale = SHADOW_PENUMBRA_SCALE * (1.0 + 2.0 * sss_amount);
+#else
+	const float penumbra_scale = SHADOW_PENUMBRA_SCALE * 16.0;
+#endif
+
+	float penumbra_size  = penumbra_scale * (shadow_screen_pos.z - blocker_search_result.x) / blocker_search_result.x;
 	      penumbra_size *= 5.0 - 4.0 * cloud_shadows; // Increase penumbra radius inside cloud shadows, nice overcast look
 	      penumbra_size  = min(penumbra_size, SHADOW_BLOCKER_SEARCH_RADIUS);
 	      penumbra_size *= shadowProjection[0].x;
@@ -258,7 +264,11 @@ vec3 calculate_shadows(
 	float penumbra_size = sqrt(0.5) * shadow_map_pixel_size * SHADOW_PENUMBRA_SCALE;
 
 	// Increase blur radius to approximate subsurface scattering
-	penumbra_size *= 1.0 + 7.0 * sss_amount;
+	#ifdef WORLD_SPACE
+	      penumbra_size = penumbra_size * rcp(16.0) + penumbra_size * 7.0 * sss_amount;
+	#else
+	      penumbra_size *= 1.0 + 7.0 * sss_amount;
+	#endif
 #endif
 
 #ifdef SHADOW_PCF

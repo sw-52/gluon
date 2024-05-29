@@ -160,7 +160,18 @@ void main() {
 		break;
 #endif
 
-#ifdef CUSTOM_SKY
+#if defined VANILLA_SUN && defined WORLD_SPACE
+	case MC_RENDER_STAGE_CUSTOM_SKY:
+		vec4 sky_color = texture(gtexture, new_uv);
+		sky_color.rgb = sky_color.rgb * tint * smoothstep(0.0, 0.2, sky_color.a);
+		if (max_of(sky_color.rgb) < 0.1) discard;
+
+		// alpha of 4 <=> custom sky
+		scene_color.a = 4.0 / 255.0;
+		scene_color.rgb = sky_color.rgb;
+
+		break;
+#elif defined CUSTOM_SKY
 	case MC_RENDER_STAGE_CUSTOM_SKY:
 	 	// alpha of 4 <=> custom sky
 		scene_color.a = 4.0 / 255.0;

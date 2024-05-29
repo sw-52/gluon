@@ -291,7 +291,7 @@ vec3 draw_sky(vec3 ray_dir) {
 #ifdef VANILLA_SUN
 	if (vanilla_sky_id == 2) {
 		const vec3 brightness_scale = sunlight_color * sun_luminance;
-		sky += vanilla_sky_color * brightness_scale * sun_color;
+		sky += vanilla_sky_color * sun_luminance;
 	}
 #else
 		sky += draw_sun(ray_dir);
@@ -307,7 +307,7 @@ vec3 draw_sky(vec3 ray_dir) {
 	}
 #endif*/
 
-#ifdef CUSTOM_SKY
+#if defined CUSTOM_SKY || defined VANILLA_SUN
 	if (vanilla_sky_id == 4) {
 		sky += vanilla_sky_color * CUSTOM_SKY_BRIGHTNESS;
 	}

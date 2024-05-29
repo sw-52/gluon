@@ -40,6 +40,8 @@ uniform vec3 sun_dir;
 
 uniform float eye_skylight;
 
+uniform vec2 view_res;
+
 uniform float biome_temperate;
 uniform float biome_arid;
 uniform float biome_snowy;
@@ -64,8 +66,9 @@ uniform float time_midnight;
 void main() {
 	uv = gl_MultiTexCoord0.xy;
 
-	light_color   = texelFetch(colortex4, ivec2(191, 0), 0).rgb;
-	ambient_color = texelFetch(colortex4, ivec2(191, 1), 0).rgb;
+	int lighting_color_x = SKY_MAP_LIGHT_X;
+	light_color   = texelFetch(colortex4, ivec2(lighting_color_x, 0), 0).rgb;
+	ambient_color = texelFetch(colortex4, ivec2(lighting_color_x, 1), 0).rgb;
 
 #if defined WORLD_OVERWORLD
 	mat2x3 rayleigh_coeff = air_fog_rayleigh_coeff(), mie_coeff = air_fog_mie_coeff();

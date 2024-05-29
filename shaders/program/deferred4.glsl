@@ -58,6 +58,8 @@ uniform vec3 light_dir;
 uniform vec3 sun_dir;
 uniform vec3 moon_dir;
 
+uniform vec2 view_res;
+
 uniform float biome_cave;
 uniform float biome_may_rain;
 uniform float biome_may_snow;
@@ -89,8 +91,9 @@ uniform float time_midnight;
 void main() {
 	uv = gl_MultiTexCoord0.xy;
 
-	light_color   = texelFetch(colortex4, ivec2(191, 0), 0).rgb;
-	ambient_color = texelFetch(colortex4, ivec2(191, 1), 0).rgb;
+	int lighting_color_x = SKY_MAP_LIGHT_X;
+	light_color   = texelFetch(colortex4, ivec2(lighting_color_x, 0), 0).rgb;
+	ambient_color = texelFetch(colortex4, ivec2(lighting_color_x, 1), 0).rgb;
 
 #if defined WORLD_OVERWORLD
 	sun_color    = get_sun_exposure() * get_sun_tint();

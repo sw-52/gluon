@@ -309,7 +309,7 @@ vec3 draw_sky(vec3 ray_dir) {
 
 #if defined CUSTOM_SKY || defined VANILLA_SUN
 	if (vanilla_sky_id == 4) {
-		sky += vanilla_sky_color * CUSTOM_SKY_BRIGHTNESS;
+		sky = vanilla_sky_color * CUSTOM_SKY_BRIGHTNESS + sky * float(max_of(vanilla_sky_color) < 0.3);
 	}
 #endif
 #endif

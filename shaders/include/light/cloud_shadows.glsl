@@ -3,7 +3,7 @@
 
 #include "/include/utility/bicubic.glsl"
 
-const ivec2 cloud_shadow_res = ivec2(256);
+const ivec2 cloud_shadow_res = ivec2(CLOUD_SHADOW_RESOLUTION);
 
 #ifdef DISTANT_HORIZONS
 #define cloud_shadow_extent float(dhRenderDistance)

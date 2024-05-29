@@ -12,6 +12,8 @@
 	#define WORLD_SPACE
 #endif
 
+#define SKY_MAP_LIGHT_X (int(view_res.x * float(SKY_MAP_RESOLUTION) / 100.0 + 0.5) - 1)
+
 // Common constants
 
 const float eps          = 1e-6;

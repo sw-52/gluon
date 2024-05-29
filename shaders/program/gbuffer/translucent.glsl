@@ -99,8 +99,9 @@ void main() {
 	material_mask = get_material_mask();
 	tbn           = get_tbn_matrix();
 
-	light_color   = texelFetch(colortex4, ivec2(191, 0), 0).rgb;
-	ambient_color = texelFetch(colortex4, ivec2(191, 1), 0).rgb;
+	int lighting_color_x = SKY_MAP_LIGHT_X;
+	light_color   = texelFetch(colortex4, ivec2(lighting_color_x, 0), 0).rgb;
+	ambient_color = texelFetch(colortex4, ivec2(lighting_color_x, 1), 0).rgb;
 
 	bool is_top_vertex = uv.y < mc_midTexCoord.y;
 

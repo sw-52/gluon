@@ -437,6 +437,8 @@ option.AURORA_BRIGHTNESS               = Aurora Brightness in Any Biome
 option.AURORA_BRIGHTNESS_SNOW          = Aurora Brightness in Snow Biome
 option.AURORA_FREQUENCY                = Aurora Frequency in Any Biome
 option.AURORA_FREQUENCY_SNOW           = Aurora Frequency in Snow Biome
+option.AURORA_SPEED                    = Aurora Speed in Any Biome
+option.AURORA_SPEED_SNOW               = Aurora Speed in Snow Biome
 option.AURORA_CLOUD_LIGHTING           = Cloud Light Contribution
 option.AURORA_GROUND_LIGHTING          = Ground Light Contribution
 

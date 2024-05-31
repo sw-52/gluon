@@ -23,8 +23,8 @@
 #endif
 
 const float sss_density          = 14.0 * SSS_DENSITY;
-const float sss_scale            = 5.0 * SSS_INTENSITY;
-const float night_vision_scale   = 1.5;
+const float sss_scale            = 5.0  * SSS_INTENSITY;
+const float night_vision_scale   = 1.5  * NIGHT_VISION_I;
 const float metal_diffuse_amount = 0.1; // Scales diffuse lighting on metals, ideally this would be zero but purely specular metals don't play well with SSR
 
 float get_blocklight_falloff(float blocklight, float skylight, float ao) {
@@ -194,9 +194,10 @@ vec3 get_diffuse_lighting(
 	lighting += 0.15 * CAVE_LIGHTING_I * directional_lighting * ao * (1.0 - light_levels.y * light_levels.y) * (1.0 - 0.7 * darknessFactor);
 #endif
 	if(nightVision > 0.0) {
+		const vec3 nv_color = vec3(NIGHT_VISION_R, NIGHT_VISION_G, NIGHT_VISION_B) * night_vision_scale;
+
 		float lum = dot(lighting, luminance_weights);
-		vec3 nv_color = vec3(0.1, 0.95, 0.2);
-		float nv_strength = nightVision * night_vision_scale * directional_lighting * ao * ao;
+		float nv_strength = nightVision * directional_lighting * sqr(ao);
 		vec3 nv_lighting = nv_color * nv_strength;
 		lighting += nv_lighting * clamp01(1.0 - lum) * mix(1.0, 4.0, clamp01((0.25 - lum) * 4.0));
 	}

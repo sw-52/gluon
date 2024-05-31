@@ -51,6 +51,10 @@ void decode_specular_map(vec4 specular_map, inout Material material) {
 	material.emission = max(material.emission, material.albedo * specular_map.a * float(specular_map.a != 1.0));
 
 	if (specular_map.g < 229.5 / 255.0) {
+		#ifdef F0_FALLBACK
+		if (specular_map.g < 0.5 / 255.0) specular_map.g = 0.04;
+		#endif
+
 		// Dielectrics
 		material.f0 = max(material.f0, specular_map.g);
 

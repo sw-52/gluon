@@ -5,7 +5,17 @@
 #include "/include/light/lpv/light_colors.glsl"
 
 bool is_emitter(uint block_id) {
-	return 32u <= block_id && block_id < 64u;
+    bool isInRange = 32u <= block_id && block_id < 64u;
+
+    // Handle lapis and emerald block light
+    #ifndef LAPIS_BLOCK_LIGHT
+        isInRange = isInRange && block_id != 60u;
+    #endif
+    #ifndef EMERALD_BLOCK_LIGHT
+        isInRange = isInRange && block_id != 59u;
+    #endif
+
+    return isInRange;
 }
 
 bool is_translucent(uint block_id) {
@@ -37,7 +47,12 @@ vec3 get_emitted_light(uint block_id) {
 		block_id -= 264u;
 		uint level = uint(floor(float(block_id) / 16.0));
 		float intensity = get_candle_intensity(level);
-		return tint_color[block_id - level * 16u] * intensity;
+
+		#ifdef COLORED_CANDLE_LIGHTS
+			return tint_color[block_id - level * 16u] * intensity;
+		#else
+			return light_color[18u] / 8.0 * intensity;
+		#endif
 	} else {
 		return vec3(0.0);
 	}

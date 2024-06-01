@@ -600,18 +600,22 @@ Material material_from(vec3 albedo_srgb, uint material_mask, vec3 world_pos, vec
 							#endif
 						} else { // 59
 							#ifdef HARDCODED_EMISSION
-							// Emerald block
-							material.emission = 0.1 * albedo_sqrt;
+								#if defined(EMERALD_BLOCK_LIGHT)
+									// Emerald block
+									material.emission = 0.1 * albedo_sqrt;
+								#endif
 							#endif
 						}
 					}
 				} else { // 60-64
 					if (material_mask < 62u) { // 60-62
 						if (material_mask == 60u) { // 60
-							#ifdef HARDCODED_EMISSION
-							// Lapis block
-							material.emission = 0.33 * albedo_sqrt;
+						#ifdef HARDCODED_EMISSION
+							#if defined(LAPIS_BLOCK_LIGHT)
+								// Lapis block
+								material.emission = 0.33 * albedo_sqrt;
 							#endif
+						#endif
 						} else { // 61
 
 						}

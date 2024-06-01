@@ -248,6 +248,12 @@ option.VOXEL_VOLUME_SIZE               = Voxel Volume Size
 option.VOXEL_VOLUME_SIZE.comment       = High performance impact, also affected by shadow distance
 suffix.VOXEL_VOLUME_SIZE               = m
 option.COLORED_LIGHT_I                 = Colored Light Intensity
+option.COLORED_CANDLE_LIGHTS           = Colored Candle Lights
+option.COLORED_CANDLE_LIGHTS.comment   = Use candle color as the light color for the candles
+option.LAPIS_BLOCK_LIGHT               = Lapis Blocks emit Light
+option.LAPIS_BLOCK_LIGHT.comment       = Emit light from the lapis block. Requires Hardcoded Emission to be enabled
+option.EMERALD_BLOCK_LIGHT             = Emerald Blocks emit Light
+option.EMERALD_BLOCK_LIGHT.comment     = Emit light from the emerald block. Requires Hardcoded Emission to be enabled
 
 suffix.shadowMapResolution             = ²
 suffix.sunPathRotation                 = °

@@ -492,6 +492,7 @@ const float wetnessHalflife         = 70.0;
   #define HARDCODED_SPECULAR
   #define HARDCODED_EMISSION
   #define HARDCODED_SSS
+  #define HARDCODED_POROSITY
   #define RAIN_PUDDLES
 
 // Resource Pack Settings

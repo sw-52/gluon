@@ -170,12 +170,20 @@ Material material_from(vec3 albedo_srgb, uint material_mask, vec3 world_pos, vec
 							material.roughness = sqr(1.0 - smoothness);
 							material.f0 = vec3(0.02);
 							#endif
+
+							#ifdef HARDCODED_POROSITY
+							material.porosity = 0.2;
+							#endif
 						} else { // 7
 							// Sand
 							#ifdef HARDCODED_SPECULAR
 							float smoothness = 0.8 * linear_step(0.81, 0.96, hsl.z);
 							material.roughness = sqr(1.0 - smoothness);
 							material.f0 = vec3(0.02);
+							#endif
+
+							#ifdef HARDCODED_POROSITY
+							material.porosity = 1.35;
 							#endif
 						}
 					}
@@ -196,12 +204,20 @@ Material material_from(vec3 albedo_srgb, uint material_mask, vec3 world_pos, vec
 							// Strong SSS
 							material.sss_amount = 0.75;
 							#endif
+
+							#ifdef HARDCODED_POROSITY
+							material.porosity = 0.2;
+							#endif
 						} else { // 9
 							// Red sand, birch planks
 							#ifdef HARDCODED_SPECULAR
 							float smoothness = 0.4 * linear_step(0.61, 0.85, hsl.z);
 							material.roughness = sqr(1.0 - smoothness);
 							material.f0 = vec3(0.02);
+							#endif
+
+							#ifdef HARDCODED_POROSITY
+							material.porosity = 0.5;
 							#endif
 						}
 					} else { // 10-12
@@ -211,6 +227,10 @@ Material material_from(vec3 albedo_srgb, uint material_mask, vec3 world_pos, vec
 							float smoothness = 0.5 * linear_step(0.4, 0.8, hsl.z);
 							material.roughness = sqr(1.0 - smoothness);
 							material.f0 = vec3(0.02);
+							#endif
+
+							#ifdef HARDCODED_POROSITY
+							material.porosity = 0.2;
 							#endif
 						} else { // 11
 							// Obsidian, nether bricks
@@ -248,10 +268,18 @@ Material material_from(vec3 albedo_srgb, uint material_mask, vec3 world_pos, vec
 							// Strong SSS
 							material.sss_amount = 0.6;
 							#endif
+
+							#ifdef HARDCODED_POROSITY
+							material.porosity = 0.5;
+							#endif
 						} else { // 15
 							#ifdef HARDCODED_SSS
 							// Weak SSS
 							material.sss_amount = 0.1;
+							#endif
+
+							#ifdef HARDCODED_POROSITY
+							material.porosity = 0.25;
 							#endif
 						}
 					}

@@ -22,10 +22,10 @@ vec3 get_handheld_light_color(int held_item_id, int held_item_light_value) {
 
 	// Handle lapis and emerald block light
 	#ifndef EMERALD_BLOCK_LIGHT
-        is_emitter = is_emitter && held_item_id!= 10059;
-    #endif
-    #ifndef LAPIS_BLOCK_LIGHT
-        is_emitter = is_emitter && held_item_id!= 10060;
+		is_emitter = is_emitter && held_item_id!= 10059;
+	#endif
+	#ifndef LAPIS_BLOCK_LIGHT
+		is_emitter = is_emitter && held_item_id!= 10060;
 	#endif
 
 	if (is_emitter) {

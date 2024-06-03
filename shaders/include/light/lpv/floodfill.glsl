@@ -5,17 +5,17 @@
 #include "/include/light/lpv/light_colors.glsl"
 
 bool is_emitter(uint block_id) {
-    bool isInRange = 32u <= block_id && block_id < 64u;
+	bool isInRange = 32u <= block_id && block_id < 64u;
 
-    // Handle lapis and emerald block light
-    #ifndef LAPIS_BLOCK_LIGHT
-        isInRange = isInRange && block_id != 60u;
-    #endif
-    #ifndef EMERALD_BLOCK_LIGHT
-        isInRange = isInRange && block_id != 59u;
-    #endif
+	// Handle lapis and emerald block light
+	#ifndef LAPIS_BLOCK_LIGHT
+		isInRange = isInRange && block_id != 60u;
+	#endif
+	#ifndef EMERALD_BLOCK_LIGHT
+		isInRange = isInRange && block_id != 59u;
+	#endif
 
-    return isInRange;
+	return isInRange;
 }
 
 bool is_translucent(uint block_id) {

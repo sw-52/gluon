@@ -610,12 +610,12 @@ Material material_from(vec3 albedo_srgb, uint material_mask, vec3 world_pos, vec
 				} else { // 60-64
 					if (material_mask < 62u) { // 60-62
 						if (material_mask == 60u) { // 60
-						#ifdef HARDCODED_EMISSION
-							#if defined(LAPIS_BLOCK_LIGHT)
-								// Lapis block
-								material.emission = 0.33 * albedo_sqrt;
+							#ifdef HARDCODED_EMISSION
+								#if defined(LAPIS_BLOCK_LIGHT)
+									// Lapis block
+									material.emission = 0.33 * albedo_sqrt;
+								#endif
 							#endif
-						#endif
 						} else { // 61
 
 						}

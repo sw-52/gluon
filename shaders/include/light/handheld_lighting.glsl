@@ -20,11 +20,23 @@ vec3 get_handheld_light_color(int held_item_id, int held_item_light_value) {
 	bool is_custom = 10064 <= held_item_id && held_item_id < 10300;
 	bool is_candle = 10264 <= held_item_id && held_item_id < 10280;
 
+	// Handle lapis and emerald block light
+	#ifndef EMERALD_BLOCK_LIGHT
+		is_emitter = is_emitter && held_item_id!= 10059;
+	#endif
+	#ifndef LAPIS_BLOCK_LIGHT
+		is_emitter = is_emitter && held_item_id!= 10060;
+	#endif
+
 	if (is_emitter) {
 		return texelFetch(light_data_sampler, ivec2(int(held_item_id) - 10032, 0), 0).rgb;
 	} else if(is_custom) {
 		if(is_candle) {
-			return texelFetch(light_data_sampler, ivec2(int(held_item_id) - 10264, 1), 0).rgb * 8.0;
+			#ifdef COLORED_CANDLE_LIGHTS
+				return texelFetch(light_data_sampler, ivec2(int(held_item_id) - 10264, 1), 0).rgb;
+			#else
+				return (blocklight_color * blocklight_scale * rcp(15.0)) * 8.0;
+			#endif
 		} else {
 			return texelFetch(light_data_sampler, ivec2(int(held_item_id) - 10032, 0), 0).rgb;
 		}

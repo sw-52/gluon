@@ -184,4 +184,66 @@ vec3 zcam_gamma_correct(vec3 linear) {
 #undef b
 #undef g
 
+// -------------------------------------------------------------------
+
+// Perceptually Based Tonemapper
+// Source: https://www.shadertoy.com/view/X3GGRz
+
+/*
+    MIT License
+
+    Copyright (c) 2024 John Payne
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+*/
+
+const mat3 sRGB_to_LMS = transpose(mat3(
+    0.31399022, 0.63951294, 0.04649755,
+    0.15537241, 0.75789446, 0.08670142,
+    0.01775239, 0.10944209, 0.87256922
+));
+
+const mat3 LMS_to_sRGB = transpose(mat3(
+     5.47221206, -4.6419601 ,  0.16963708,
+    -1.1252419 ,  2.29317094, -0.1678952 ,
+     0.02980165, -0.19318073,  1.16364789
+));
+
+vec3 perceptually_based_tonemap_lms(vec3 LMS) {
+    LMS = pow(LMS, vec3(0.75));
+    LMS = LMS / (LMS + 1.0);
+    LMS *= LMS;
+
+    return LMS;
+}
+
+vec3 perceptually_based_tonemap(vec3 sRGB) {
+    vec3 LMS = sRGB_to_LMS * sRGB;
+
+    LMS = perceptually_based_tonemap_lms(LMS);
+    
+    sRGB = LMS_to_sRGB * LMS;
+    return sRGB;
+}
+
+vec3 perceptually_based_tonemap_rec2020(vec3 rec2020) {
+    return perceptually_based_tonemap(rec2020 * rec2020_to_rec709) * rec709_to_rec2020;
+}
+
 #endif // INCLUDE_TONEMAPPING_ZCAM_JUSTJOHN

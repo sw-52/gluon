@@ -49,6 +49,7 @@ uniform float aspectRatio;
 uniform float blindness;
 uniform float darknessFactor;
 uniform float frameTimeCounter;
+uniform float viewHeight;
 
 uniform float biome_cave;
 uniform float time_noon;
@@ -62,15 +63,58 @@ uniform vec2 view_pixel_size;
 #include "/include/tonemapping/zcam_justjohn.glsl"
 //#include "/include/tonemapping/hatchling_oklab.glsl"
 
+#define TEXT_OPENDT _O, _p, _e, _n, _space, _D, _i, _s, _p, _l, _a, _y, _space, _T, _r, _a, _n, _s, _f, _o, _r, _m
+
 #if (tonemap == tonemap_opendrt) || (defined(TONEMAP_COMPARISON) && (tonemap_left == tonemap_opendrt || tonemap_right == tonemap_opendrt))
-#undef tonemap_opendrt
-//#include "/include/tonemapping/opendt/opendrt.glsl"
+	#ifdef MODULE_OPENDT
+		#undef tonemap_opendrt
+		#include "/modules/opendt/opendrt.glsl"
+	#else
+		#define MISSING_MODULE TEXT_OPENDT
+		#define MISSING_MODULE_TONEMAP _O, _p, _e, _n, _D, _R, _T, _space, _v, _0, _dot, _2
+	#endif
+#endif
+
+#if (tonemap == tonemap_opendrt_v03) || (defined(TONEMAP_COMPARISON) && (tonemap_left == tonemap_opendrt_v03 || tonemap_right == tonemap_opendrt_v03))
+	#ifdef MODULE_OPENDT
+		#undef tonemap_opendrt_v03
+		#include "/modules/opendt/opendrt_v0.3.glsl"
+	#else
+		#define MISSING_MODULE TEXT_OPENDT
+		#define MISSING_MODULE_TONEMAP _O, _p, _e, _n, _D, _R, _T, _space, _v, _0, _dot, _3
+	#endif
 #endif
 
 #if (tonemap == tonemap_jzdt) || (defined(TONEMAP_COMPARISON) && (tonemap_left == tonemap_jzdt || tonemap_right == tonemap_jzdt))
-#undef tonemap_jzdt
-//#include "/include/tonemapping/opendt/jzdt.glsl"
+	#ifdef MODULE_OPENDT
+		#undef tonemap_jzdt
+		#include "/modules/opendt/jzdt.glsl"
+	#else
+		#define MISSING_MODULE TEXT_OPENDT
+		#define MISSING_MODULE_TONEMAP _J, _z, _D, _T
+	#endif
 #endif
+
+#if (tonemap == tonemap_chromagnon) || (defined(TONEMAP_COMPARISON) && (tonemap_left == tonemap_chromagnon || tonemap_right == tonemap_chromagnon))
+	#ifdef MODULE_OPENDT
+		#undef tonemap_chromagnon
+		#include "/modules/opendt/chromagnon.glsl"
+	#else
+		#define MISSING_MODULE TEXT_OPENDT
+		#define MISSING_MODULE_TONEMAP _C, _h, _r, _o, _m, _a, _g, _n, _o, _n
+	#endif
+#endif
+
+#if (tonemap == tonemap_tesseract) || (defined(TONEMAP_COMPARISON) && (tonemap_left == tonemap_tesseract || tonemap_right == tonemap_tesseract))
+	#ifdef MODULE_OPENDT
+		#undef tonemap_tesseract
+		#include "/modules/opendt/tesseract.glsl"
+	#else
+		#define MISSING_MODULE TEXT_OPENDT
+		#define MISSING_MODULE_TONEMAP _T, _e, _s, _s, _e, _r, _a, _c, _t
+	#endif
+#endif
+
 
 #if (tonemap == tonemap_rgbdrt) || (defined(TONEMAP_COMPARISON) && (tonemap_left == tonemap_rgbdrt || tonemap_right == tonemap_rgbdrt))
 #undef tonemap_rgbdrt
@@ -89,6 +133,16 @@ uniform vec2 view_pixel_size;
 
 #ifdef TONEMAP_HUE_FADE
 #include "/include/tonemapping/hue_fade.glsl"
+#endif
+
+#ifdef MISSING_MODULE
+#include "/include/utility/text_rendering.glsl"
+#undef  tonemap
+#define tonemap tonemap_none
+#undef  tonemap_right
+#define tonemap_right tonemap_none
+#undef  tonemap_left
+#define tonemap_left tonemap_none
 #endif
 
 #include "/include/utility/bicubic.glsl"
@@ -396,6 +450,8 @@ vec3 tonemap_uchimura(vec3 rgb) {
 }
 
 vec3 tonemap_justjohn(vec3 rgb) {
+#ifndef JJS_ZCAM_PERCEPTUAL_TONEMAP
+	
 	rgb *= 1.6;
 #ifdef JJS_ZCAM_REC2020
 	rgb = zcam_tonemap_rec2020(rgb);
@@ -404,6 +460,11 @@ vec3 tonemap_justjohn(vec3 rgb) {
 	sRGB = zcam_tonemap(sRGB);
 	//sRGB = zcam_gamma_correct(sRGB);
 	rgb = sRGB * display_to_working_color;
+#endif
+
+#else
+	rgb *= 3.0;
+	rgb = perceptually_based_tonemap_rec2020(rgb);
 #endif
 	return rgb;
 }
@@ -499,7 +560,15 @@ vec3 tonemap_melon(vec3 rgb) {
 #ifndef tonemap_opendrt
 vec3 tonemap_opendrt(vec3 rgb) {
 	rgb *= OPENDRT_EXPOSURE;
-	//rgb = opendrtransform(rgb);
+	rgb = opendrtransform(rgb);
+	return rgb;
+}
+#endif
+
+#ifndef tonemap_opendrt_v03
+vec3 tonemap_opendrt_v03(vec3 rgb) {
+	rgb *= 1.4;
+	rgb = opendrtransform_v03(rgb);
 	return rgb;
 }
 #endif
@@ -507,7 +576,23 @@ vec3 tonemap_opendrt(vec3 rgb) {
 #ifndef tonemap_jzdt
 vec3 tonemap_jzdt(vec3 rgb) {
 	rgb *= 1.2;
-	//rgb = jzdtransform(rgb);
+	rgb = jzdtransform(rgb);
+	return rgb;
+}
+#endif
+
+#ifndef tonemap_chromagnon
+vec3 tonemap_chromagnon(vec3 rgb) {
+	rgb *= 1.8;
+	rgb = chromagnon_transform(rgb);
+	return rgb;
+}
+#endif
+
+#ifndef tonemap_tesseract
+vec3 tonemap_tesseract(vec3 rgb) {
+	rgb *= 1.8;
+	rgb = tesseract_transform(rgb);
 	return rgb;
 }
 #endif
@@ -566,10 +651,38 @@ vec3 pre_tonemap(vec3 rgb) {
 	return rgb;
 }
 
+#ifdef MISSING_MODULE
+void draw_module_required_error_message() {
+	scene_color = vec3(sqr(sin(uv.xy + vec2(0.4, 0.2) * frameTimeCounter)) * 0.5 + 0.3, 1.0);
+	begin_text(ivec2(gl_FragCoord.xy) / 3, ivec2(10, viewHeight / 3 - 10));
+	text.fg_col = vec4(0.0, 0.0, 0.0, 1.0);
+	text.bg_col = vec4(0.0);
+
+	// A Module is required for the Tonemap Operator "${MISSING_MODULE_TONEMAP}"
+	//
+	//
+	// How to fix:
+	//   - Change the selected Tonemap Operator
+	//   - Download the required module "${MISSING_MODULE}"
+
+	print((_A, _space, _M, _o, _d, _u, _l, _e, _space, _i, _s, _space, _r, _e, _q, _u, _i, _r, _e, _d, _space, _f, _o, _r, _space, _t, _h, _e, _space, _T, _o, _n, _e, _m, _a, _p, _space, _O, _p, _e, _r, _a, _t, _o, _r, _space, _quote, MISSING_MODULE_TONEMAP, _quote));
+	print_line(); print_line(); print_line();
+	print((_H, _o, _w, _space, _t, _o, _space, _f, _i, _x, _colon));
+	print_line();
+	print((_space, _space, _minus, _space, _C, _h, _a, _n, _g, _e, _space, _t, _h, _e, _space, _s, _e, _l, _e, _c, _t, _e, _d, _space, _T, _o, _n, _e, _m, _a, _p, _space, _O, _p, _e, _r, _a, _t, _o, _r));
+	print_line();
+	print((_space, _space, _minus, _space, _D, _o, _w, _n, _l, _o, _a, _d, _space, _t, _h, _e, _space, _r, _e, _q, _u, _i, _r, _e, _d, _space, _m, _o, _d, _u, _l, _e, _space, _quote, MISSING_MODULE, _quote));
+	print_line();
+	end_text(scene_color);
+}
+#endif
+
 void main() {
 	ivec2 texel = ivec2(gl_FragCoord.xy);
 
 	scene_color = texelFetch(colortex5, texel, 0).rgb;
+
+#ifndef MISSING_MODULE
 
 	float exposure = texelFetch(colortex5, ivec2(0), 0).a;
 
@@ -674,7 +787,13 @@ void main() {
 	if (abs(uv_scaled.y - y[1].g) < line) scene_color += y[1] * working_to_display_color;
 	if (abs(uv_scaled.y - y[2].b) < line) scene_color += y[2] * working_to_display_color;
 
-#endif
+#endif // TONEMAP_PLOT
+
+#else // MISSING_MODULE
+
+	draw_module_required_error_message();
+
+#endif // MISSING_MODULE
 }
 
 #endif

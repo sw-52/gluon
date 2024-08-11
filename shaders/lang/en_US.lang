@@ -43,10 +43,13 @@ screen.khronos_neutral_settings        = Khronos Neutral Tonemap Settings
 screen.jjs_zcam_settings               = justjohn's ZCAM Tonemap Settings
 screen.bottosson_settings              = BOttosson Tonemap Settings
 screen.melon_tonemap_settings          = Melon Tonemap Settings
-screen.opendrt_settings                = OpenDRT Settings
 screen.rgbdrt_settings                 = rgbDRT Settings
 screen.zcamdrt_settings                = ZCAM DRT Settings
+screen.opendrt_settings                = OpenDRT v0.2 Settings
+screen.opendrt_v03_settings            = OpenDRT v0.3 Settings
 screen.jzdt_settings                   = JzDT Settings
+screen.chromagnon_settings             = Chromagnon Settings
+screen.tesseract_settings              = Tesseract Settings
 
 screen.aurora                          = Aurora
 screen.aurora_color                    = Aurora Color Settings
@@ -871,10 +874,13 @@ value.tonemap.tonemap_khronos_neutral  = Khronos Neutral
 value.tonemap.tonemap_justjohn         = justjohn's ZCAM
 value.tonemap.tonemap_bottosson        = BOttosson
 value.tonemap.tonemap_melon            = Melon
-value.tonemap.tonemap_opendrt          = OpenDRT
-value.tonemap.tonemap_jzdt             = JzDT
 value.tonemap.tonemap_rgbdrt           = rgbDRT
 value.tonemap.tonemap_zcam_drt         = ZCAM DRT
+value.tonemap.tonemap_opendrt          = OpenDRT v0.2
+value.tonemap.tonemap_opendrt_v03      = OpenDRT v0.3
+value.tonemap.tonemap_jzdt             = JzDT
+value.tonemap.tonemap_chromagnon       = Chromagnon
+value.tonemap.tonemap_tesseract        = Tesseract
 value.tonemap.tonemap_fidelityfx_lpm   = FidelityFX LPM
 value.tonemap.tonemap_hatchling        = Hatchling Oklab
 
@@ -973,6 +979,8 @@ option.UCHIMURA_BLACK_TIGHTNESS       = Black Tightness
 option.UCHIMURA_BLACK_PEDESTAL        = Black Pedestal
 
 option.JJS_ZCAM_REC2020             = Experimental Rec.2020
+option.JJS_ZCAM_PERCEPTUAL_TONEMAP  = Perceptually Based Tonemapper
+option.JJS_ZCAM_PERCEPTUAL_TONEMAP.comment = Use Perceptually Based Tonemapper instead of ZCAM tonemap
 
 option.AGX_LOOK                     = AgX Tonemap Look
 option.AGX_LOOK.comment             = \nDefault: No change and no extra performance impact.\nGolden: Adds warm tones for a less saturated, golden feel.\nPunchy: Enhances colors and contrast for vivid visuals.\nCustom: Enables customizing Offset, Slope, Power, and Saturation\n\nEquation:\n§o luma + Saturation * [(color * Slope + Offset)^Power - luma]
@@ -1083,12 +1091,83 @@ option.OPENDRT_HS_RED          = Hue Shift Red
 option.OPENDRT_HS_GREEN        = Hue Shift Green
 option.OPENDRT_HS_BLUE         = Hue Shift Blue
 
+
+option.OPENDRT_03_LP       = Max Output
+option.OPENDRT_03_LG       = Middle Gray
+option.OPENDRT_03_LG_BOOST = Middle Gray Boost
+option.OPENDRT_03_CONTRAST = Contrast
+option.OPENDRT_03_TOE      = Toe
+
+option.OPENDRT_03_PC_P = Purity Compress
+option.OPENDRT_03_PB   = Purity Boost
+option.OPENDRT_03_HS_R = Hue Shift Red
+option.OPENDRT_03_HS_G = Hue Shift Green
+option.OPENDRT_03_HS_B = Hue Shift Blue
+
+option.OPENDRT_03_SAT_F   = Saturation Amount
+option.OPENDRT_03_SAT_W_R = Saturation Weight Red
+option.OPENDRT_03_SAT_W_G = Saturation Weight Green
+option.OPENDRT_03_SAT_W_B = Saturation Weight Blue
+option.OPENDRT_03_DN_W_C  = Density Weight Cyan
+option.OPENDRT_03_DN_W_M  = Density Weight Magenta
+option.OPENDRT_03_DN_W_Y  = Density Weight Yellow
+
+
 option.JZDT_DECHROMA            = Dechroma
 option.JZDT_SATURATION          = Saturation
 option.JZDT_EUCLIDEAN           = Euclidean Distance Norm
 option.JZDT_PERCEPTUAL_DECHROMA = Perceptual Dechroma
 option.JZDT_GAMUT_COMPRESS      = Gamut Compress
 
+
+option.CHROMAGNON_LP            = Lp
+option.CHROMAGNON_LG            = Lg
+option.CHROMAGNON_LG_BOOST      = Lg Boost
+option.CHROMAGNON_OFFSET        = Offset
+option.CHROMAGNON_CONTRAST      = Contrast
+option.CHROMAGNON_HIGH_CONTRAST = High Contrast
+option.CHROMAGNON_HIGH_CLIP     = High Clip
+
+option.CHROMAGNON_WHITE_TEMP = White Temp
+option.CHROMAGNON_WHITE_TINT = White Tint
+option.CHROMAGNON_GREY_TEMP  = Grey Temp
+option.CHROMAGNON_GREY_TINT  = Grey tint
+
+option.CHROMAGNON_PC_P  = PC Slope
+option.CHROMAGNON_PC_X0 = PC Amount
+option.CHROMAGNON_PC_T0 = PC Threshold
+
+option.CHROMAGNON_RND_S_R = RM Scale Red
+option.CHROMAGNON_RND_S_G = RM Scale Green
+option.CHROMAGNON_RND_S_B = RM Scale Blue
+option.CHROMAGNON_RND_R_R = RM Rotate Red
+option.CHROMAGNON_RND_R_G = RM Rotate Green
+option.CHROMAGNON_RND_R_B = RM Rotate Blue
+
+option.CHROMAGNON_LK_R = LM Red Distance
+option.CHROMAGNON_LK_G = LM Green Distance
+option.CHROMAGNON_LK_B = LM Blue Distance
+
+option.CHROMAGNON_PC_CAT   = Purity Compress
+value.CHROMAGNON_PC_CAT.0  = §f->
+option.CHROMAGNON_RND_CAT  = Render Matrix
+value.CHROMAGNON_RND_CAT.0 = §f->
+option.CHROMAGNON_LK_CAT   = Look Matrix
+value.CHROMAGNON_LK_CAT.0  = §f->
+
+
+option.TESSERACT_LP       = Lp
+option.TESSERACT_LG       = Lg
+option.TESSERACT_OFFSET   = Offset
+option.TESSERACT_CONTRAST = Contrast
+
+option.TESSERACT_PB   = Purity
+option.TESSERACT_HL_R = Hue Low Red
+option.TESSERACT_HL_G = Hue Low Green
+option.TESSERACT_HL_B = Hue Low Blue
+option.TESSERACT_HH_R = Hue High Red
+option.TESSERACT_HH_G = Hue High Green
+option.TESSERACT_HH_B = Hue High Blue
 
 # Exposure
 
@@ -1137,53 +1216,59 @@ value.TONEMAP_PLOT.TONEMAP_PLOT_NONE   = §fOff
 value.TONEMAP_PLOT.TONEMAP_PLOT_WHITE  = Brightness
 value.TONEMAP_PLOT.TONEMAP_PLOT_COLOR  = Per Channel
 
-value.tonemap_left.tonemap_none           = §cNo Tonemap
-value.tonemap_left.academy_fit            = Academy Fit
-value.tonemap_left.academy_rrt            = Academy RRT
-value.tonemap_left.tonemap_lottes         = Lottes
-value.tonemap_left.tonemap_hejl_2015      = Hejl 2015
-value.tonemap_left.tonemap_hejl_burgess   = Hejl-Burgess
-value.tonemap_left.tonemap_uncharted_2    = Uncharted 2
-value.tonemap_left.tonemap_tech           = Tech
-value.tonemap_left.tonemap_ozius          = Ozius
-value.tonemap_left.tonemap_reinhard       = Reinhard
-value.tonemap_left.tonemap_reinhard_jodie = Reinhard-Jodie
-value.tonemap_left.tonemap_uchimura       = Uchimura
-value.tonemap_left.tonemap_agx            = AgX
-value.tonemap_left.tonemap_khronos_neutral= Khronos Neutral
-value.tonemap_left.tonemap_justjohn       = justjohn's ZCAM
-value.tonemap_left.tonemap_bottosson      = BOttosson
-value.tonemap_left.tonemap_melon          = Melon
-value.tonemap_left.tonemap_opendrt        = OpenDRT
-value.tonemap_left.tonemap_jzdt           = JzDT
-value.tonemap_left.tonemap_rgbdrt         = rgbDRT
-value.tonemap_left.tonemap_zcam_drt       = ZCAM DRT
-value.tonemap_left.tonemap_fidelityfx_lpm = FidelityFX LPM
-value.tonemap_left.tonemap_hatchling      = Hatchling Oklab
+value.tonemap_left.tonemap_none            = §cNo Tonemap
+value.tonemap_left.academy_fit             = Academy Fit
+value.tonemap_left.academy_rrt             = Academy RRT
+value.tonemap_left.tonemap_lottes          = Lottes
+value.tonemap_left.tonemap_hejl_2015       = Hejl 2015
+value.tonemap_left.tonemap_hejl_burgess    = Hejl-Burgess
+value.tonemap_left.tonemap_uncharted_2     = Uncharted 2
+value.tonemap_left.tonemap_tech            = Tech
+value.tonemap_left.tonemap_ozius           = Ozius
+value.tonemap_left.tonemap_reinhard        = Reinhard
+value.tonemap_left.tonemap_reinhard_jodie  = Reinhard-Jodie
+value.tonemap_left.tonemap_uchimura        = Uchimura
+value.tonemap_left.tonemap_agx             = AgX
+value.tonemap_left.tonemap_khronos_neutral = Khronos Neutral
+value.tonemap_left.tonemap_justjohn        = justjohn's ZCAM
+value.tonemap_left.tonemap_bottosson       = BOttosson
+value.tonemap_left.tonemap_melon           = Melon
+value.tonemap_left.tonemap_rgbdrt          = rgbDRT
+value.tonemap_left.tonemap_zcam_drt        = ZCAM DRT
+value.tonemap_left.tonemap_opendrt         = OpenDRT v0.2
+value.tonemap_left.tonemap_opendrt_v03     = OpenDRT v0.3
+value.tonemap_left.tonemap_jzdt            = JzDT
+value.tonemap_left.tonemap_chromagnon      = Chromagnon
+value.tonemap_left.tonemap_tesseract       = Tesseract
+value.tonemap_left.tonemap_fidelityfx_lpm  = FidelityFX LPM
+value.tonemap_left.tonemap_hatchling       = Hatchling Oklab
 
-value.tonemap_right.tonemap_none           = §cNo Tonemap
-value.tonemap_right.academy_fit            = Academy Fit
-value.tonemap_right.academy_rrt            = Academy RRT
-value.tonemap_right.tonemap_lottes         = Lottes
-value.tonemap_right.tonemap_hejl_2015      = Hejl 2015
-value.tonemap_right.tonemap_hejl_burgess   = Hejl-Burgess
-value.tonemap_right.tonemap_uncharted_2    = Uncharted 2
-value.tonemap_right.tonemap_tech           = Tech
-value.tonemap_right.tonemap_ozius          = Ozius
-value.tonemap_right.tonemap_reinhard       = Reinhard
-value.tonemap_right.tonemap_reinhard_jodie = Reinhard-Jodie
-value.tonemap_right.tonemap_uchimura       = Uchimura
-value.tonemap_right.tonemap_agx            = AgX
-value.tonemap_right.tonemap_khronos_neutral= Khronos Neutral
-value.tonemap_right.tonemap_justjohn       = justjohn's ZCAM
-value.tonemap_right.tonemap_bottosson      = BOttosson
-value.tonemap_right.tonemap_melon          = Melon
-value.tonemap_right.tonemap_opendrt        = OpenDRT
-value.tonemap_right.tonemap_jzdt           = JzDT
-value.tonemap_right.tonemap_rgbdrt         = rgbDRT
-value.tonemap_right.tonemap_zcam_drt       = ZCAM DRT
-value.tonemap_right.tonemap_fidelityfx_lpm = FidelityFX LPM
-value.tonemap_right.tonemap_hatchling      = Hatchling Oklab
+value.tonemap_right.tonemap_none            = §cNo Tonemap
+value.tonemap_right.academy_fit             = Academy Fit
+value.tonemap_right.academy_rrt             = Academy RRT
+value.tonemap_right.tonemap_lottes          = Lottes
+value.tonemap_right.tonemap_hejl_2015       = Hejl 2015
+value.tonemap_right.tonemap_hejl_burgess    = Hejl-Burgess
+value.tonemap_right.tonemap_uncharted_2     = Uncharted 2
+value.tonemap_right.tonemap_tech            = Tech
+value.tonemap_right.tonemap_ozius           = Ozius
+value.tonemap_right.tonemap_reinhard        = Reinhard
+value.tonemap_right.tonemap_reinhard_jodie  = Reinhard-Jodie
+value.tonemap_right.tonemap_uchimura        = Uchimura
+value.tonemap_right.tonemap_agx             = AgX
+value.tonemap_right.tonemap_khronos_neutral = Khronos Neutral
+value.tonemap_right.tonemap_justjohn        = justjohn's ZCAM
+value.tonemap_right.tonemap_bottosson       = BOttosson
+value.tonemap_right.tonemap_melon           = Melon
+value.tonemap_right.tonemap_rgbdrt          = rgbDRT
+value.tonemap_right.tonemap_zcam_drt        = ZCAM DRT
+value.tonemap_right.tonemap_opendrt         = OpenDRT v0.2
+value.tonemap_right.tonemap_opendrt_v03     = OpenDRT v0.3
+value.tonemap_right.tonemap_jzdt            = JzDT
+value.tonemap_right.tonemap_chromagnon      = Chromagnon
+value.tonemap_right.tonemap_tesseract       = Tesseract
+value.tonemap_right.tonemap_fidelityfx_lpm  = FidelityFX LPM
+value.tonemap_right.tonemap_hatchling       = Hatchling Oklab
 
 # Box
 

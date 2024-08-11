@@ -1,4 +1,5 @@
 #include "/settings.glsl"
+#include "/modules/module_manager.glsl"
 
 #if MC_VERSION < 11700
 	#define gtexture tex
@@ -67,9 +68,10 @@ float length_squared(vec3 v) { return dot(v, v); }
 vec2 normalize_safe(vec2 v) { return v == vec2(0.0) ? v : normalize(v); }
 vec3 normalize_safe(vec3 v) { return v == vec3(0.0) ? v : normalize(v); }
 
-float sdiv(float a, float b) { return abs(b) < eps ? 0.0 : a/b; }
-vec3  sdiv(vec3 a, float b)  { return abs(b) < eps ? vec3(0.0) : a/b; }
-vec3  sdiv(vec3 a, vec3 b)   { return vec3(sdiv(a.x, b.x), sdiv(a.y, b.y), sdiv(a.z, b.z)); }
+// Returns true if x is between lower bound a (inclusive) and upper bound b (exclusive)
+bool between(uint x, uint a, uint b) { return a <= x && x < b; }
+bool between(int x, int a, int b) { return a <= x && x < b; }
+bool between(float x, float a, float b) { return a <= x && x < b; }
 
 // Remapping functions
 

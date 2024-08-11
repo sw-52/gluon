@@ -12,9 +12,9 @@ mat2x3 raymarch_water_fog(
 	bool sky,
 	float dither
 ) {
-	const uint min_step_count = 16;
-	const uint max_step_count = 25;
-	const float step_count_growth = 0.5;
+	const uint min_step_count = WATER_FOG_MIN_STEPS; // 16
+	const uint max_step_count = WATER_FOG_MAX_STEPS; // 25
+	const float step_count_growth = WATER_FOG_STEP_GROWTH; // 0.5
 
 	const vec2 caustics_dir_0 = vec2(cos(0.5), sin(0.5));
 	const vec2 caustics_dir_1 = vec2(cos(3.0), sin(3.0));
@@ -23,7 +23,7 @@ mat2x3 raymarch_water_fog(
 	const vec3 scattering_coeff = vec3(WATER_SCATTERING_UNDERWATER);
 	const vec3 extinction_coeff = absorption_coeff + scattering_coeff;
 
-	const uint multiple_scattering_iterations = 4;
+	const uint multiple_scattering_iterations = FOG_MULTIPLE_SCATTERING_ITERATIONS; // 4
 
 	vec3 world_dir = world_end_pos - world_start_pos;
 	float ray_length;
@@ -72,6 +72,10 @@ mat2x3 raymarch_water_fog(
 		float depth1 = texelFetch(shadowtex1, shadow_texel, 0).x;
 		float shadow = step(float(clamp01(shadow_screen_pos) == shadow_screen_pos) * shadow_screen_pos.z, depth1);
 
+	#if defined CLOUD_SHADOWS && defined FOG_CLOUD_SHADOWS && defined WORLD_OVERWORLD
+		shadow *= get_cloud_shadows(colortex8, world_pos - cameraPosition);
+	#endif
+
 		// Calculate sunlight transmittance through the volume
 		float distance_traveled = abs(depth0 - shadow_screen_pos.z) * -shadowProjectionInverse[2].z * rcp(SHADOW_DEPTH_SCALE);
 
@@ -79,7 +83,11 @@ mat2x3 raymarch_water_fog(
 		float distance_traveled_sky = distance_traveled * light_dir.y;
 		      distance_traveled_sky = min(distance_traveled_sky, 15.0 - 15.0 * eye_skylight + max0(eyeAltitude - world_pos.y));
 #else
+	#if defined CLOUD_SHADOWS && defined FOG_CLOUD_SHADOWS && defined WORLD_OVERWORLD
+		float shadow = get_cloud_shadows(colortex8, world_pos - cameraPosition);
+	#else
 		#define shadow 1.0
+	#endif
 		#define distance_traveled 0.0
 		float distance_traveled_sky = 15.0 - 15.0 * eye_skylight + max0(eyeAltitude - world_pos.y);
 #endif

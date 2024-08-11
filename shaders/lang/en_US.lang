@@ -70,6 +70,7 @@ screen.clouds_cumulonimbus             = Cumulonimbus Clouds Settings
 screen.clouds_cirrus                   = Cirrus Clouds Settings
 screen.clouds_minecrafty               = Blocky Clouds Settings
 
+screen.fog_advanced                    = Advanced Fog Settings
 screen.fog_rlh                         = Rayleigh Coefficient
 screen.fog_mie                         = Mie Coefficient
 screen.sunlight_color                  = Sunlight Color
@@ -606,6 +607,7 @@ option.BLOOMY_FOG.comment              = Intense bloom in fog. This gives the ap
 option.BLOOMY_FOG_INTENSITY            = Bloomy Fog Intensity
 option.BLOOMY_FOG_INTENSITY.comment    = Adjusts the intensity of "bloomy fog"
 option.NETHER_FOG_INTENSITY            = Nether Fog Intensity
+option.CAVE_FOG_INTENSITY              = Cave Fog Intensity
 option.VL                              = Volumetric Lighting
 option.VL.comment                      = Adds light shafts and variable fog density
 option.VL_RENDER_SCALE                 = VL Render Scale
@@ -613,6 +615,22 @@ option.AIR_FOG_CLOUDY_NOISE            = Cloudy Fog
 option.AIR_FOG_CLOUDY_NOISE.comment    = Subtle cloudy shapes in the fog, best visible in the morning.\nRequires volumetric fog!
 option.AIR_FOG_COLORED_LIGHT_SHAFTS    = Colored Light Shafts
 option.AIR_FOG_COLORED_LIGHT_SHAFTS.comment = Light shafts passing through translucent objects are tinted by their color
+option.FOG_CLOUD_SHADOWS               = Cloud Shadow Light Shafts
+
+option.AIR_FOG_MIN_STEPS     = Air Fog Min Steps
+option.AIR_FOG_MAX_STEPS     = Air Fog Max Steps
+option.AIR_FOG_STEP_GROWTH   = Air Fog Step Growth
+option.AIR_FOG_VOLUME_TOP    = Air Fog Volume Top
+option.WATER_FOG_MIN_STEPS   = Water Fog Min Steps
+option.WATER_FOG_MAX_STEPS   = Water Fog Max Steps
+option.WATER_FOG_STEP_GROWTH = Water Fog Step Growth
+option.END_FOG_MIN_STEPS     = End Fog Min Steps
+option.END_FOG_MAX_STEPS     = End Fog Max Steps
+option.END_FOG_VOLUME_TOP    = End Fog Volume Top
+option.END_FOG_VOLUME_BOTTOM = End Fog Volume Bottom
+option.END_FOG_STEP_GROWTH   = End Fog Step Growth
+option.END_FOG_DENSITY_SCALE = End Fog Density
+option.FOG_MULTIPLE_SCATTERING_ITERATIONS = Multiple Scattering Iterations
 
 option.AIR_FOG_RAYLEIGH_FALLOFF_START     = Rayleigh Falloff Start
 option.AIR_FOG_RAYLEIGH_FALLOFF_START.comment = Altitude above sea level at which the rayleigh fog begins to decrease
@@ -663,6 +681,7 @@ option.AIR_FOG_MIE_DENSITY_NOON        = Noon Density
 option.AIR_FOG_MIE_DENSITY_EVENING     = Evening Density
 option.AIR_FOG_MIE_DENSITY_MIDNIGHT    = Midnight Density
 option.AIR_FOG_MIE_DENSITY_RAIN        = Rain Density
+option.AIR_FOG_MIE_DENSITY_SNOW        = Snow Density
 option.AIR_FOG_MIE_DENSITY_BLUE_HOUR   = Dawn/Dusk Density
 
 # Materials settings

@@ -16,7 +16,7 @@ const float snow_fog_density = 1.0;
 const vec3  snow_fog_color   = from_srgb(vec3(0.957, 0.988, 0.988)) * 0.3;
 
 const float cave_fog_start   = 1.0;
-const float cave_fog_density = 0.0033;
+const float cave_fog_density = 0.0033 * CAVE_FOG_INTENSITY;
 const vec3  cave_fog_color   = vec3(0.033);
 
 const float nether_fog_start   = 0.0;
@@ -156,10 +156,10 @@ mat2x3 water_fog_simple(
 	vec3 transmittance = exp(-extinction_coeff * dist);
 
 	vec3 scattering  = light_color * exp(-extinction_coeff * sss_depth) * smoothstep(0.0, 0.25, skylight); // direct lighting
-		 scattering *= 0.7 * henyey_greenstein_phase(LoV, 0.4) + 0.3 * isotropic_phase;                          // phase function for direct lighting
-	     scattering += ambient_color * skylight * isotropic_phase;                                               // ambient lighting
-	     scattering *= (1.0 - transmittance) * scattering_coeff / extinction_coeff;                  // scattering integral
-		 scattering *= 1.0 + multiple_scattering_energy;                                                         // multiple scattering
+		 scattering *= 0.7 * henyey_greenstein_phase(LoV, 0.4) + 0.3 * isotropic_phase;                    // phase function for direct lighting
+	     scattering += ambient_color * skylight * isotropic_phase;                                         // ambient lighting
+	     scattering *= (1.0 - transmittance) * scattering_coeff / extinction_coeff;                        // scattering integral
+		 scattering *= 1.0 + multiple_scattering_energy;                                                   // multiple scattering
 
 	return mat2x3(scattering, transmittance);
 }

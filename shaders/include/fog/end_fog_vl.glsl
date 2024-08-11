@@ -21,20 +21,27 @@ float end_fog_density(vec3 world_pos) {
 	return density;
 }
 
+float end_fog_noise(vec3 world_pos) {
+	const vec3 wind0    = vec3(1.0, 0.1, 0.5) * 0.01;
+	const vec3 wind1    = vec3(-0.7, -0.1, -0.1) * 0.05;
+
+	float base_noise  = texture(colortex0, 0.02 * world_pos + wind0 * frameTimeCounter).x;
+	float detail_nose = texture(colortex0, 0.04 * world_pos + wind1 * frameTimeCounter).x * 0.8 - 0.4;
+
+	float density = max0(linear_step(0.6, 0.9, base_noise) + detail_nose);
+	return density;
+}
+
 vec3 end_fog_emission(vec3 world_pos) {
 #ifdef WORLD_NETHER
 	return vec3(0.0);
 #else
 	const vec3 main_col = from_srgb(vec3(END_AMBIENT_R, END_AMBIENT_G, END_AMBIENT_B)) * END_AMBIENT_I;
 	const vec3 alt_col  = 0.5 * vec3(0.25, 1.0, 0.5);
-	const vec3 wind0    = vec3(1.0, 0.1, 0.5) * 0.01;
-	const vec3 wind1    = vec3(-0.7, -0.1, -0.1) * 0.05;
 
-	float base_noise  = texture(colortex0, 0.02 * world_pos + wind0 * frameTimeCounter).x;
-	float detail_nose = texture(colortex0, 0.04 * world_pos + wind1 * frameTimeCounter).x * 0.8 - 0.4;
 	float color_noise = texture(colortex0, 0.02 * world_pos + 0.2).x;
 
-	float density = max0(linear_step(0.6, 0.9, base_noise) + detail_nose);
+	float density   = end_fog_noise(world_pos);
 	float color_mix = linear_step(0.5, 0.7, color_noise);
 
 	float view_dist   = distance(world_pos, cameraPosition);
@@ -52,23 +59,23 @@ mat2x3 raymarch_end_fog(
 	bool sky,
 	float dither
 ) {
-	const uint min_step_count     = 16;
-	const uint max_step_count     = 25;
-	const float volume_top        = 256.0;
-	const float volume_bottom     = 0.0;
-	const float step_count_growth = 0.5;
+	const uint min_step_count     = END_FOG_MIN_STEPS; // 16
+	const uint max_step_count     = END_FOG_MAX_STEPS; // 25
+	const float volume_top        = END_FOG_VOLUME_TOP; // 256.0
+	const float volume_bottom     = END_FOG_VOLUME_BOTTOM; // 0.0
+	const float step_count_growth = END_FOG_STEP_GROWTH; // 0.5
 
 #ifdef WORLD_END
 	const vec3 end_color        = from_srgb(vec3(END_AMBIENT_R, END_AMBIENT_G, END_AMBIENT_B));
 #elif defined (WORLD_NETHER)
 	const vec3 end_color        = from_srgb(vec3(NETHER_R, NETHER_G, NETHER_B));
 #endif
-	const float density_scale   = 0.01;
+	const float density_scale   = 0.01 * END_FOG_DENSITY_SCALE;
 	const vec3 absorption_coeff = exp2(-end_color) * density_scale;
 	const vec3 scattering_coeff = vec3(1.0) * density_scale;
 	const vec3 extinction_coeff = absorption_coeff + scattering_coeff;
 
-	const uint multiple_scattering_iterations = 4;
+	const uint multiple_scattering_iterations = FOG_MULTIPLE_SCATTERING_ITERATIONS; // 4
 
 	vec3 world_dir = world_end_pos - world_start_pos;
 	float ray_length;

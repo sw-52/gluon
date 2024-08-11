@@ -490,8 +490,8 @@ void main() {
 		const float cloud_shadows = 1.0;
 #endif
 
+		float sss_depth = 0.0;
 #if defined SHADOW && (defined WORLD_OVERWORLD || defined WORLD_END || defined WORLD_SPACE)
-		float sss_depth;
 		float shadow_distance_fade;
 		vec3 shadows;
 
@@ -504,7 +504,7 @@ void main() {
 	#endif
 #else
 		vec3 shadows = vec3(sqrt(ao) * pow8(light_levels.y));
-		#define sss_depth 0.0
+		//shadows = calculate_shadows(NoL, light_levels.y, cloud_shadows, material.sss_amount, sss_depth);
 		#define shadow_distance_fade 0.0
 #endif
 

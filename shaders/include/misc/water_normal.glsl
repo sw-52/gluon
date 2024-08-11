@@ -77,7 +77,9 @@ vec3 get_water_normal(vec3 world_pos, vec3 flat_normal, vec2 coord, vec2 flow_di
 	float normal_influence  = 0.04;
 #endif
 	      normal_influence *= smoothstep(0.0, 0.05, abs(flat_normal.y));
+#ifndef PROGRAM_SHADOW
 	      normal_influence *= smoothstep(0.0, 0.15, abs(dot(flat_normal, normalize(world_pos - cameraPosition)))); // prevent noise when looking horizontally
+#endif
 	      normal_influence *= WATER_WAVE_STRENGTH;
 
 	vec3 normal     = vec3(wave1 - wave0, wave2 - wave0, h);

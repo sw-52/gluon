@@ -3,6 +3,13 @@
 
 #if defined WORLD_OVERWORLD || defined WORLD_END || defined WORLD_SPACE
 
+// Fake, lightmap-based shadows for outside of the shadow range or when shadows are disabled
+float lightmap_shadows(float skylight, float NoL) {
+	return smoothstep(13.5 / 15.0, 14.5 / 15.0, skylight);
+}
+
+#ifdef SHADOW
+
 #include "/include/light/distortion.glsl"
 #include "/include/utility/color.glsl"
 #include "/include/utility/dithering.glsl"
@@ -54,12 +61,6 @@ const vec2[32] blue_noise_disk = vec2[](
 	vec2( 0.826922,  0.001024)
 );
 
-// Fake, lightmap-based shadows for outside of the shadow range or when shadows are disabled
-float lightmap_shadows(float skylight, float NoL) {
-	return smoothstep(13.5 / 15.0, 14.5 / 15.0, skylight);
-}
-
-#ifdef SHADOW
 vec2 blocker_search(vec3 scene_pos, float dither) {
 	const uint step_count = SHADOW_BLOCKER_SEARCH_STEPS;
 
@@ -277,22 +278,24 @@ vec3 calculate_shadows(
 	return distant_shadow * shadow_basic(shadow_screen_pos);
 #endif
 }
-#else
+#else // SHADOW
 vec3 calculate_shadows(
-	vec3 scene_pos,
-	vec3 flat_normal,
+	float NoL,
 	float skylight,
 	float cloud_shadows,
 	float sss_amount,
-	out float distance_fade,
 	out float sss_depth
 ) {
-	distance_fade = 0.0;
-	sss_depth = 0.0;
-	return vec3(cloud_shadows);
-}
-#endif
+	sss_depth = 1.0;
+	if (NoL < 1e-3 && sss_amount < 1e-3) return vec3(0.0);
 
-#endif
+	float lightmap_shadow = lightmap_shadows(skylight, NoL);
+	sss_depth -= max0(sss_amount * NoL);
+
+	return vec3(lightmap_shadow * cloud_shadows);
+}
+#endif // SHADOW
+
+#endif // WORLD
 
 #endif // INCLUDE_LIGHT_SHADOWS

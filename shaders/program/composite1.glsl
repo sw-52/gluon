@@ -348,15 +348,15 @@ void main() {
 
 #ifdef SPECULAR_MAPPING
 		vec4 specular_map = vec4(unpack_unorm_2x8(gbuffer_data_1.z), unpack_unorm_2x8(gbuffer_data_1.w));
-
-#if defined POM && defined POM_SHADOW
+		bool parallax_shadow = false;
+/*#if defined POM && defined POM_SHADOW
 		// Specular map alpha > 0.5 => inside parallax shadow
 		bool parallax_shadow = specular_map.a > 0.5;
 		specular_map.a -= 0.5 * float(parallax_shadow);
 		specular_map.a *= 2.0;
-#endif
+#endif*/
 
-		decode_specular_map(specular_map, material);
+		decode_specular_map(specular_map, material, parallax_shadow);
 #endif
 
 #ifdef DISTANT_HORIZONS

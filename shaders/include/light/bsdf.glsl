@@ -27,9 +27,14 @@ float v2_smith_ggx(float NoL, float NoV, float alpha_sq) {
     return 0.5 / (ggx_l + ggx_v);
 }
 
-vec3 fresnel_schlick(float cos_theta, vec3 f0) {
+vec3 fresnel_schlick_photon(float cos_theta, vec3 f0) {
 	float f = pow5(1.0 - cos_theta);
 	return f + f0 * (1.0 - f);
+}
+
+vec3 fresnel_schlick(float cos_theta, vec3 f0) {
+	float f = pow5(1.0 - cos_theta);
+	return f0 + (1.0 - f0) * f;
 }
 
 vec3 fresnel_dielectric_n(float cos_theta, float n) {

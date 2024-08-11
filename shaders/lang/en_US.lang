@@ -1,5 +1,6 @@
 # Profiles
 
+profile.potato                         = §6Potato
 profile.low                            = §eLow
 profile.medium                         = §aMedium
 profile.high                           = §bHigh
@@ -115,6 +116,7 @@ value.INFO.0                           = §eby SixthSurge
 value.INFO.1                           = §aby SixthSurge
 value.INFO.2                           = §bby SixthSurge
 value.INFO.3                           = §dby SixthSurge
+value.INFO.4                           = §6by SixthSurge
 
 # World settings
 

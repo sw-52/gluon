@@ -25,7 +25,12 @@
 const float sss_density          = 14.0 * SSS_DENSITY;
 const float sss_scale            = 5.0  * SSS_INTENSITY;
 const float night_vision_scale   = 1.5  * NIGHT_VISION_I;
-const float metal_diffuse_amount = 0.1; // Scales diffuse lighting on metals, ideally this would be zero but purely specular metals don't play well with SSR
+
+#if defined ENVIRONMENT_REFLECTIONS
+const float metal_diffuse_amount = 0.02; // Scales diffuse lighting on metals, ideally this would be zero but purely specular metals don't play well with SSR
+#else
+const float metal_diffuse_amount = 0.33;
+#endif
 
 float get_blocklight_falloff(float blocklight, float skylight, float ao) {
 	float falloff  = pow8(blocklight) + 0.18 * sqr(blocklight) + 0.16 * dampen(blocklight);                // Base falloff
@@ -138,6 +143,7 @@ vec3 get_diffuse_lighting(
 #else
 	// Simple shading for when shadows are disabled
 	vec3 sss = 0.08 * sss_scale * pi + 0.5 * material.sheen_amount * rcp(material.albedo + eps) * henyey_greenstein_phase(-LoV, 0.5) * linear_step(-0.8, -0.2, -LoV);
+		 sss *= ao * (clamp01(NoL) * 0.7 + 0.3);
 
 	vec3 diffuse  = vec3(lift(max0(NoL), 0.5 * rcp(SHADING_STRENGTH)) * 0.6 + 0.4) * (shadows * 0.8 + 0.2);
 	     diffuse  = mix(diffuse, sss, lift(material.sss_amount, 5.0));
@@ -202,7 +208,7 @@ vec3 get_diffuse_lighting(
 		lighting += nv_lighting * clamp01(1.0 - lum) * mix(1.0, 4.0, clamp01((0.25 - lum) * 4.0));
 	}
 
-	return max0(lighting) * material.albedo * rcp_pi * mix(1.0, metal_diffuse_amount, float(material.is_metal));
+	return max0(lighting) * material.albedo * rcp_pi * mix(1.0, mix(max(metal_diffuse_amount, 0.5), metal_diffuse_amount, clamp01(min(max_of(skylight), light_levels.y))), float(material.is_metal));
 }
 
 #endif // INCLUDE_LIGHT_DIFFUSE_LIGHTING

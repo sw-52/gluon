@@ -128,4 +128,9 @@ float isolate_hue(vec3 hsl, float center, float width) {
 	return pulse(hsl.x * 360.0, center, width, 360.0);
 }
 
+float isolate_hue_norm(vec3 hsl, float center, float width) {
+	if (hsl.y < 1e-2 || hsl.z < 1e-2) return 0.0; // black/gray colors with no hue
+	return pulse(hsl.x, center, width, 1.0);
+}
+
 #endif // INCLUDE_UTILITY_COLOR

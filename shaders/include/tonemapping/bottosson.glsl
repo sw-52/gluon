@@ -23,31 +23,44 @@
 
 const float softness_scale = BOTTOSSON_SOFTNESS;  // controls softness of RGB clipping
 const float offset         = BOTTOSSON_LIGHT_SAT; // controls how colors desaturate as they brighten. 0 results in that colors never fluoresce, 1 in very saturated colors
-const float chroma_scale   = BOTTOSSON_CHROMA;  // overall scale of chroma
+const float chroma_scale   = BOTTOSSON_CHROMA;    // overall scale of chroma
 
 // Origin: https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/
 // Using this since it was easy to differentiate, same technique would work for any curve
 vec3 s_curve(vec3 x) {
-    float a = 2.51f;
-    float b = 0.03f;
-    float c = 2.43f;
-    float d = 0.59f;
-    float e = 0.14f;
+    float a = 2.51;
+    float b = 0.03;
+    float c = 2.43;
+    float d = 0.59;
+    float e = 0.14;
     x = max0(x);
     return clamp01((x * (a * x + b)) / (x * (c * x + d) + e));
 }
 
+float s_curve(float x) {
+    float a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14;
+    x = max0(x);
+    return clamp01((x * fma(a, x, b)) / (x * fma(c, x, d) + e));
+}
+
 // derivative of s-curve
 vec3 d_s_curve(vec3 x) {
-    float a = 2.51f;
-    float b = 0.03f;
-    float c = 2.43f;
-    float d = 0.59f;
-    float e = 0.14f;
+    float a = 2.51;
+    float b = 0.03;
+    float c = 2.43;
+    float d = 0.59;
+    float e = 0.14;
 
     x = max0(x);
     vec3 r = (x * (c * x + d) + e);
     return (a * x * (d * x + 2.0 * e) + b * (e - c * x*x)) / (r*r);
+}
+
+float d_s_curve(float x) {
+    float a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14;
+    x = max0(x);
+    float r = fma(x, fma(c, x, d), e);
+    return fma(a * x, fma(d, x, 2.0 * e), b * (e - c * x*x)) / (r*r);
 }
 
 vec3 btsn_tonemap_per_channel(vec3 c) {
@@ -93,9 +106,9 @@ float calculateC(vec3 lms) {
     // Most of this could be precomputed
     // Creating a transform that maps R,G,B in the target gamut to have same distance from grey axis
 
-    vec3 lmsR = toLms(vec3(1.0,0.0,0.0));
-    vec3 lmsG = toLms(vec3(0.0,1.0,0.0));
-    vec3 lmsB = toLms(vec3(0.0,0.0,1.0));
+    vec3 lmsR = toLms(vec3(1.0, 0.0, 0.0));
+    vec3 lmsG = toLms(vec3(0.0, 1.0, 0.0));
+    vec3 lmsB = toLms(vec3(0.0, 0.0, 1.0));
 
     vec3 uDir = (lmsR - lmsG) / sqrt(2.0);
     vec3 vDir = (lmsR + lmsG - 2.0 * lmsB) / sqrt(6.0);
@@ -110,8 +123,8 @@ float calculateC(vec3 lms) {
 
     return sqrt(sqr(_uv.y) + sqr(_uv.z));
 
-    float a = 1.9779984951f * lms.x - 2.4285922050f * lms.y + 0.4505937099f * lms.z;
-    float b = 0.0259040371f * lms.x + 0.7827717662f * lms.y - 0.8086757660f * lms.z;
+    float a = 1.9779984951 * lms.x - 2.4285922050 * lms.y + 0.4505937099 * lms.z;
+    float b = 0.0259040371 * lms.x + 0.7827717662 * lms.y - 0.8086757660 * lms.z;
 
     return sqrt(a*a + b*b);
 }
@@ -184,36 +197,37 @@ vec3 btsn_tonemap_hue_preserving(vec3 c) {
 #if BOTTOSSON_APPR == BOTTOSSON_APPR_CHROMA_SAT || BOTTOSSON_APPROACH == BOTTOSSON_APPR_CHROMA_LUM
     {
 #if BOTTOSSON_APPR == BOTTOSSON_APPR_CHROMA_SAT
-        float I = (MP.x+(1.0-offset)*MP.y);
+        float I = (MP.x + (1.0 - offset) * MP.y);
 #elif BOTTOSSON_APPR == BOTTOSSON_APPR_CHROMA_LUM
         // Remove comment to see what the results are with Oklab L
         float I = dot(lms, vec3(0.2104542553f, 0.7936177850f, - 0.0040720468f));
 #endif
 
-        lms = lms*I*I;
-        I = I*I*I;
+        float I2 = I*I;
+        lms *= I2;
+        I   *= I2;
         vec3 dLms = lms - I;
 
-        float Icurve = s_curve(vec3(I)).x;
-        lms = 1.0f + chroma_scale * dLms * d_s_curve(vec3(I)) / Icurve;
+        float Icurve = s_curve(I);
+        lms = 1.0 + chroma_scale * dLms * d_s_curve(I) / Icurve;
         I = pow(Icurve, 1.0/3.0);
 
-        lms = lms*I;
+        lms *= I;
     }
 #endif
 
     // Approach 2: Separate color into a whiteness/blackness part, apply scale to them independendtly
 #if BOTTOSSON_APPR == BOTTOSSON_APPR_SEPARATE_BW
     {
-        lms = chroma_scale*(lms - MP.x) + MP.x;
+        lms = chroma_scale * (lms - MP.x) + MP.x;
 
         float invBlackness = (MP.x + MP.y);
         float whiteness = (MP.x - MP.y);
 
-        float invBlacknessC = pow(s_curve(vec3(cube(invBlackness))).x, 1.0/3.0);
-        float whitenessC = pow(s_curve(vec3(cube(whiteness))).x, 1.0/3.0);
+        float invBlacknessC = pow(s_curve(cube(invBlackness)), 1.0/3.0);
+        float whitenessC = pow(s_curve(cube(whiteness)), 1.0/3.0);
 
-        lms = (invBlacknessC+whitenessC)/2.0 + (lms-(invBlackness+whiteness)/2.0)*(invBlacknessC-whitenessC)/(invBlackness-whiteness);
+        lms = (invBlacknessC + whitenessC) / 2.0 + (lms - (invBlackness + whiteness) / 2.0) * (invBlacknessC - whitenessC) / (invBlackness - whiteness);
     }
 #endif
 
@@ -222,10 +236,10 @@ vec3 btsn_tonemap_hue_preserving(vec3 c) {
     {
         float M = findCenterAndPurity(lms).x;
         vec2 ST = approximateShape(); // this can be precomputed, only depends on RGB gamut
-        float C_smooth_gamut = (1.0)/((ST.x/(M)) + (ST.y/(1.0-M)));
+        float C_smooth_gamut = 1.0 / ((ST.x / M) + (ST.y / (1.0 - M)));
         float C = calculateC(lms);
 
-        lms = (lms-M)/sqrt(C*C/C_smooth_gamut/C_smooth_gamut+1.0) + M;
+        lms = (lms - M) / sqrt(C * C / C_smooth_gamut / C_smooth_gamut + 1.0) + M;
     }
 #endif
 
@@ -267,13 +281,14 @@ vec3 btsn_soft_clip_color(vec3 color) {
 }
 
 vec3 bottosson_color_test(vec3 color, vec2 uv, float t, float b, uint n) {
+    float fn = float(n);
     float n1 = float(n + 1u);
     float adjust = 1.0 / ((n1 * (n1 + 1.0) / 2.0) / 45.0);
 
     for (int i = 0; i <= n; i++) {
         for (int j = 0; j <= i; j++) {
-            float fi = float(i) / float(n);
-            float fj = float(j) / float(n);
+            float fi = float(i) / fn;
+            float fj = float(j) / fn;
 
             float x = 1.5 * (fi - 0.5 * fj - 0.5);
             float y = 1.5 * sqrt(3.0) / 2.0 * (fj - 0.5);
@@ -281,9 +296,9 @@ vec3 bottosson_color_test(vec3 color, vec2 uv, float t, float b, uint n) {
 
             float d = min1(0.0006 / dot(xyd, xyd));
 
-            vec3 c = vec3(fi-fj, fj, 1.0 - fi);
+            vec3 c = vec3(fi - fj, fj, 1.0 - fi);
 
-            color += pow(2.0,-3.0 * cos(tau * t)) * d * c * adjust * b;
+            color += pow(2.0, -3.0 * cos(tau * t)) * d * c * adjust * b;
         }
     }
 	return color;

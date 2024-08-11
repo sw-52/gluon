@@ -44,7 +44,7 @@
 --------------------------------------------------------------------------------
 */
 
-#if !defined INCLUDE_UTILITY_TEXT_RENDERING
+#ifndef INCLUDE_UTILITY_TEXT_RENDERING
 #define INCLUDE_UTILITY_TEXT_RENDERING
 
 // Characters
@@ -153,13 +153,13 @@ struct Text {
 
 // Fills the global text object with default values
 void begin_text(ivec2 frag_pos, ivec2 text_pos) {
-	text.result      = vec4(0.0);
+	text.result       = vec4(0.0);
 	text.fg_col       = vec4(1.0);
 	text.bg_col       = vec4(0.0, 0.0, 0.0, 0.6);
 	text.frag_pos     = frag_pos;
 	text.text_pos     = text_pos;
 	text.char_pos     = ivec2(0);
-	text.base        = 10;
+	text.base         = 10;
 	text.fp_precision = 2;
 }
 

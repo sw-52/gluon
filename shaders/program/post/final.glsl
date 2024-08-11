@@ -125,6 +125,14 @@ void draw_iris_required_error_message() {
 	begin_text(ivec2(gl_FragCoord.xy) / 3, ivec2(0, viewHeight / 3));
 	text.fg_col = vec4(0.0, 0.0, 0.0, 1.0);
 	text.bg_col = vec4(0.0);
+
+	// Iris is required for feature "Colored Lights"
+	//
+	//
+	// How to fix:
+	//   - Disable Colored Lights in the Lighting menu
+	//   - Install Iris 1.6 or above
+
 	print((_I, _r, _i, _s, _space, _i, _s, _space, _r, _e, _q, _u, _i, _r, _e, _d, _space, _f, _o, _r, _space, _f, _e, _a, _t, _u, _r, _e, _space, _quote, _C, _o, _l, _o, _r, _e, _d, _space, _L, _i, _g, _h, _t, _s, _quote));
 	print_line(); print_line(); print_line();
 	print((_H, _o, _w, _space, _t, _o, _space, _f, _i, _x, _colon));

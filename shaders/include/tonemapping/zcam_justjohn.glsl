@@ -53,22 +53,24 @@ vec3 eotf_pq(vec3 x, bool inverse) {
 #define b 1.15
 #define g 0.66
 
+const mat3 XYZ_to_LMS = transpose(mat3(
+     0.41479,   0.579999, 0.014648,
+    -0.20151,   1.12065,  0.0531008,
+    -0.0166008, 0.2648,   0.66848
+));
+
+const mat3 LMS_to_Iab = transpose(mat3(
+    0.0,       1.0,      0.0,
+    3.524,    -4.06671,  0.542708,
+    0.199076,  1.0968,  -1.29588
+));
+
 vec3 XYZ_to_ICh(vec3 XYZ) {
     XYZ *= W;
     XYZ.xy = vec2(b, g) * XYZ.xy - (vec2(b, g) - 1.0) * XYZ.zx;
 
-    const mat3 XYZ_to_LMS = transpose(mat3(
-     0.41479,   0.579999, 0.014648,
-    -0.20151,   1.12065,  0.0531008,
-    -0.0166008, 0.2648,   0.66848));
-
     vec3 LMS = XYZ_to_LMS * XYZ;
     LMS = eotf_pq(LMS, true);
-
-    const mat3 LMS_to_Iab = transpose(mat3(
-     0.0,       1.0,      0.0,
-     3.524,    -4.06671,  0.542708,
-     0.199076,  1.0968,  -1.29588));
 
     vec3 Iab = LMS_to_Iab * LMS;
 
@@ -106,12 +108,14 @@ vec3 ICh_to_XYZ(vec3 ICh) {
 const mat3 XYZ_to_sRGB = transpose(mat3(
      3.2404542, -1.5371385, -0.4985314,
     -0.9692660,  1.8760108,  0.0415560,
-     0.0556434, -0.2040259,  1.0572252));
+     0.0556434, -0.2040259,  1.0572252
+));
 
 const mat3 sRGB_to_XYZ = transpose(mat3(
      0.4124564, 0.3575761, 0.1804375,
      0.2126729, 0.7151522, 0.0721750,
-     0.0193339, 0.1191920, 0.9503041));
+     0.0193339, 0.1191920, 0.9503041
+));
 
 bool in_sRGB_gamut(vec3 ICh) {
     vec3 sRGB = XYZ_to_sRGB * ICh_to_XYZ(ICh);

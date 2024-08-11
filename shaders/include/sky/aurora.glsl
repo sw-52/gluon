@@ -155,12 +155,11 @@ vec4 aurora(vec3 dir, float dither) {
 
 vec3 draw_aurora(vec3 ray_dir, float dither) {
 	if (aurora_amount < 0.01) return vec3(0.0);
-	//ray_dir *= dither;
 
 	vec3 color = vec3(0.0);
-	float fade = smoothstep(0.0, 0.1, abs(ray_dir.y));
 
 	if (ray_dir.y > 0.0) {
+		float fade = smoothstep(0.0, 0.1, abs(ray_dir.y));
 		vec4 aur = smoothstep(0.0, 1.5, aurora(ray_dir, dither)) * fade;
 		color = color * (1.0 - aur.a) + aur.rgb;
 	}

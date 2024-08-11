@@ -755,4 +755,4 @@ const vec3 gamutCuspTable[] = vec3[360](
 
 
 
-#endif // ZCAM_DRT_TABLE
+#endif // INCLUDE_TONEMAPPING_ZCAM_DRT_TABLE

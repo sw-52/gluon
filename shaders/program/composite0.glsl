@@ -130,6 +130,10 @@ uniform sampler2D shadowcolor0;
 uniform sampler2D dhDepthTex;
 #endif
 
+#ifdef CLOUD_SHADOWS
+uniform sampler2D colortex8; // cloud shadow map
+#endif
+
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjection;
@@ -184,6 +188,10 @@ uniform float time_midnight;
 // ------------
 
 #if defined WORLD_OVERWORLD
+#ifdef CLOUD_SHADOWS
+#include "/include/light/cloud_shadows.glsl"
+#endif
+
 #include "/include/fog/air_fog_vl.glsl"
 #endif
 

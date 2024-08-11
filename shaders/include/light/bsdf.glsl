@@ -8,6 +8,10 @@ float f0_to_ior(float f0) {
 	return (1.0 + sqrt_f0) / (1.0 - sqrt_f0);
 }
 
+float ior_to_f0(float n) {
+	return sqr((1.0 - n) / (1.0 + n));
+}
+
 // https://www.gdcvault.com/play/1024478/PBR-Diffuse-Lighting-for-GGX
 float distribution_ggx(float NoH_sq, float alpha_sq) {
 	return alpha_sq / (pi * sqr(1.0 - NoH_sq + NoH_sq * alpha_sq));

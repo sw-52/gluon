@@ -85,8 +85,13 @@ uniform vec2 view_pixel_size;
 uniform vec2 taa_offset;
 uniform vec2 clouds_offset;
 
+#ifdef DAYLIGHT_CYCLE
 uniform bool daylight_cycle_enabled;
 uniform bool world_age_changed;
+#else
+uniform bool world_age_changed_small;
+#define world_age_changed world_age_changed_small
+#endif
 
 // ------------
 //   Includes
@@ -158,6 +163,7 @@ vec3 reproject_clouds(vec2 uv, float distance_to_cloud) {
 
 	vec3 cloud_pos = world_dir * distance_to_cloud + gbufferModelViewInverse[3].xyz;
 
+#ifdef DAYLIGHT_CYCLE
 	// Work out which layer this cloud belongs to
 	vec3 velocity;
 	vec3 air_cloud_pos = vec3(0.0, CLOUDS_SCALE * (eyeAltitude - SEA_LEVEL) + planet_radius, 0.0) + CLOUDS_SCALE * cloud_pos;
@@ -172,6 +178,7 @@ vec3 reproject_clouds(vec2 uv, float distance_to_cloud) {
 	}
 
 	cloud_pos += velocity * frameTime * rcp(CLOUDS_SCALE) * float(daylight_cycle_enabled);
+#endif
 
 	return reproject_scene_space(cloud_pos, false, false);
 }

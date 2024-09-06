@@ -1,0 +1,4 @@
+#ifndef MODULES_OPENDT_LIB
+#define MODULES_OPENDT_LIB
+
+#endif // MODULES_OPENDT_LIB

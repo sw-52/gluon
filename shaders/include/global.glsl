@@ -13,6 +13,14 @@
 	#define WORLD_SPACE
 #endif
 
+#ifdef WORLD_END
+	#define CURVATURE_SIZE END_CURVATURE_SIZE
+#elif defined(WORLD_NETHER)
+	#define CURVATURE_SIZE NETHER_CURVATURE_SIZE
+#else
+	#define CURVATURE_SIZE OVERWORLD_CURVATURE_SIZE
+#endif
+
 #define SKY_MAP_LIGHT_X (int(view_res.x * float(SKY_MAP_RESOLUTION) / 100.0 + 0.5) - 1)
 
 // Common constants
@@ -27,6 +35,12 @@ const float degree       = tau / 360.0; // Size of one degree in radians, useful
 const float golden_ratio = 0.5 + 0.5 * sqrt(5.0);
 const float golden_angle = tau / golden_ratio / golden_ratio;
 const float hand_depth   = 0.56;
+
+#if !defined(WORLD_CURVATURE) || CURVATURE_SIZE == 0 || CURVATURE_SIZE < 0
+const float planet_radius = 6371e3; // m
+#else
+const float planet_radius = CURVATURE_SIZE * 16.0;
+#endif
 
 #if defined TAA && defined TAAU
 const float taau_render_scale = TAAU_RENDER_SCALE;

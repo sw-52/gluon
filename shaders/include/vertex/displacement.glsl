@@ -90,14 +90,6 @@ vec3 animate_vertex(vec3 world_pos, bool is_top_vertex, float skylight, uint mat
 	}
 }
 
-#ifdef WORLD_END
-	#define CURVATURE_SIZE END_CURVATURE_SIZE
-#elif defined(WORLD_NETHER)
-	#define CURVATURE_SIZE NETHER_CURVATURE_SIZE
-#else
-	#define CURVATURE_SIZE OVERWORLD_CURVATURE_SIZE
-#endif
-
 vec3 world_curvature(vec3 scene_pos) {
 #if CURVATURE_SIZE != 0.0 && defined(WORLD_CURVATURE)
 	//scene_pos += cameraPosition;

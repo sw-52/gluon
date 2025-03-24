@@ -130,6 +130,10 @@ const uint _close_chevron        = 0x02082220u; // >
 const uint _block                = 0xFFFFFFFCu; // █
 const uint _copyright            = 0x03AB9AB8u; // ©️
 
+// Characters by sw-52
+const uint _slash      = 0x08844220u; // /
+const uint _backslash  = 0x82104208u; // \
+
 const int char_width   = 5;
 const int char_height  = 6;
 const int char_spacing = 1;

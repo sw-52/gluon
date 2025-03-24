@@ -664,6 +664,7 @@ void draw_module_required_error_message() {
 	// How to fix:
 	//   - Change the selected Tonemap Operator
 	//   - Download the required module "${MISSING_MODULE}"
+	//     from https://github.com/sw-52/mc-shader-modules
 
 	print((_A, _space, _M, _o, _d, _u, _l, _e, _space, _i, _s, _space, _r, _e, _q, _u, _i, _r, _e, _d, _space, _f, _o, _r, _space, _t, _h, _e, _space, _T, _o, _n, _e, _m, _a, _p, _space, _O, _p, _e, _r, _a, _t, _o, _r, _space, _quote, MISSING_MODULE_TONEMAP, _quote));
 	print_line(); print_line(); print_line();
@@ -672,6 +673,8 @@ void draw_module_required_error_message() {
 	print((_space, _space, _minus, _space, _C, _h, _a, _n, _g, _e, _space, _t, _h, _e, _space, _s, _e, _l, _e, _c, _t, _e, _d, _space, _T, _o, _n, _e, _m, _a, _p, _space, _O, _p, _e, _r, _a, _t, _o, _r));
 	print_line();
 	print((_space, _space, _minus, _space, _D, _o, _w, _n, _l, _o, _a, _d, _space, _t, _h, _e, _space, _r, _e, _q, _u, _i, _r, _e, _d, _space, _m, _o, _d, _u, _l, _e, _space, _quote, MISSING_MODULE, _quote));
+	print_line();
+	print((_space, _space, _space, _space, _f, _r, _o, _m, _space, _h, _t, _t, _p, _s, _colon, _slash, _slash, _g, _i, _t, _h, _u, _b, _dot, _c, _o, _m, _slash, _s, _w, _minus, _5, _2, _slash, _m, _c, _minus, _s, _h, _a, _d, _e, _r, _minus, _m, _o, _d, _u, _l, _e, _s));
 	print_line();
 	end_text(scene_color);
 }

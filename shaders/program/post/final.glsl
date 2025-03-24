@@ -48,7 +48,7 @@ uniform sampler2D DEBUG_SAMPLER;
 uniform float viewHeight;
 uniform float frameTimeCounter;
 
-#ifdef COLORED_LIGHTS
+#if defined COLORED_LIGHTS && (defined WORLD_NETHER || !defined SHADOW) && DEBUG_VIEW != DEBUG_VIEW_SAMPLER
 uniform sampler2D shadowtex0;
 #endif
 

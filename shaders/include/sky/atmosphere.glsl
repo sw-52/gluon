@@ -24,7 +24,7 @@ const float min_mu_s = -0.35;
 
 // Atmosphere boundaries
 
-const float planet_radius = 6371e3; // m
+//const float planet_radius = 6371e3; // m
 
 const float atmosphere_inner_radius = planet_radius - 1e3; // m
 const float atmosphere_outer_radius = planet_radius + 110e3; // m

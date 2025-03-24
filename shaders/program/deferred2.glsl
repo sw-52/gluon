@@ -146,7 +146,7 @@ float texture_min_4x4(sampler2D s, vec2 coord) {
 }
 
 vec3 reproject_clouds(vec2 uv, float distance_to_cloud) {
-	const float planet_radius                 = 6371e3;
+	//const float planet_radius                 = 6371e3;
 	const float clouds_cumulus_radius         = planet_radius + CLOUDS_CUMULUS_ALTITUDE;
 	const float clouds_altocumulus_radius     = planet_radius + CLOUDS_ALTOCUMULUS_ALTITUDE;
 	const float clouds_cirrus_radius          = planet_radius + CLOUDS_CIRRUS_ALTITUDE;

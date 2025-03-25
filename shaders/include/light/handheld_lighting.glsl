@@ -16,20 +16,16 @@ uniform int heldBlockLightValue2;
 
 vec3 get_handheld_light_color(int held_item_id, int held_item_light_value) {
 #ifdef COLORED_LIGHTS
-	bool is_emitter = 10032 <= held_item_id && held_item_id < 10064;
-	bool is_custom = 10064 <= held_item_id && held_item_id < 10300;
-	bool is_candle = 10264 <= held_item_id && held_item_id < 10280;
+	bool is_emitter = 10032 <= held_item_id && held_item_id < 10332;
 
 	if (is_emitter) {
 		return texelFetch(light_data_sampler, ivec2(int(held_item_id) - 10032, 0), 0).rgb;
-	} else if(is_custom) {
-		if(is_candle) {
-			return texelFetch(light_data_sampler, ivec2(int(held_item_id) - 10264, 1), 0).rgb * 8.0;
-		} else {
-			return texelFetch(light_data_sampler, ivec2(int(held_item_id) - 10032, 0), 0).rgb;
-		}
 	} else {
+	#ifdef COLORED_LIGHTS_FALLBACK
+		return (blocklight_color * blocklight_scale * rcp(15.0)) * held_item_light_value;
+	#else
 		return vec3(0.0);
+	#endif
 	}
 #else
 	return (blocklight_color * blocklight_scale * rcp(15.0)) * held_item_light_value;
@@ -47,10 +43,11 @@ vec3 get_handheld_lighting(vec3 scene_pos, float ao) {
 	scene_pos += relativeEyePosition;
 #endif
 
-	vec3 light_color = max(
+	/*vec3 light_color = max(
 		get_handheld_light_color(heldItemId, heldBlockLightValue),
 	    get_handheld_light_color(heldItemId2, heldBlockLightValue2)
-	);
+	);*/
+	vec3 light_color = get_handheld_light_color(heldItemId, heldBlockLightValue) + get_handheld_light_color(heldItemId2, heldBlockLightValue2);
 
 	float falloff = get_handheld_light_falloff(scene_pos, ao);
 

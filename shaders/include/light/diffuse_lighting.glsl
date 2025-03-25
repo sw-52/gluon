@@ -10,6 +10,10 @@
 #include "/include/utility/fast_math.glsl"
 #include "/include/utility/spherical_harmonics.glsl"
 
+#ifdef DIRECTIONAL_LIGHTMAPS
+#include "/include/light/directional_lightmaps.glsl"
+#endif
+
 #ifdef COLORED_LIGHTS
 #include "/include/light/lpv/blocklight.glsl"
 #endif
@@ -189,7 +193,21 @@ vec3 get_diffuse_lighting(
 #endif
 
 #ifdef HANDHELD_LIGHTING
-	lighting += get_handheld_lighting(scene_pos, ao);
+	vec3 handheld_lighting_pos = scene_pos;
+	#ifdef DIRECTIONAL_LIGHTMAPS
+	vec3 normal_diff = normal - flat_normal;
+	//normal_diff = sign(normal_diff) * sqrt(abs(normal_diff));
+	normal_diff += sqrt(1.0 - clamp01(dot(normalize(normal_diff), normalize(flat_normal)))) * normal_diff * 4.0;
+	handheld_lighting_pos += normal_diff + flat_normal * 0.5;
+	#else
+	handheld_lighting_pos += flat_normal * 0.5;
+	#endif
+
+	vec3 handheld_lighting = get_handheld_lighting(handheld_lighting_pos, ao);
+	#if defined(DIRECTIONAL_LIGHTMAPS) && DIRECTIONAL_LIGHTMAPS_INTENSITY > 0.0
+	//handheld_lighting *= get_directional_lpv(normal, scene_pos, handheld_lighting);
+	#endif
+	lighting += handheld_lighting;
 #endif
 
 	lighting += material.emission * emission_scale;

@@ -183,7 +183,7 @@ vec3 get_diffuse_lighting(
 	vec3 mc_blocklight = (blocklight_falloff * directional_lighting) * (blocklight_scale * blocklight_color);
 
 #ifdef COLORED_LIGHTS
-	lighting += get_lpv_blocklight(scene_pos, flat_normal, mc_blocklight, ao * directional_lighting);
+	lighting += get_lpv_blocklight(scene_pos, normal, flat_normal, mc_blocklight, ao * directional_lighting, material);
 #else
 	lighting += mc_blocklight;
 #endif

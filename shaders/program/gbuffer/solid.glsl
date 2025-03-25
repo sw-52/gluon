@@ -432,7 +432,7 @@ void main() {
 #endif
 
 #if defined PROGRAM_GBUFFERS_ENTITIES
-	base_color.rgb = mix(base_color.rgb, entityColor.rgb, entityColor.a);
+	if (material_mask != 102) base_color.rgb = mix(base_color.rgb, entityColor.rgb, entityColor.a);
 #endif
 
 #if defined PROGRAM_GBUFFERS_BLOCK
@@ -456,7 +456,7 @@ void main() {
 	adjusted_light_levels *= mix(0.7, 1.0, material_ao);
 
 	#ifdef DIRECTIONAL_LIGHTMAPS
-	adjusted_light_levels *= get_directional_lightmaps(normal);
+	adjusted_light_levels *= get_directional_lightmaps(normal, scene_pos, light_levels);
 	#endif
 #endif
 

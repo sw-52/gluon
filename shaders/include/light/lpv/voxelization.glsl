@@ -20,14 +20,21 @@ bool is_inside_voxel_volume(vec3 voxel_pos) {
 bool is_voxelized(uint block_id, bool vertex_at_grid_corner) {
 	bool is_terrain = any(equal(ivec4(renderStage), ivec4(MC_RENDER_STAGE_TERRAIN_SOLID, MC_RENDER_STAGE_TERRAIN_TRANSLUCENT, MC_RENDER_STAGE_TERRAIN_CUTOUT, MC_RENDER_STAGE_TERRAIN_CUTOUT_MIPPED)));
 
+#ifdef COLORED_LIGHTS_ENTITIES
+	bool is_entity = any(equal(ivec3(renderStage), ivec3(MC_RENDER_STAGE_ENTITIES, MC_RENDER_STAGE_BLOCK_ENTITIES, MC_RENDER_STAGE_PARTICLES)));
+#else
+	const bool is_entity = false;
+#endif
+
 	bool is_transparent_block =
 		block_id == 1u  || // Water
 	    block_id == 18u || // Transparent metal objects
 	    block_id == 256u;  // Miscellaneous transparent
 	
-	bool is_light_emitting_block = (32u <= block_id && block_id < 96u) || (264u <= block_id && block_id < 332u) ;
+	bool is_light_emitting_block = between(block_id, 32u, 96u) || between(block_id, 264u, 379u);
+	bool is_light_tinting_block  = between(block_id, 164u, 180u);
 
-	return (vertex_at_grid_corner || is_light_emitting_block) && is_terrain && !is_transparent_block;
+	return (vertex_at_grid_corner || is_light_emitting_block || is_light_tinting_block) && (is_terrain || is_entity) && !is_transparent_block;
 }
 
 bvec3 disjunction(bvec3 a, bvec3 b) {
@@ -54,7 +61,7 @@ void update_voxel_map(uint block_id) {
 	vec3 block_pos = transform(gl_ModelViewMatrix, gl_Vertex.xyz);
 	     block_pos = transform(shadowModelViewInverse, block_pos);
 		 block_pos = fract(block_pos + cameraPosition);
-	bool vertex_at_grid_corner = is_corner(block_pos, rcp(16.0) - 1e-3);
+	bool vertex_at_grid_corner = is_corner(block_pos, rcp(16.0) - 1e-3) && gl_Color.a > 0.95;
 
 	// Warped and crimson stem emission
 	uint is_warped_stem  = uint(19 <= block_id && block_id < 23);
@@ -70,7 +77,8 @@ void update_voxel_map(uint block_id) {
 	// SSS blocks
 	if (block_id == 5u  || // Leaves
 	    block_id == 14u || // Strong SSS
-	    block_id == 15u    // Weak SSS
+	    block_id == 15u || // Weak SSS
+		block_id == 44u    // Beacon
 	) {
 		block_id = 179u; // light gray tint
 	}
@@ -79,6 +87,7 @@ void update_voxel_map(uint block_id) {
 	block_id = (!vertex_at_grid_corner
 		       || block_id == 34u // Weak white light, transparent
 		       || block_id == 37u // Weak golden light, transparent
+			   || between(block_id, 364u, 379u) // Redstone wire
 		    ) && block_id < 1024u
 		? min(block_id + 1024u, 2047u)
 		: block_id;

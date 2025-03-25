@@ -8,6 +8,7 @@ uint get_material_mask() {
 #elif defined PROGRAM_GBUFFERS_ENTITIES || defined PROGRAM_GBUFFERS_ENTITIES_TRANSLUCENT
 	// Entities
 	uint id = uint(max(entityId - 10000, 0));
+	if (id == 104u) id = 36u; // Drowned
 #ifdef IS_IRIS
 	uint item_id = uint(max(currentRenderedItemId - 10000, 0));
 	id = id == 100 ? item_id : id;

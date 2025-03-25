@@ -143,6 +143,10 @@ void main() {
 	}
 #endif
 
+#if defined PROGRAM_GBUFFERS_ENTITIES_TRANSLUCENT
+	if (material_mask == 102) material_mask = 80;
+#endif
+
 #if defined PROGRAM_GBUFFERS_TEXTURED
 	// Make world border emissive
 	if (renderStage == MC_RENDER_STAGE_WORLD_BORDER) material_mask = 4;
@@ -522,7 +526,7 @@ void main() {
 #endif
 
 #if defined PROGRAM_GBUFFERS_ENTITIES_TRANSLUCENT
-		if (material_mask == 102) base_color = vec4(1.0);
+		if (material_mask == 80u) base_color = vec4(1.0);
 #endif
 
 #ifdef FANCY_NETHER_PORTAL
@@ -550,7 +554,7 @@ void main() {
 		adjusted_light_levels *= mix(0.7, 1.0, material_ao);
 
 	#ifdef DIRECTIONAL_LIGHTMAPS
-		adjusted_light_levels *= get_directional_lightmaps(normal);
+		adjusted_light_levels *= get_directional_lightmaps(normal, scene_pos, light_levels);
 	#endif
 
 		// Pack normal

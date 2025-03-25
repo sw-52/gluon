@@ -163,7 +163,6 @@ value.CURVATURE_MODE.CURVATURE_MODE_LOG_SPHERICAL    = Log Spherical
 
 option.COLORED_LIGHTS                  = Colored Lights
 option.COLORED_LIGHTS.comment          = Variable-color block lighting using flood fill algorithm. Requires Iris 1.6 or above
-option.COLORED_LIGHTS_VANILLA_LIGHTMAP_CONTRIBUTION = Vanilla Lightmap Contribution
 option.HANDHELD_LIGHTING               = Handheld Lighting
 option.HANDHELD_LIGHTING.comment       = Handheld items cast light on the world. If coloured lighting is enabled the handheld lighting will be coloured like the lights themselves
 option.HANDHELD_LIGHTING_INTENSITY     = Handheld Lighting Intensity
@@ -255,7 +254,15 @@ option.NIGHT_VISION_I                  = Intensity
 option.VOXEL_VOLUME_SIZE               = Voxel Volume Size
 option.VOXEL_VOLUME_SIZE.comment       = High performance impact, also affected by shadow distance
 suffix.VOXEL_VOLUME_SIZE               = m
+option.COLORED_LIGHTS_VANILLA_LIGHTMAP_CONTRIBUTION = Vanilla Lightmap Contribution
 option.COLORED_LIGHT_I                 = Colored Light Intensity
+option.COLORED_LIGHTS_ENTITIES         = Entity Lights
+option.COLORED_LIGHTS_COLORED_CANDLES  = Colored Candle Lights
+option.COLORED_LIGHTS_REDSTONE_WIRE    = Redstone Wire Emission
+option.COLORED_LIGHTS_EMERALD_EMISSION = Emerald Block Emission
+option.COLORED_LIGHTS_LAPIS_EMISSION   = Lapis Block Emission
+option.COLORED_LIGHTS_FALLBACK         = Handheld Lighting Fallback
+option.COLORED_LIGHTS_FALLBACK.comment = Uses the vanilla light value if the held item has no colored lights mapping
 
 suffix.shadowMapResolution             = ²
 suffix.sunPathRotation                 = °

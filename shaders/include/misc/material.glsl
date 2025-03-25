@@ -630,18 +630,32 @@ Material material_from(vec3 albedo_srgb, uint material_mask, vec3 world_pos, vec
 							material.emission = 0.33 * albedo_sqrt;
 							#endif
 						} else { // 59
-							#ifdef HARDCODED_EMISSION
 							// Emerald block
+							#if defined HARDCODED_EMISSION && defined COLORED_LIGHTS_EMERALD_EMISSION
 							material.emission = 0.1 * albedo_sqrt;
+							#endif
+
+							#ifdef HARDCODED_SPECULAR
+							float smoothness = sqrt(linear_step(0.1, 0.9, hsl.z));
+							material.roughness = max(sqr(1.0 - smoothness), 0.04);
+							material.f0 = vec3(0.25);
+							material.ssr_multiplier = 1.0;
 							#endif
 						}
 					}
 				} else { // 60-64
 					if (material_mask < 62u) { // 60-62
 						if (material_mask == 60u) { // 60
-							#ifdef HARDCODED_EMISSION
 							// Lapis block
+							#if defined HARDCODED_EMISSION && defined COLORED_LIGHTS_LAPIS_EMISSION
 							material.emission = 0.33 * albedo_sqrt;
+							#endif
+
+							#ifdef HARDCODED_SPECULAR
+							float smoothness = sqrt(linear_step(0.1, 0.9, hsl.z));
+							material.roughness = max(sqr(1.0 - smoothness), 0.04);
+							material.f0 = vec3(0.25);
+							material.ssr_multiplier = 1.0;
 							#endif
 						} else { // 61
 
@@ -659,7 +673,7 @@ Material material_from(vec3 albedo_srgb, uint material_mask, vec3 world_pos, vec
 			}
 		}
 	} else if (material_mask < 264u) { // 64 - 264
-		if(material_mask == 80) { // 80
+		if(material_mask == 80u) { // 80
 			// Powered lightning rod
 			material.emission = vec3(1.0);
 		} /*else {

@@ -93,6 +93,10 @@ vec3 draw_sun(vec3 ray_dir) { return draw_sun(ray_dir, vec3(1.0)); }
 #include "/include/utility/geometry.glsl"
 //#include "/include/sky/moon.glsl"
 
+#ifdef BLOCKY_CLOUDS
+#include "/include/sky/blocky_clouds.glsl"
+#endif
+
 const float moon_luminance = 4.0; // luminance of moon disk
 
 /*vec3 draw_moon(vec3 ray_dir) {
@@ -110,8 +114,14 @@ vec4 get_clouds_and_aurora(vec3 ray_dir, vec3 clear_sky) {
 	#ifndef BLOCKY_CLOUDS
 	const vec3 air_viewer_pos = vec3(0.0, planet_radius, 0.0);
 	CloudsResult result = draw_clouds(air_viewer_pos, ray_dir, clear_sky, -1.0, dither);
-	#else
-	CloudsResult result = clouds_not_hit;
+	#elif defined PROGRAM_DEFERRED0
+	vec4 blocky_clouds = draw_blocky_clouds(cameraPosition, cameraPosition + ray_dir, true, dither, dither);
+
+	float new_alpha = sqr(sqr(blocky_clouds.a));
+	blocky_clouds.rgb += clear_sky * (1.0 - new_alpha) * (blocky_clouds.a - new_alpha);
+	blocky_clouds.a = new_alpha;
+
+	CloudsResult result = CloudsResult(blocky_clouds.rgb, blocky_clouds.a, 0.0);
 	#endif
 
 	// Render aurora

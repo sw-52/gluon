@@ -137,7 +137,8 @@ vec4 raymarch_blocky_clouds(
 	vec3 world_end_pos,
 	bool sky,
 	float layer_altitude,
-	float dither
+	float dither,
+	float lighting_dither
 ) {
 	const uint  primary_steps     = 12;
 	const uint  lighting_steps    = 4;
@@ -190,7 +191,12 @@ vec4 raymarch_blocky_clouds(
 	vec3 scattering = vec3(0.0);
 	float transmittance = 1.0;
 
-	float lighting_dither = interleaved_gradient_noise(gl_FragCoord.xy, frameCounter);
+#ifndef PROGRAM_DEFERRED0
+	//float lighting_dither = interleaved_gradient_noise(uv, frameCounter);
+#else
+	// Prevent flickering in sky map
+	lighting_dither = interleaved_gradient_noise(uv);
+#endif
 
 	bool moonlit = sun_dir.y < -0.06;
 
@@ -267,6 +273,62 @@ vec4 raymarch_blocky_clouds(
 	transmittance = mix(1.0, transmittance, distance_fade);
 
 	return vec4(scattering, transmittance);
+}
+
+vec4 raymarch_blocky_clouds(
+	vec3 world_start_pos,
+	vec3 world_end_pos,
+	bool sky,
+	float layer_altitude,
+	float dither
+) {
+	float lighting_dither = interleaved_gradient_noise(gl_FragCoord.xy, frameCounter);
+	return raymarch_blocky_clouds(
+		world_start_pos,
+		world_end_pos,
+		sky,
+		layer_altitude,
+		dither,
+		lighting_dither
+	);
+}
+
+vec4 draw_blocky_clouds(
+	vec3 world_start_pos,
+	vec3 world_end_pos,
+	bool sky,
+	float dither,
+	float lighting_dither
+) {
+	vec4 clouds = raymarch_blocky_clouds(
+		world_start_pos,
+		world_end_pos,
+		sky,
+		blocky_clouds_altitude_l0,
+		dither,
+		lighting_dither
+	);
+
+#ifdef BLOCKY_CLOUDS_LAYER_2
+	float visibility = pow4(clouds.a);
+	vec4 clouds_l2 = raymarch_blocky_clouds(
+		world_start_pos,
+		world_end_pos,
+		sky,
+		blocky_clouds_altitude_l1,
+		dither,
+		lighting_dither
+	);
+	clouds.rgb += clouds_l2.xyz * visibility;
+	clouds.a   *= mix(1.0, clouds_l2.a, visibility);
+#endif
+
+	return clouds;
+}
+
+vec4 draw_blocky_clouds(vec3 world_start_pos, vec3 world_end_pos, bool sky, float dither) {
+	float lighting_dither = interleaved_gradient_noise(gl_FragCoord.xy, frameCounter);
+	return draw_blocky_clouds(world_start_pos, world_end_pos, sky, dither, lighting_dither);
 }
 
 #endif // INCLUDE_SKY_BLOCKY_CLOUDS

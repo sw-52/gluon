@@ -344,7 +344,13 @@ void main() {
 	float dither = texelFetch(noisetex, texel & 511, 0).b;
 	      dither = r1(frameCounter, dither);
 
-	clouds = raymarch_blocky_clouds(
+	clouds = draw_blocky_clouds(
+		world_start_pos,
+		world_end_pos,
+		depth == 1.0,
+		dither
+	);
+	/*clouds = raymarch_blocky_clouds(
 		world_start_pos,
 		world_end_pos,
 		depth == 1.0,
@@ -363,7 +369,7 @@ void main() {
 	);
 	clouds.rgb += clouds_l2.xyz * visibility;
 	clouds.a   *= mix(1.0, clouds_l2.a, visibility);
-#endif
+#endif*/
 
 	float new_alpha = sqr(sqr(clouds.a));
 	clouds.rgb += atmosphere * (1.0 - new_alpha) * (clouds.a - new_alpha);

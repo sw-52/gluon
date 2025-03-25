@@ -110,6 +110,7 @@ uniform sampler2D noisetex;
 
 uniform sampler3D colortex0; // 3D worley noise
 uniform sampler2D colortex1; // gbuffer data
+uniform sampler2D colortex2; // gbuffer 1
 uniform sampler2D colortex3; // translucent color
 uniform sampler2D colortex4; // sky map
 
@@ -291,6 +292,200 @@ void main() {
 	vec3 world_end_pos   = world_pos;
 
 	vec3 world_back_start_pos = world_end_pos;
+#ifdef DISTANT_HORIZONS
+	if (/*!front_is_dh_terrain &&*/ back_is_dh_terrain) {
+		/*vec3 view_back_start_pos  = screen_to_view_space(vec3(uv, dh_depth), true, true);
+		vec3 scene_back_start_pos = view_to_scene_space(view_pos);
+		     world_back_start_pos = scene_back_start_pos + cameraPosition;*/
+			 //world_back_start_pos = world_start_pos;
+	}
+#endif
+#if defined WATER_REFRACTION || (defined TRANSLUCENT_REFRACTION && defined NORMAL_MAPPING)
+	vec3 flat_normal = decode_unit_vector(unpack_unorm_2x8(gbuffer_data_0.z));
+
+	vec4 gbuffer_data_1 = texelFetch(colortex2, view_texel, 0);
+	vec3 normal = decode_unit_vector(gbuffer_data_1.xy);
+
+	bool has_refraction = normal != flat_normal && depth0 != depth1;
+	vec2 refracted_uv;
+	bool refracted = false;
+
+	mat3 tbn = get_tbn_matrix(flat_normal);
+
+	vec3 world_dir; float view_dist;
+	length_normalize(scene_pos - gbufferModelViewInverse[3].xyz, world_dir, view_dist);
+	float layer_dist = abs(view_dist - length(view_back_pos));
+
+	if (is_water) {
+#ifdef WATER_REFRACTION
+
+	// Water waves
+
+	#ifdef WATER_WAVES
+		if (flat_normal.y > 0.01 && isEyeInWater == 0
+		 || flat_normal.y < 0.01 && isEyeInWater != 0
+		) {
+			vec2 coord = world_pos.xz;
+
+			bool flowing_water = abs(flat_normal.y) < 0.99;
+			vec2 flow_dir = flowing_water ? normalize(flat_normal.xz) : vec2(0.0);
+
+	#ifdef WATER_PARALLAX
+			vec3 tangent_dir = world_dir * tbn;
+			coord = get_water_parallax_coord(tangent_dir, coord, flow_dir, flowing_water);
+	#endif
+
+			normal = tbn * get_water_normal(world_pos, flat_normal, coord, flow_dir, skylight, flowing_water);
+
+		}
+	#endif
+
+		vec3 tangent_normal = normal * tbn;
+
+		refracted_uv = uv + tangent_normal.xy * rcp(max(view_dist, 1.0)) * min(layer_dist, 8.0) * (0.1 * WATER_REFRACTION_INTENSITY);
+
+		//vec4 refracted_color = texture(colortex3, refracted_uv * taau_render_scale).rgba;
+
+		// Make sure the refracted object is behind water
+		float refracted_data  = texelFetch(colortex1, ivec2(refracted_uv * taau_render_scale * view_res), 0).y;
+		uint  refracted_mask  = uint(unpack_unorm_2x8(refracted_data).y * 255.0);
+
+		if (refracted_mask == 1) refracted = true;
+#endif
+	} else if (has_refraction) {
+#if defined TRANSLUCENT_REFRACTION && defined NORMAL_MAPPING
+		vec3 tangent_normal = normal * tbn;
+
+		// light gray glass
+		bool has_refraction_boost = material_mask == 179u;
+		refracted_uv = uv + tangent_normal.xy * rcp(clamp(pow(view_dist * 0.5, 1.5), 0.1, 1.0)) * clamp(layer_dist, 1.0, 8.0) * (0.02 * TRANSLUCENT_REFRACTION_INTENSITY)
+			 * (1.0 + float(has_refraction_boost) * 3.0) * (1.0 - float(material_mask == 62u) * 0.75);
+
+
+		if ((length(tangent_normal.xy) > 0.02 || has_refraction_boost) && uv != refracted_uv) {
+			if (refracted_uv != clamp01(refracted_uv)) {
+				refracted_uv = 1.0 - abs(mod(refracted_uv, 2.0) - 1.0);
+			}
+			refracted = true;
+		}
+#endif
+	}
+
+	if (refracted) {
+		ivec2 refracted_texel = ivec2(refracted_uv * taau_render_scale * view_res);
+			//float refracted_depth0   = texelFetch(depthtex0, refracted_texel, 0).x;
+			float refracted_depth1   = texelFetch(depthtex1, refracted_texel, 0).x;
+
+		#ifdef DISTANT_HORIZONS
+			float refracted_dh_depth = texelFetch(dhDepthTex, refracted_texel, 0).x;
+			bool refracted_is_dh_terrain = is_distant_horizons_terrain(refracted_depth1, dh_depth);
+			if (refracted_is_dh_terrain) refracted_depth1 = refracted_dh_depth;
+		#else
+			#define refracted_is_dh_terrain false
+		#endif
+
+			// Make sure the refracted pos is behind
+			/*float refracted_depth = texelFetch(depthtex1, ivec2(refracted_uv * taau_render_scale * view_res), 0).x;
+			refracted_depth = linearize_depth(refracted_depth);
+			if (refracted_depth >= linearize_depth(depth0)) {*/
+			
+				vec3 refracted_view_pos  = screen_to_view_space(vec3(uv, depth0), true, false);
+				vec3 refracted_scene_pos = view_to_scene_space(refracted_view_pos);
+				world_back_start_pos = refracted_scene_pos + cameraPosition;
+
+				vec3 refracted_view_back_pos = screen_to_view_space(vec3(refracted_uv, refracted_depth1), true, refracted_is_dh_terrain);
+				vec3 refracted_scene_back_pos = view_to_scene_space(refracted_view_back_pos);
+				world_back_pos = refracted_scene_back_pos + cameraPosition;
+				// view_texel * view_pixel_size
+
+				//vec4 refracted_gbuffer_data = texelFetch(colortex1, view_texel, 0);
+				//skylight = 1.0;
+			//}
+	}
+#endif
+
+
+/*
+#if defined WATER_REFRACTION || (defined TRANSLUCENT_REFRACTION && defined NORMAL_MAPPING)
+	//vec3 flat_normal = decode_unit_vector(unpack_unorm_2x8(gbuffer_data_0.z));
+
+	//vec4 gbuffer_data_1 = texelFetch(colortex2, view_texel, 0);
+	//vec3 normal = decode_unit_vector(gbuffer_data_1.xy);
+
+	//bool has_refraction = normal != flat_normal && depth0 != depth1;
+	if (has_refraction) {
+		mat3 tbn = get_tbn_matrix(flat_normal);
+		vec3 tangent_normal = normal * tbn;
+
+		vec3 world_dir; float view_dist;
+		length_normalize(scene_pos - gbufferModelViewInverse[3].xyz, world_dir, view_dist);
+		float layer_dist = abs(view_dist - length(view_back_pos));
+
+		// light gray glass
+		bool has_refraction_boost = material_mask == 179u;
+		vec2 refracted_uv = uv;
+	#ifdef WATER_REFRACTION
+		if (is_water) {
+			refracted_uv += tangent_normal.xy * rcp(max(view_dist, 1.0)) * min(layer_dist, 8.0) * (0.1 * WATER_REFRACTION_INTENSITY);
+		} else
+	#else
+		if (!is_water)
+	#endif
+		{
+		#if defined TRANSLUCENT_REFRACTION && defined NORMAL_MAPPING
+			refracted_uv += tangent_normal.xy * rcp(clamp(pow(view_dist * 0.5, 1.5), 0.1, 1.0)) * clamp(layer_dist, 1.0, 8.0) * (0.02 * TRANSLUCENT_REFRACTION_INTENSITY)
+				 * (1.0 + float(has_refraction_boost) * 3.0) * (1.0 - float(material_mask == 62u) * 0.75);
+		#endif
+		}
+
+		/*if (is_water) {
+		#ifdef WATER_REFRACTION
+			refracted_uv += tangent_normal.xy * rcp(max(view_dist, 1.0)) * min(layer_dist, 8.0) * (0.1 * WATER_REFRACTION_INTENSITY);
+		#endif
+		} else {
+		#if defined TRANSLUCENT_REFRACTION && defined NORMAL_MAPPING
+			refracted_uv += tangent_normal.xy * rcp(clamp(pow(view_dist * 0.5, 1.5), 0.1, 1.0)) * clamp(layer_dist, 1.0, 8.0) * (0.02 * TRANSLUCENT_REFRACTION_INTENSITY)
+				 * (1.0 + float(has_refraction_boost) * 3.0) * (1.0 - float(material_mask == 62u) * 0.75);
+		#endif
+		}*/
+
+		/*if ((length(tangent_normal.xy) > 0.02 || has_refraction_boost) && uv != refracted_uv) {
+			if (refracted_uv != clamp01(refracted_uv)) {
+				refracted_uv = 1.0 - abs(mod(refracted_uv, 2.0) - 1.0);
+			}
+
+			ivec2 refracted_texel = ivec2(refracted_uv * taau_render_scale * view_res);
+			//float refracted_depth0   = texelFetch(depthtex0, refracted_texel, 0).x;
+			float refracted_depth1   = texelFetch(depthtex1, refracted_texel, 0).x;
+
+		#ifdef DISTANT_HORIZONS
+			float refracted_dh_depth = texelFetch(dhDepthTex, refracted_texel, 0).x;
+			bool refracted_is_dh_terrain = is_distant_horizons_terrain(refracted_depth1, dh_depth);
+			if (refracted_is_dh_terrain) refracted_depth1 = refracted_dh_depth;
+		#else
+			#define refracted_is_dh_terrain false
+		#endif*/
+
+			// Make sure the refracted pos is behind
+			/*float refracted_depth = texelFetch(depthtex1, ivec2(refracted_uv * taau_render_scale * view_res), 0).x;
+			refracted_depth = linearize_depth(refracted_depth);
+			if (refracted_depth >= linearize_depth(depth0)) {*/
+			
+				/*vec3 refracted_view_pos  = screen_to_view_space(vec3(refracted_uv, depth0), true, front_is_dh_terrain);
+				vec3 refracted_scene_pos = view_to_scene_space(refracted_view_pos);
+				world_back_start_pos = refracted_scene_pos + cameraPosition;
+
+				vec3 refracted_view_back_pos = screen_to_view_space(vec3(refracted_uv, refracted_depth1), true, refracted_is_dh_terrain);
+				vec3 refracted_scene_back_pos = view_to_scene_space(refracted_view_back_pos);
+				world_back_pos = refracted_scene_back_pos + cameraPosition;
+				// view_texel * view_pixel_size
+
+				//vec4 refracted_gbuffer_data = texelFetch(colortex1, view_texel, 0);
+				skylight = 1.0;
+			//}
+		}
+	}
+#endif*/
 
 	is_translucent = is_water || is_translucent;
 #ifdef DISTANT_HORIZONS
@@ -315,6 +510,7 @@ void main() {
 			#else
 			mat2x3 fog = mat2x3(vec3(0.0), vec3(1.0));
 			#endif
+			//fog = mat2x3(vec3(0.0), vec3(1.0));
 
 			fog_scattering    = fog[0];
 			fog_transmittance = fog[1];

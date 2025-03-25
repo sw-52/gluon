@@ -19,8 +19,9 @@ out vec2 uv;
 
 flat out uint material_mask;
 flat out vec3 tint;
+flat out mat3 tbn;
 
-#ifdef WATER_CAUSTICS
+#if defined WATER_CAUSTICS || (defined TRANSLUCENT_CAUSTICS && defined NORMAL_MAPPING)
 out vec3 scene_pos;
 
 #if defined (PHYSICS_MOD_OCEAN) && defined (PHYSICS_OCEAN)
@@ -80,10 +81,25 @@ uniform int renderStage;
 #include "/include/light/lpv/voxelization.glsl"
 #endif
 
+vec3 shadow_view_to_eye_pos(vec3 pos) {
+	return mat3(shadowModelViewInverse) * pos;
+	//return (shadowModelViewInverse * vec4(pos, 1.0)).xyz - gbufferModelViewInverse[3].xyz;
+
+}
+
+mat3 get_tbn_matrix() {
+	mat3 tbn;
+	tbn[0] = shadow_view_to_eye_pos(normalize(gl_NormalMatrix * at_tangent.xyz));
+	tbn[2] = shadow_view_to_eye_pos(normalize(gl_NormalMatrix * gl_Normal));
+	tbn[1] = cross(tbn[0], tbn[2]) * sign(at_tangent.w);
+	return tbn;
+}
+
 void main() {
 	uv            = gl_MultiTexCoord0.xy;
 	material_mask = uint(mc_Entity.x - 10000.0);
 	tint          = gl_Color.rgb;
+	tbn           = get_tbn_matrix();
 
 #ifdef COLORED_LIGHTS
 	update_voxel_map(material_mask);
@@ -141,8 +157,9 @@ in vec2 uv;
 
 flat in uint material_mask;
 flat in vec3 tint;
+flat in mat3 tbn;
 
-#ifdef WATER_CAUSTICS
+#if defined WATER_CAUSTICS || (defined TRANSLUCENT_CAUSTICS && defined NORMAL_MAPPING)
 in vec3 scene_pos;
 #endif
 
@@ -152,6 +169,14 @@ in vec3 scene_pos;
 
 uniform sampler2D tex;
 uniform sampler2D noisetex;
+
+#if defined TRANSLUCENT_CAUSTICS && defined NORMAL_MAPPING
+uniform sampler2D normals;
+
+#ifdef SPECULAR_MAPPING
+	uniform sampler2D specular;
+#endif
+#endif
 
 #ifdef SHADOW_COLOR
 uniform sampler2D shadowtex1;
@@ -175,6 +200,8 @@ uniform float rainStrength;
 uniform vec2 taa_offset;
 uniform vec3 light_dir;
 
+#include "/include/misc/material.glsl"
+#include "/include/light/bsdf.glsl"
 #include "/include/misc/water_normal.glsl"
 #include "/include/utility/color.glsl"
 
@@ -182,8 +209,9 @@ uniform vec3 light_dir;
 #include "/include/misc/oceans.glsl"
 #endif
 
-const float air_n = 1.000293; // for 0°C and 1 atm
+/*const float air_n = 1.000293; // for 0°C and 1 atm
 const float water_n = 1.333;  // for 20°C
+const float glass_n = 1.52;*/
 
 const vec3 water_absorption_coeff = vec3(WATER_ABSORPTION_R, WATER_ABSORPTION_G, WATER_ABSORPTION_B) * rec709_to_working_color;
 const vec3 water_scattering_coeff = vec3(WATER_SCATTERING);
@@ -224,7 +252,7 @@ float get_water_caustics() {
 	return 1.0;
 #else
 	// TBN matrix for a face pointing directly upwards
-	const mat3 tbn = mat3(
+	const mat3 tbn_up = mat3(
 		1.0, 0.0, 0.0,
 		0.0, 0.0, 1.0,
 		0.0, 1.0, 0.0
@@ -236,7 +264,7 @@ float get_water_caustics() {
 	vec3 world_pos = scene_pos + cameraPosition;
 
 	vec2 coord = world_pos.xz;
-	vec3 normal = tbn * get_water_normal(world_pos, tbn[2], coord, flow_dir, 1.0, flowing_water);
+	vec3 normal = tbn_up * get_water_normal(world_pos, tbn_up[2], coord, flow_dir, 1.0, flowing_water);
 
 	vec3 old_pos = world_pos;
 	vec3 new_pos = world_pos + refract_safe(light_dir, normal, air_n / water_n) * distance_through_water;
@@ -247,6 +275,87 @@ float get_water_caustics() {
 	if (old_area == 0.0 || new_area == 0.0) return 1.0;
 
 	return 0.25 * inversesqrt(old_area / new_area);
+#endif
+}
+
+#if   TEXTURE_FORMAT == TEXTURE_FORMAT_LAB
+void decode_normal_map(vec3 normal_map, out vec3 normal, out float ao) {
+	normal.xy = normal_map.xy * 2.0 - 1.0;
+	normal.z  = sqrt(clamp01(1.0 - dot(normal.xy, normal.xy)));
+	ao        = normal_map.z;
+}
+#elif TEXTURE_FORMAT == TEXTURE_FORMAT_OLD
+void decode_normal_map(vec3 normal_map, out vec3 normal, out float ao) {
+	normal  = normal_map * 2.0 - 1.0;
+	ao      = length(normal);
+	normal *= rcp(ao);
+}
+#endif
+
+vec3 get_translucent_caustics(uint material_mask) {
+#if !defined TRANSLUCENT_CAUSTICS || !defined NORMAL_MAPPING
+	return vec3(1.0);
+#else
+	//float matmask_f = float(material_mask);
+	//if (abs(dFdx(matmask_f)) > eps || abs(dFdy(matmask_f)) > eps) return vec3(1.0);
+
+	vec3 normal;
+	float ao;
+	vec3 normal_map = texture(normals, uv, 0).xyz;
+	float norm_i = length_squared(textureLod(normals, uv, 8).xy * 2.0 - 1.0);
+	decode_normal_map(normal_map, normal, ao);
+	float normal_intensity = pow(length_squared(normal.xy * 2.0) * 0.5, 4.0);
+	normal = tbn * normal;
+
+#ifdef TRANSLUCENT_CAUSTICS_SPECULAR_N
+	Material m;
+	vec4 specular_map = texture(specular, uv, 0);
+	decode_specular_map(specular_map, m);
+	#ifdef CHROMATIC_DISPERSION
+	vec3 translucent_n = vec3(f0_to_ior(m.f0.r), f0_to_ior(m.f0.g), f0_to_ior(m.f0.b));
+	#else
+	float f0 = dot(m.f0, luminance_weights);
+	float translucent_n = f0_to_ior(f0);
+	#endif
+#else
+	#ifdef CHROMATIC_DISPERSION
+	const vec3 translucent_n = vec3(0.999, 400.0, -1.0);
+	#else
+	const float translucent_n = glass_n;
+	#endif
+#endif
+
+	vec3 world_pos = scene_pos + cameraPosition;
+
+#ifdef CHROMATIC_DISPERSION
+	vec3 old_pos = world_pos;
+	vec3 new_pos_r = world_pos + refract_safe(light_dir, normal, air_n / translucent_n.r) * 0.25;
+	vec3 new_pos_g = world_pos + refract_safe(light_dir, normal, air_n / translucent_n.g) * 0.25;
+	vec3 new_pos_b = world_pos + refract_safe(light_dir, normal, air_n / translucent_n.b) * 0.25;
+
+	float old_area = length_squared(dFdx(old_pos)) * length_squared(dFdy(old_pos));
+	vec3  new_area = vec3(
+		length_squared(dFdx(new_pos_r)) * length_squared(dFdy(new_pos_r)),
+		length_squared(dFdx(new_pos_g)) * length_squared(dFdy(new_pos_g)),
+		length_squared(dFdx(new_pos_b)) * length_squared(dFdy(new_pos_b))
+	);
+
+	if (old_area == 0.0 || any(equal(new_area, vec3(0.0)))) return vec3(1.0);
+
+	return pow(old_area / new_area, vec3(0.5 * TRANSLUCENT_CAUSTICS_INTENSITY));
+#else
+	vec3 old_pos = world_pos;
+	vec3 new_pos = world_pos + refract_safe(light_dir, normal, air_n / translucent_n) * 0.25;// * max(norm_i, 0.01);
+
+	float old_area = length_squared(dFdx(old_pos)) * length_squared(dFdy(old_pos));
+	float new_area = length_squared(dFdx(new_pos)) * length_squared(dFdy(new_pos));
+
+	if (old_area == 0.0 || new_area == 0.0) return vec3(1.0);
+
+	return vec3((pow(old_area / new_area, 0.5 * TRANSLUCENT_CAUSTICS_INTENSITY)));
+	// * (rcp(1.0 + 7.0 * norm_i));
+#endif
+	//return clamp01(1.0 - normal_intensity);
 #endif
 }
 
@@ -272,6 +381,9 @@ void main() {
 
 		shadowcolor0_out  = mix(vec3(1.0), base_color.rgb * tint, base_color.a);
 		shadowcolor0_out  = 0.25 * srgb_eotf_inv(shadowcolor0_out) * rec709_to_rec2020;
+	#ifdef TRANSLUCENT_CAUSTICS
+		if (base_color.a < 1.0 - rcp(255.0)) shadowcolor0_out.rgb *= get_translucent_caustics(material_mask);
+	#endif
 		shadowcolor0_out *= step(base_color.a, 1.0 - rcp(255.0));
 	}
 #else

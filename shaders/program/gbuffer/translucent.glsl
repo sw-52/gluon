@@ -224,6 +224,10 @@ uniform sampler2D specular;
 uniform sampler2D colortex8; // Cloud shadow map
 #endif
 
+#ifdef TRANSLUCENT_REFRACTION
+uniform sampler2D colortex0; // Scene color
+#endif
+
 uniform sampler2D depthtex1;
 
 #ifdef COLORED_LIGHTS
@@ -416,7 +420,14 @@ void main() {
 	float depth1 = texelFetch(depthtex1, ivec2(gl_FragCoord.xy), 0).x;
 
 	vec3 world_pos = scene_pos + cameraPosition;
+
+#ifdef TRANSLUCENT_REFRACTION
+	vec3 world_dir; float view_dist;
+	length_normalize(scene_pos - gbufferModelViewInverse[3].xyz, world_dir, view_dist);
+	bool has_refraction;
+#else
 	vec3 world_dir = normalize(scene_pos - gbufferModelViewInverse[3].xyz);
+#endif
 
 	vec3 view_back_pos = screen_to_view_space(vec3(coord, depth1), true);
 
@@ -662,7 +673,15 @@ void main() {
 		alpha     = base_color.a;
 	}
 
+	/*#ifdef TRANSLUCENT_REFRACTION
+	if (!has_refraction) scene_color = texture(colortex0, gl_FragCoord.xy).rgba;
+	//if (has_refraction) {
+		scene_color.rgb = scene_color.rgb * (1.0 - alpha) + radiance / max(alpha, eps) * alpha;
+		scene_color.a = 1.0;// - (1.0 - scene_color.a) * (1.0 - alpha);
+	//} else //! continued below
+	#else*/
 	scene_color = vec4(radiance / max(alpha, eps), alpha);
+	//#endif
 
 	// Apply fog
 

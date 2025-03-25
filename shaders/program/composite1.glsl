@@ -421,6 +421,8 @@ void main() {
 #endif*/
 	}
 
+	//scene_color = vec3(length(((normal - flat_normal) * tbn).xy) > 0.02) * 0.75 + 0.25;
+
 #ifdef DISTANT_HORIZONS
 		// Distant Horizons water scattering
 
@@ -447,9 +449,12 @@ void main() {
 
 	// Rain puddles
 
+	bool  is_puddle = false;
+	float puddle_intensity = 0.0;
+	float puddle_darkening = 1.0;
 #ifdef RAIN_PUDDLES
-	if (!is_water && depth1 != 1.0) {
-		bool puddle = get_rain_puddles(
+	if (!is_water && depth1 != 1.0 && !is_hand) {
+		is_puddle = get_rain_puddles(
 			world_pos,
 			flat_normal,
 			light_levels,
@@ -457,15 +462,73 @@ void main() {
 			normal,
 			material.f0,
 			material.roughness,
-			material.ssr_multiplier
+			material.ssr_multiplier,
+			puddle_darkening,
+			puddle_intensity
 		);
 
-		if (puddle) {
+		if (is_puddle) {
 			material.is_metal = false;
 			material.is_hardcoded_metal = false;
 		}
 	}
 #endif
+
+	bool puddle_refraction = is_puddle && flat_normal.y >= 0.99;
+	bool has_refraction = !is_water/* && normal != flat_normal*/ && depth0 != depth1 && translucent_color.a < 1.0 - rcp(255.0);
+	if (has_refraction || puddle_refraction) {
+#ifdef TRANSLUCENT_REFRACTION
+		vec3 tangent_normal = normal /*- flat_normal)*/ * tbn;
+		// light gray glass
+		bool has_refraction_boost = material_mask == 179u;
+
+		//vec2 refracted_uv = uv + tangent_normal.xy * (1.0 + 1.0 - tangent_normal.z) * rcp(max(view_dist, 1.0)) * min(layer_dist, 8.0) * (0.1 * TRANSLUCENT_REFRACTION_INTENSITY);
+		//vec2 refracted_uv = tangent_normal.xy; /* (1.0 - tangent_normal.z + 1.0)*/ * rcp(clamp(pow(view_dist * 0.5, 1.5), 0.1, 1.0)) * clamp(layer_dist, 1.0, 8.0) * (0.02 * TRANSLUCENT_REFRACTION_INTENSITY)
+			 //* (1.0 + float(has_refraction_boost) * 3.0) * (1.0 - float(material_mask == 62u) * 0.75) * (1.0 + puddle_intensity);
+		
+		vec2 refracted_uv = refract(normalize(view_pos), tangent_normal, 1.0 / 1.5).xy;
+
+		refracted_uv *= rcp(max(view_dist, 1.0)) * min(layer_dist, 8.0) * (0.02 * TRANSLUCENT_REFRACTION_INTENSITY)
+			 * (1.0 + float(has_refraction_boost) * 3.0) * (1.0 - float(material_mask == 62u) * 0.75) * (1.0 + puddle_intensity);
+
+		if (!has_refraction) refracted_uv *= linear_step(eps, 0.1, puddle_intensity);
+		refracted_uv += uv;
+
+		//if (/*length(tangent_normal.xy) > 0.02 ||*/ (has_refraction_boost && !is_hand) || is_puddle) {
+		if (length(tangent_normal.xy) > 0.02 || !is_hand) {	
+			if (refracted_uv != clamp01(refracted_uv)) {
+				refracted_uv = 1.0 - abs(mod(refracted_uv, 2.0) - 1.0);
+			}
+
+			// Make sure the refracted object is behind
+			float refracted_depth = texelFetch(depthtex1, ivec2(refracted_uv * taau_render_scale * view_res), 0).x;
+			refracted_depth = linearize_depth(refracted_depth);
+			if (puddle_refraction) refracted_depth += 0.05;
+			if (refracted_depth >= linearize_depth(depth0)) {
+				vec3 refracted_color = texture(colortex0, refracted_uv * taau_render_scale).rgb;
+
+				float refracted_depth_t = texelFetch(depthtex0, ivec2(refracted_uv * taau_render_scale * view_res), 0).x;
+				refracted_depth_t = linearize_depth(refracted_depth_t);
+
+				//if (refracted_depth >= linearize_depth(depth0)) {
+					vec4 refracted_color_t = texture(colortex3, refracted_uv * taau_render_scale).rgba;
+					refracted_color.rgb = (refracted_color.rgb - translucent_color.rgb * translucent_color.a) / (1.0 - translucent_color.a);
+					//if (distance(refracted_color_t, translucent_color) > 0.01)
+					refracted_color = apply_translucent(refracted_color, refracted_color_t);
+				//}
+				
+				//scene_color = refracted_color * (1.0 - translucent_color.a) + translucent_color.rgb * translucent_color.a;
+				scene_color = apply_translucent(refracted_color, translucent_color);
+			}
+		}
+#endif
+
+		/*if (TRANSLUCENT_TINT > 0.0 && has_refraction) {
+			vec3 t_hsl = rgb_to_hsl(translucent_color.rgb);
+			scene_color *= mix(vec3(1.0), hsl_to_rgb(vec3(t_hsl.xy, 0.5)), TRANSLUCENT_TINT * t_hsl.y);
+		}*/
+		if (is_puddle)      scene_color *= puddle_darkening; //scene_color *= mix(vec3(1.0), albedo, puddle_intensity);
+	}
 
 	// Specular reflections
 
@@ -520,7 +583,7 @@ void main() {
 
 	// Apply clouds in front of translucents
 
-	bool is_translucent = depth0 != depth1;
+	bool is_translucent = depth0 != depth1 || is_puddle;
 #ifdef DISTANT_HORIZONS
          is_translucent = is_translucent || depth0_dh != depth1_dh;
 #endif

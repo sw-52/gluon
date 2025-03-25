@@ -3,9 +3,11 @@
 
 #include "/include/tonemapping/aces/matrices.glsl"
 #include "/include/utility/color.glsl"
+#include "/include/utility/fast_math.glsl"
 
 const float air_n   = 1.000293; // for 0°C and 1 atm
 const float water_n = 1.333;    // for 20°C
+const float glass_n = 1.52;
 
 struct Material {
 	vec3 albedo;
@@ -91,6 +93,7 @@ void decode_specular_map(vec4 specular_map, inout Material material) {
 void decode_specular_map(vec4 specular_map, inout Material material, out bool parallax_shadow) {
 #if defined POM && defined POM_SHADOW
 		// Specular map alpha >= 0.5 => parallax shadow
+		specular_map.a += eps;
 		parallax_shadow = specular_map.a >= 0.5;
 		specular_map.a = fract(specular_map.a * 2.0);
 #endif

@@ -33,23 +33,25 @@ bool get_rain_puddles(
 	inout vec3 normal,
 	inout vec3 f0,
 	inout float roughness,
-	inout float ssr_multiplier
+	inout float ssr_multiplier,
+	out float scene_color_mult,
+	out float puddle
 ) {
 	const float puddle_f0                      = 0.02;
 	const float puddle_roughness               = 0.002;
 	const float puddle_darkening_factor        = 0.25;
 	const float puddle_darkening_factor_porous = 0.4;
 
-	if (wetness < 0.0 || biome_may_rain < 0.0) return false;
+	if (wetness < eps || biome_may_rain < eps) return false;
 
-	float puddle = get_puddle_noise(world_pos, flat_normal, light_levels);
+	puddle = get_puddle_noise(world_pos, flat_normal, light_levels);
 
 	if (puddle < eps) return false;
 
 	// Puddle darkening
-	scene_color *= 1.0 - puddle_darkening_factor_porous * porosity * puddle;
+	scene_color_mult = 1.0 - puddle_darkening_factor_porous * porosity * puddle;
 	puddle *= 1.0 - porosity;
-	scene_color *= 1.0 - puddle_darkening_factor * puddle;
+	scene_color_mult *= 1.0 - puddle_darkening_factor * puddle;
 
 	// Replace material with puddle material
 	f0             = max(f0, mix(f0, vec3(puddle_f0), puddle));

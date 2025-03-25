@@ -23,6 +23,7 @@ screen.world_curvature                 = World Curvature Settings
 screen.colored_lights                  = Colored Lights Settings
 screen.rp_settings                     = Resource Pack Settings
 screen.reflections                     = Reflections
+screen.refractions                     = Refractions
 screen.light_sources                   = Light Sources
 screen.shadows                         = Shadows
 screen.color_grading                   = Color Grading
@@ -752,6 +753,12 @@ option.SSR_ROUGHNESS_THRESHOLD.comment = Adjusts how smooth a surface must be fo
 option.SSR_PREVIOUS_FRAME.comment      = Use previous frame data for reflections, so that translucents and reflections appear in reflections
 
 option.TRANSLUCENT_TINT                 = Translucent Tint
+option.TRANSLUCENT_REFRACTION           = Translucent Refractions
+option.TRANSLUCENT_REFRACTION_INTENSITY = Refraction Intensity
+option.TRANSLUCENT_CAUSTICS             = Translucent Caustics
+option.TRANSLUCENT_CAUSTICS_INTENSITY   = Caustics Intensity
+option.CHROMATIC_DISPERSION             = Chromatic Dispersion
+
 # Water settings
 
 option.WATER_CAUSTICS                  = Water Caustics

@@ -146,9 +146,10 @@ void main() {
 //----------------------------------------------------------------------------//
 #if defined fsh
 
-layout (location = 0) out vec3 scene_color;
+layout (location = 0) out vec3 out_color;
+layout (location = 1) out vec4 reset_colortex3;
 
-/* RENDERTARGETS: 0 */
+/* RENDERTARGETS: 0,3 */
 
 in vec2 uv;
 
@@ -299,6 +300,7 @@ vec4 read_clouds(out float apparent_distance) {
 }
 
 void main() {
+	vec3 scene_color;
 	ivec2 texel = ivec2(gl_FragCoord.xy);
 
 	// Sample textures
@@ -578,6 +580,9 @@ void main() {
 		scene_color = scene_color * clouds.w + clouds.xyz;
 #endif
 	}
+
+	out_color = scene_color;
+	reset_colortex3 = vec4(0.0);
 }
 
 #endif

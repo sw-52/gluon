@@ -751,6 +751,7 @@ option.SSR_ROUGHNESS_THRESHOLD         = Roughness Threshold
 option.SSR_ROUGHNESS_THRESHOLD.comment = Adjusts how smooth a surface must be for reflections to appear
 option.SSR_PREVIOUS_FRAME.comment      = Use previous frame data for reflections, so that translucents and reflections appear in reflections
 
+option.TRANSLUCENT_TINT                 = Translucent Tint
 # Water settings
 
 option.WATER_CAUSTICS                  = Water Caustics

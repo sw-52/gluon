@@ -183,14 +183,14 @@ layout (location = 0) out vec4 scene_color;
 layout (location = 1) out vec4 gbuffer_data_0; // albedo, block ID, flat normal, light levels
 layout (location = 2) out vec4 gbuffer_data_1; // detailed normal, specular map (optional)
 
-/* RENDERTARGETS: 0,1 */
+/* RENDERTARGETS: 3,1 */
 
 #ifdef NORMAL_MAPPING
-/* RENDERTARGETS: 0,1,2 */
+/* RENDERTARGETS: 3,1,2 */
 #endif
 
 #ifdef SPECULAR_MAPPING
-/* RENDERTARGETS: 0,1,2 */
+/* RENDERTARGETS: 3,1,2 */
 #endif
 
 in vec2 uv;
@@ -641,6 +641,7 @@ void main() {
 
 	float alpha;
 
+#ifndef VL
 	if (is_water) {
 
 		mat2x3 water_fog = water_fog_simple(
@@ -655,7 +656,9 @@ void main() {
 
 		radiance += water_fog[0] * (1.0 + 6.0 * sqr(water_fog[1])) * (1.0 - exp(-0.33 * layer_dist));
 		alpha     = 1.0 - water_fog[1].x;
-	} else {
+	} else
+#endif
+	{
 		alpha     = base_color.a;
 	}
 

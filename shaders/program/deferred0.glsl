@@ -13,7 +13,7 @@
   const int colortex0Format  = R11F_G11F_B10F; // full res    | scene color (deferred3 -> temporal), bloom tiles (composite5 -> composite14), final color (composite14 -> final)
   const int colortex1Format  = RGBA16;         // full res    | gbuffer data 0 (solid -> composite1)
   const int colortex2Format  = RGBA16;         // full res    | gbuffer data 1 (solid -> composite1)
-  const int colortex3Format  = RGBA8;          // full res    | animated overlays/vanilla sky (solid -> deferred3), blended translucent color (translucent -> composite1), bloomy fog amount (composite1 -> composite14)
+  const int colortex3Format  = RGBA16;         // full res    | animated overlays/vanilla sky (solid -> deferred3), blended translucent color (translucent -> composite1), bloomy fog amount (composite1 -> composite14)
   const int colortex4Format  = R11F_G11F_B10F; // sky map res | sky map (deferred -> composite1)
   const int colortex5Format  = RGBA16F;        // full res    | scene history (always)
   const int colortex6Format  = RGB16F;         // quarter res | ambient occlusion history (always), fog scattering (composite -> composite1 +flip) 

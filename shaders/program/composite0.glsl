@@ -201,9 +201,25 @@ uniform float time_midnight;
 
 #include "/include/fog/water_fog_vl.glsl"
 
+#include "/include/misc/distant_horizons.glsl"
+#include "/include/misc/water_normal.glsl"
 #include "/include/utility/encoding.glsl"
 #include "/include/utility/random.glsl"
 #include "/include/utility/space_conversion.glsl"
+
+vec3 apply_translucent(vec3 solid_color, vec4 translucent_color) {
+	if (TRANSLUCENT_TINT > 0.0) {
+		vec3 t_hsl = rgb_to_hsl(translucent_color.rgb);
+		solid_color *= mix(vec3(1.0), hsl_to_rgb(vec3(t_hsl.xy, 0.5)), TRANSLUCENT_TINT * t_hsl.y);
+	}
+
+	return solid_color * (1.0 - translucent_color.a) + translucent_color.rgb * translucent_color.a;
+}
+
+
+/*mat2x3 apply_translucent_fog(inout fog, vec4 translucent_color) {
+
+}*/
 
 void main() {
 	ivec2 fog_texel  = ivec2(gl_FragCoord.xy);
@@ -215,13 +231,18 @@ void main() {
 
 #ifdef DISTANT_HORIZONS
     mat4 projection_matrix, projection_matrix_inverse;
-    bool is_dh_terrain;
-	float dh_depth = texelFetch(dhDepthTex, view_texel, 0).x;
+	mat4 back_projection_matrix, back_projection_matrix_inverse;
+	float dh_depth  = texelFetch(dhDepthTex, view_texel, 0).x;
+	float dh_depth1 = texelFetch(dhDepthTex1, view_texel, 0).x;
+	bool front_is_dh_terrain = is_distant_horizons_terrain(depth0, dh_depth);
+    bool back_is_dh_terrain  = is_distant_horizons_terrain(depth1, dh_depth1);
 
-    if (depth0 == 1.0) {
+	if (front_is_dh_terrain) depth0 = dh_depth;
+	if (back_is_dh_terrain)  depth1 = dh_depth1;
+
+    /*if (depth0 == 1.0) {
         is_dh_terrain = true;
         depth0 = dh_depth;
-        depth1 = dh_depth;
         projection_matrix = dhProjection;
         projection_matrix_inverse = dhProjectionInverse;
     } else {
@@ -229,19 +250,37 @@ void main() {
         projection_matrix = gbufferProjection;
         projection_matrix_inverse = gbufferProjectionInverse;
     }
+
+	if (depth1 == 1.0) {
+		is_dh_terrain = true;
+		depth1 = dh_depth1;
+		back_projection_matrix = dhProjection;
+        back_projection_matrix_inverse = dhProjectionInverse;
+	} else {
+		is_dh_terrain = false;
+		back_projection_matrix = gbufferProjection;
+        back_projection_matrix_inverse = gbufferProjectionInverse;
+	}*/
 #else
-    #define is_dh_terrain             false
-    #define projection_matrix         gbufferProjection
-    #define projection_matrix_inverse gbufferProjectionInverse
+	#define front_is_dh_terrain       false
+	#define back_is_dh_terrain        false
+    //#define projection_matrix         gbufferProjection
+    //#define projection_matrix_inverse gbufferProjectionInverse
+	//#define back_projection_matrix         gbufferProjection
+    //#define back_projection_matrix_inverse gbufferProjectionInverse
 #endif
 
 	float skylight = unpack_unorm_2x8(gbuffer_data_0.w).y;
+	uint material_mask = uint(255.0 * unpack_unorm_2x8(gbuffer_data_0.y).y);
 
-	vec3 view_pos  = screen_to_view_space(projection_matrix_inverse, vec3(uv, depth0), true);
+	bool is_translucent = depth0 < depth1;
+	bool is_water = material_mask == 1u;
+
+	vec3 view_pos  = screen_to_view_space(vec3(uv, depth0), true, front_is_dh_terrain);
 	vec3 scene_pos = view_to_scene_space(view_pos);
 	vec3 world_pos = scene_pos + cameraPosition;
 
-	vec3 view_back_pos  = screen_to_view_space(vec3(uv, depth1), true);
+	vec3 view_back_pos  = screen_to_view_space(vec3(uv, depth1), true, back_is_dh_terrain);
 	vec3 scene_back_pos = view_to_scene_space(view_back_pos);
 	vec3 world_back_pos = scene_back_pos + cameraPosition;
 
@@ -250,6 +289,14 @@ void main() {
 
 	vec3 world_start_pos = gbufferModelViewInverse[3].xyz + cameraPosition;
 	vec3 world_end_pos   = world_pos;
+
+	vec3 world_back_start_pos = world_end_pos;
+
+	is_translucent = is_water || is_translucent;
+#ifdef DISTANT_HORIZONS
+	is_translucent = is_translucent || dh_depth != dh_depth1;
+#endif
+	is_translucent = is_translucent && distance(world_back_start_pos, world_back_pos) > 1e-3;
 
 	// Volumetric lighting
 
@@ -272,13 +319,65 @@ void main() {
 			fog_scattering    = fog[0];
 			fog_transmittance = fog[1];
 
+			if (is_translucent) {
+				mat2x3 fog_t = mat2x3(vec3(0.0), vec3(1.0));;
+				if (!is_water) {
+					#if defined WORLD_OVERWORLD
+					fog_t = raymarch_air_fog(world_back_start_pos, world_back_pos, depth1 == 1.0, skylight, dither);
+					#elif defined WORLD_NETHER
+					fog_t = mat2x3(vec3(0.0), vec3(1.0));
+					#elif defined WORLD_END
+					fog_t = raymarch_end_fog(world_back_start_pos, world_back_pos, depth1 == 1.0, dither);
+					#else
+					fog_t = mat2x3(vec3(0.0), vec3(1.0));
+					#endif
+				} else if (!front_is_dh_terrain) {
+					fog_t = raymarch_water_fog(world_back_start_pos, world_back_pos, depth1 == 1.0, false, dither);
+				}
+
+				if ((max_of(fog_t[0]) > eps || min_of(fog_t[1]) < (1.0 - eps)) && !is_water) {
+					vec4 translucent_color = texelFetch(colortex3, view_texel, 0).rgba;
+					fog_t[0] = apply_translucent(fog_t[0], translucent_color);
+					fog_t[1] = mix(fog_t[1], vec3(1.0), translucent_color.a);
+				}
+
+				fog_scattering    += fog_t[0] * fog_transmittance;
+				fog_transmittance *= fog_t[1];
+			}
+
 			break;
 
 		case 1:
-			mat2x3 water_fog = raymarch_water_fog(world_start_pos, world_end_pos, depth0 == 1.0, dither);
+			mat2x3 water_fog = raymarch_water_fog(world_start_pos, world_end_pos, depth0 == 1.0, true, dither);
 
 			fog_scattering    = water_fog[0];
 			fog_transmittance = water_fog[1];
+
+			if (is_translucent) {
+				mat2x3 fog_t = mat2x3(vec3(0.0), vec3(1.0));;
+				if (is_water) {
+					#if defined WORLD_OVERWORLD
+					fog_t = raymarch_air_fog(world_back_start_pos, world_back_pos, depth1 == 1.0, skylight, dither);
+					#elif defined WORLD_NETHER
+					fog_t = mat2x3(vec3(0.0), vec3(1.0));
+					#elif defined WORLD_END
+					fog_t = raymarch_end_fog(world_back_start_pos, world_back_pos, depth1 == 1.0, dither);
+					#else
+					fog_t = mat2x3(vec3(0.0), vec3(1.0));
+					#endif
+				} else {
+					fog_t = raymarch_water_fog(world_back_start_pos, world_back_pos, depth1 == 1.0, true, dither);
+				}
+
+				if ((max_of(fog_t[0]) > eps || min_of(fog_t[1]) < (1.0 - eps))) {
+					vec4 translucent_color = texelFetch(colortex3, view_texel, 0).rgba;
+					fog_t[0] = apply_translucent(fog_t[0], translucent_color);
+					fog_t[1] = mix(fog_t[1], vec3(1.0), translucent_color.a);
+				}
+
+				fog_scattering    += fog_t[0] * fog_transmittance;
+				fog_transmittance *= fog_t[1];
+			}
 
 			break;
 

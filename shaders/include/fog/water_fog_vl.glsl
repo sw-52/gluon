@@ -10,6 +10,7 @@ mat2x3 raymarch_water_fog(
 	vec3 world_start_pos,
 	vec3 world_end_pos,
 	bool sky,
+	bool in_water,
 	float dither
 ) {
 	const uint min_step_count = WATER_FOG_MIN_STEPS; // 16
@@ -19,16 +20,25 @@ mat2x3 raymarch_water_fog(
 	const vec2 caustics_dir_0 = vec2(cos(0.5), sin(0.5));
 	const vec2 caustics_dir_1 = vec2(cos(3.0), sin(3.0));
 
-	const vec3 absorption_coeff = vec3(WATER_ABSORPTION_R_UNDERWATER, WATER_ABSORPTION_G_UNDERWATER, WATER_ABSORPTION_B_UNDERWATER) * rec709_to_working_color;
-	const vec3 scattering_coeff = vec3(WATER_SCATTERING_UNDERWATER);
-	const vec3 extinction_coeff = absorption_coeff + scattering_coeff;
+	const vec3 absorption_coeff_below = vec3(WATER_ABSORPTION_R_UNDERWATER, WATER_ABSORPTION_G_UNDERWATER, WATER_ABSORPTION_B_UNDERWATER) * rec709_to_working_color;
+	const vec3 scattering_coeff_below = vec3(WATER_SCATTERING_UNDERWATER);
+	const vec3 extinction_coeff_below = absorption_coeff_below + scattering_coeff_below;
+
+	const vec3 absorption_coeff_above = vec3(WATER_ABSORPTION_R, WATER_ABSORPTION_G, WATER_ABSORPTION_B) * rec709_to_working_color;
+	const vec3 scattering_coeff_above = vec3(WATER_SCATTERING);
+	const vec3 extinction_coeff_above = absorption_coeff_above + scattering_coeff_above;
 
 	const uint multiple_scattering_iterations = FOG_MULTIPLE_SCATTERING_ITERATIONS; // 4
+
+	vec3 absorption_coeff = in_water ? absorption_coeff_below : absorption_coeff_above;
+	vec3 scattering_coeff = in_water ? scattering_coeff_below : scattering_coeff_above;
+	vec3 extinction_coeff = in_water ? extinction_coeff_below : extinction_coeff_above;
 
 	vec3 world_dir = world_end_pos - world_start_pos;
 	float ray_length;
 	length_normalize(world_dir, world_dir, ray_length);
 	if (sky) ray_length = far;
+	else if (!in_water) ray_length = max(ray_length, 1.0);
 
 	// Adjust step count based on ray length
 	uint step_count = uint(float(min_step_count) + step_count_growth * ray_length);

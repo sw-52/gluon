@@ -172,6 +172,7 @@ vec3 get_sky_reflection(vec3 ray_dir, float skylight) {
 }
 
 vec3 trace_specular_ray(
+	sampler2D scene_sampler,
 	vec3 screen_pos,
 	vec3 view_pos,
 	vec3 ray_dir,
@@ -235,7 +236,7 @@ vec3 trace_specular_ray(
 		vec3 reflection = textureLod(colortex5, hit_pos_prev.xy, mip_level).rgb;
 		     reflection = max0(reflection - fog_scattering);
 #else
-		vec3 reflection = textureLod(colortex0, hit_pos.xy * taau_render_scale, mip_level).rgb;
+		vec3 reflection = textureLod(scene_sampler, hit_pos.xy * taau_render_scale, mip_level).rgb;
 #endif
 
 		return mix(sky_reflection, reflection, border_attenuation);
@@ -245,6 +246,7 @@ vec3 trace_specular_ray(
 }
 
 vec3 get_specular_reflections(
+	sampler2D scene_sampler,
 	Material material,
 	mat3 tbn_matrix,
 	vec3 screen_pos,
@@ -284,7 +286,7 @@ vec3 get_specular_reflections(
 			float NoL = dot(normal, ray_dir);
 			if (NoL < eps) continue;
 
-			vec3 radiance = trace_specular_ray(screen_pos, view_pos, ray_dir, dither, skylight, SSR_INTERSECTION_STEPS_ROUGH, SSR_REFINEMENT_STEPS, int(mip_level));
+			vec3 radiance = trace_specular_ray(scene_sampler, screen_pos, view_pos, ray_dir, dither, skylight, SSR_INTERSECTION_STEPS_ROUGH, SSR_REFINEMENT_STEPS, int(mip_level));
 
 			float NoV = max(1e-2, dot(flat_normal, -world_dir));
 			float MoV = max(1e-2, dot(microfacet_normal, -world_dir));
@@ -337,7 +339,7 @@ vec3 get_specular_reflections(
 	float v1 = v1_smith_ggx(NoV, alpha_squared);
 	float v2 = v2_smith_ggx(NoL, NoV, alpha_squared);
 
-	vec3 reflection  = trace_specular_ray(screen_pos, view_pos, ray_dir, dither, skylight, SSR_INTERSECTION_STEPS_SMOOTH, SSR_REFINEMENT_STEPS, 0);
+	vec3 reflection  = trace_specular_ray(scene_sampler, screen_pos, view_pos, ray_dir, dither, skylight, SSR_INTERSECTION_STEPS_SMOOTH, SSR_REFINEMENT_STEPS, 0);
 	     reflection *= albedo_tint * fresnel;
 
 	if (any(isnan(reflection))) reflection = vec3(0.0); // don't reflect NaNs

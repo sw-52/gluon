@@ -62,6 +62,7 @@ uniform sampler2D noisetex;
 uniform sampler2D colortex0; // scene color
 uniform sampler2D colortex1; // gbuffer 0
 uniform sampler2D colortex2; // gbuffer 1
+uniform sampler2D colortex3; // translucent color
 uniform sampler2D colortex4; // sky map
 uniform sampler2D colortex5; // scene history
 uniform sampler2D colortex6; // volumetric fog scattering
@@ -200,6 +201,26 @@ vec3 purkinje_shift(vec3 rgb, vec2 light_levels) {
 #endif
 }
 
+vec3 apply_translucent(vec3 solid_color, vec4 translucent_color) {
+	//solid_color *= mix(vec3(1.0), translucent_color.rgb, translucent_color.a) * (1.0 - linear_step(0.5, 1.0, translucent_color.a));
+	//solid_color += translucent_color.rgb * linear_step(0.5, 1.0, translucent_color.a);
+	//return solid_color;
+	//translucent_color.a = pow(translucent_color.a, rcp(1.0 + 4.0 * TRANSLUCENT_TINT));
+	
+	//return solid_color * (1.0 - translucent_color.a) + translucent_color.rgb * translucent_color.a;
+	//solid_color *= mix(vec3(1.0), translucent_color.rgb, pow(translucent_color.a, rcp(2.2)));
+	
+	//if (translucent_color.a < 0.1) translucent_color.rgb = vec3(1.0);
+	//return solid_color * mix(vec3(1.0), translucent_color.rgb, TRANSLUCENT_TINT);
+
+	if (TRANSLUCENT_TINT > 0.0) {
+		vec3 t_hsl = rgb_to_hsl(translucent_color.rgb);
+		solid_color *= mix(vec3(1.0), hsl_to_rgb(vec3(t_hsl.xy, 0.5)), TRANSLUCENT_TINT * t_hsl.y);
+	}
+
+	return solid_color * (1.0 - translucent_color.a) + translucent_color.rgb * translucent_color.a;
+}
+
 void main() {
 	bloomy_fog = 1.0;
 
@@ -208,6 +229,9 @@ void main() {
 	// Sample textures
 
 	scene_color         = texelFetch(colortex0, texel, 0).rgb;
+	vec3 solid_color    = scene_color;
+	vec4 translucent_color = texelFetch(colortex3, texel, 0).rgba;
+	scene_color         = apply_translucent(scene_color, translucent_color);
 	vec3 original_color = scene_color;
 	float depth0        = texelFetch(depthtex0, texel, 0).x;
 	float depth1        = texelFetch(depthtex1, texel, 0).x;
@@ -260,7 +284,8 @@ void main() {
 
 	// Space conversions
 
-	depth0 += 0.38 * float(depth0 < hand_depth); // Hand lighting fix from Capt Tatsu
+	bool is_hand = depth0 < hand_depth;
+	depth0 += 0.38 * float(is_hand); // Hand lighting fix from Capt Tatsu
 
 	vec3 screen_pos = vec3(uv, depth0);
 	vec3 view_pos = screen_to_view_space(screen_pos, true);
@@ -374,22 +399,26 @@ void main() {
 
 		vec2 refracted_uv = uv + tangent_normal.xy * rcp(max(view_dist, 1.0)) * min(layer_dist, 8.0) * (0.1 * WATER_REFRACTION_INTENSITY);
 
-		vec3  refracted_color = texture(colortex0, refracted_uv * taau_render_scale).rgb;
-
 		// Make sure the refracted object is behind water
 		float refracted_data  = texelFetch(colortex1, ivec2(refracted_uv * taau_render_scale * view_res), 0).y;
 		uint  refracted_mask  = uint(unpack_unorm_2x8(refracted_data).y * 255.0);
 
-		if (refracted_mask == 1) scene_color = refracted_color;
+		if (refracted_mask == 1u) {
+			vec3 refracted_color = texture(colortex0, refracted_uv * taau_render_scale).rgb;
+			vec4 refracted_color_t = texture(colortex3, refracted_uv * taau_render_scale).rgba;
+			refracted_color = apply_translucent(refracted_color, refracted_color_t);
+
+			scene_color = refracted_color;
+		}
 #endif
 
-#ifdef SNELLS_WINDOW
+/*#ifdef SNELLS_WINDOW
 		if (isEyeInWater == 1.0) {
 			float NoV = clamp01(dot(normal, -world_dir));
 			float water_n = isEyeInWater == 1 ? air_n / water_n : water_n / air_n;
 			scene_color *= 1.0 - min1(fresnel_dielectric_n(NoV, water_n) * SNELLS_WINDOW_INTENSITY);
 		}
-#endif
+#endif*/
 	}
 
 #ifdef DISTANT_HORIZONS
@@ -440,10 +469,11 @@ void main() {
 
 	// Specular reflections
 
-#if defined ENVIRONMENT_REFLECTIONS || defined SKY_REFLECTIONS
+/*#if defined ENVIRONMENT_REFLECTIONS || defined SKY_REFLECTIONS
 	if (material.ssr_multiplier > eps && (depth0 < 1.0 || front_is_dh_terrain)) {
 		mat3 tbn = get_tbn_matrix(normal);
 		vec3 reflections = get_specular_reflections(
+			colortex0,
 			material,
 			tbn,
 			screen_pos,
@@ -482,7 +512,7 @@ void main() {
 
 		scene_color += reflections;
 	}
-#endif
+#endif*/
 
 	// Apply border fog
 	float border_fog = border_fog(scene_pos, world_dir);
@@ -503,6 +533,14 @@ void main() {
 			scene_color = scene_color * clouds.w + clouds.xyz;
 		}
 	}
+
+#ifdef SNELLS_WINDOW
+	if (is_water && isEyeInWater == 1.0) {
+		float NoV = clamp01(dot(normal, -world_dir));
+		float water_n = isEyeInWater == 1 ? air_n / water_n : water_n / air_n;
+		scene_color *= 1.0 - min1(fresnel_dielectric_n(NoV, water_n) * SNELLS_WINDOW_INTENSITY);
+	}
+#endif
 
 	// Apply atmospheric fog
 
@@ -530,6 +568,53 @@ void main() {
 
 #if defined WORLD_NETHER
 	bloomy_fog = spherical_fog(view_dist, nether_fog_start, nether_bloomy_fog_density) * 0.33 + 0.67;
+#endif
+
+	// Specular reflections
+
+#if defined ENVIRONMENT_REFLECTIONS || defined SKY_REFLECTIONS
+	if (material.ssr_multiplier > eps && (depth0 < 1.0 || front_is_dh_terrain)) {
+		mat3 tbn = get_tbn_matrix(normal);
+		vec3 reflections = get_specular_reflections(
+			colortex0,
+			material,
+			tbn,
+			screen_pos,
+			view_pos,
+			normal,
+			flat_normal,
+			world_dir,
+			world_dir * tbn,
+			light_levels.y,
+			is_water
+		);
+
+#ifdef WATER_WAVES
+		// Specular highlight for water (must be applied after water waves)
+		if (is_water) {
+			float NoL = dot(normal, light_dir);
+			float NoV = clamp01(dot(normal, -world_dir));
+			float LoV = dot(light_dir, -world_dir);
+			float halfway_norm = inversesqrt(2.0 * LoV + 2.0);
+			float NoH = (NoL + NoV) * halfway_norm;
+			float LoH = LoV * halfway_norm + halfway_norm;
+
+	#ifndef DISTANT_HORIZONS
+			vec3 shadows = vec3(data[0].xy, data[1].x);
+	#else
+			vec3 shadows = front_is_dh_terrain
+				? vec3(1.0)
+				: vec3(data[0].xy, data[1].x);
+	#endif
+
+			reflections += get_specular_highlight(material, NoL, NoV, NoH, LoV, LoH) * light_color * shadows;
+		}
+#endif
+
+		reflections *= common_fog_alpha(length(scene_pos), false);
+
+		scene_color += reflections;
+	}
 #endif
 
 	// Apply purkinje shift

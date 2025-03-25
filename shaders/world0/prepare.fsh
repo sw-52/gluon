@@ -77,6 +77,11 @@ uniform float time_midnight;
 uniform float biome_cave;
 uniform float biome_may_snow;
 
+#ifdef COLORED_LIGHTS
+uniform sampler3D light_sampler_a;
+uniform sampler3D light_sampler_b;
+#endif
+
 const vec3 sun_color  = vec3(0.0);
 const vec3 moon_color = vec3(0.0);
 const vec3 sky_color  = vec3(0.0);

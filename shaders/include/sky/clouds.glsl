@@ -1,4 +1,4 @@
-#if !defined INCLUDE_SKY_CLOUDS
+#ifndef INCLUDE_SKY_CLOUDS
 #define INCLUDE_SKY_CLOUDS
 
 #include "/include/sky/atmosphere.glsl"
@@ -9,6 +9,16 @@
 #include "/include/utility/phase_functions.glsl"
 #include "/include/utility/random.glsl"
 #include "/include/utility/sampling.glsl"
+
+//#define TERRAIN_SHADOWS_ON_CLOUDS
+
+#ifdef TERRAIN_SHADOWS_ON_CLOUDS
+#include "/include/light/shadows.glsl"
+#endif
+
+#if defined COLORED_LIGHTS && defined COLORED_LIGHTS_CLOUDS 
+#include "/include/light/lpv/blocklight.glsl"
+#endif
 
 struct CloudsResult {
 	vec3 scattering;
@@ -45,12 +55,15 @@ float clouds_powder_effect(float density, float cos_theta) {
 vec3 clouds_aerial_perspective(
 	vec3 clouds_scattering,
 	float clouds_transmittance,
+	float distance_to_terrain,
 	vec3 ray_origin,
 	vec3 ray_end,
 	vec3 ray_dir,
 	vec3 clear_sky
 ) {
 	vec3 air_transmittance;
+
+	//if (distance_to_terrain >= 0.0) return clouds_scattering; //ray_end = ray_origin + distance_to_terrain;
 
 #if CLOUDS_AERIAL_PERSPECTIVE_BOOST != 0
 	ray_end = mix(ray_origin, ray_end, float(1 << CLOUDS_AERIAL_PERSPECTIVE_BOOST));
@@ -72,7 +85,7 @@ vec3 clouds_aerial_perspective(
 	clear_sky = mix(clear_sky, sky_color * rcp(tau), rainStrength * mix(1.0, 0.9, time_sunrise + time_sunset));
 	air_transmittance = mix(air_transmittance, vec3(air_transmittance.x), 0.8 * rainStrength);
 
-	return mix((1.0 - clouds_transmittance) * clear_sky, clouds_scattering, air_transmittance);
+	return mix((1.0 - clouds_transmittance) * clear_sky, clouds_scattering, /*(distance_to_terrain < 0.0) ?*/ air_transmittance /*: vec3(1.0)*/);
 }
 
 /*
@@ -226,6 +239,105 @@ vec2 clouds_cumulus_scattering(
 	return scattering * scattering_integral_times_density;
 }
 
+#if defined COLORED_LIGHTS && defined COLORED_LIGHTS_CLOUDS 
+vec3 clouds_cumulus_lpv_scattering(
+	vec3  ray_pos,
+	vec3  ray_step,
+	vec3  air_viewer_pos,
+	float distance_to_terrain,
+	float density,
+	float step_length,
+	vec2  detail_weights,
+	vec2  edge_sharpening,
+	float dynamic_thickness,
+	vec2 dither,
+	const uint lighting_steps,
+	out float step_transmittance
+) {
+	vec3 lpv_scattering = vec3(0.0);
+	vec3 ray_pos_relative = ray_pos;// - air_viewer_pos;
+	ray_pos_relative.y -= planet_radius;
+
+	/*if (distance_to_terrain >= 0.0 && length(ray_pos_relative) > distance_to_terrain) {
+		vec3 prev_ray_pos = ray_pos_relative - ray_step;
+		if (length(prev_ray_pos) > distance_to_terrain || min_of(prev_ray_pos) < 0.0) return lpv_scattering;
+		else ray_pos_relative = prev_ray_pos;
+	}*/
+
+	vec3 scene_pos = ray_pos_relative;
+	scene_pos /= CLOUDS_SCALE;
+	scene_pos.y -= (eyeAltitude - SEA_LEVEL);
+
+	//lpv_scattering += get_lpv_fog(ray_pos vec3(0.0, CLOUDS_SCALE * (eyeAltitude - SEA_LEVEL) + planet_radius, 0.0));
+	vec3 voxel_pos = scene_to_voxel_space(scene_pos);
+	if (!is_inside_voxel_volume(voxel_pos)) return lpv_scattering;
+
+	vec3 lpv_light = get_lpv_basic_voxel(voxel_pos, scene_pos) * COLORED_LIGHT_I;
+
+	if (max_of(lpv_light) < 1e-3) return lpv_scattering;
+	//lpv_scattering *= step_transmittance;
+
+	vec3  ray_dir            = normalize(ray_step);
+	//vec3  light_dir          = /*normalize(vec3(1.0, 1.0, 1.0));*/ normalize(get_lpv_direction(scene_pos, lpv_light));
+	vec3  light_dir          = normalize(get_lpv_direction_clouds(scene_pos, dither));
+	if (abs(length(light_dir) - 1.0) > eps) light_dir = normalize(light_dir - vec3(0.0, 1e-2, 0.0));
+	//vec3 light_dir = vec3(0.0, -1.0, 0.0);
+	float cos_theta          = min(/*0.8;*/dot(ray_dir, light_dir), 0.95);
+
+	float extinction_coeff   = 0.8 * CLOUDS_CUMULUS_DENSITY;
+	float scattering_coeff   = extinction_coeff;
+
+	float light_optical_depth  = clouds_cumulus_optical_depth(ray_pos, light_dir, detail_weights, edge_sharpening, dynamic_thickness, dither.y, 24u);
+	//float light_optical_depth = 0.0;
+	float scatter_amount = scattering_coeff;
+	float extinct_amount = extinction_coeff;
+	step_transmittance = exp(density * -extinction_coeff * step_length);
+	float scattering_integral_times_density = (1.0 - step_transmittance) / extinction_coeff;
+
+	float powder_effect = clouds_powder_effect(density + density * clouds_stratus_amount, cos_theta);
+
+	float phase = clouds_phase_single(cos_theta);
+	vec3  phase_g = pow(vec3(0.6, 0.9, 0.3), vec3(1.0 + light_optical_depth));
+
+	//lpv_scattering = lpv_light * scatter_amount;
+
+	for (uint i = 0u; i < 8u; ++i) {
+		lpv_scattering += scatter_amount * exp(-extinct_amount * light_optical_depth) * phase;
+
+		scatter_amount *= 0.55 * mix(lift(clamp01(scattering_coeff / 0.1), 0.33), 1.0, cos_theta * 0.5 + 0.5) * powder_effect;
+		extinct_amount *= 0.4;
+		phase_g *= 0.8;
+
+		powder_effect = mix(powder_effect, sqrt(powder_effect), 0.5);
+
+		phase = clouds_phase_multi(cos_theta, phase_g);
+	}
+
+	return lpv_scattering * lpv_light * scattering_integral_times_density;//* density * step_length;
+}
+#endif
+
+#if defined SHADOW && defined TERRAIN_SHADOWS_ON_CLOUDS
+vec3 clouds_cumulus_terrain_shadow(vec3 ray_pos) {
+	 	ivec2 shadow_texel = ivec2(shadow_screen_pos.xy * shadowMapResolution * MC_SHADOW_QUALITY);
+
+	#ifdef AIR_FOG_COLORED_LIGHT_SHAFTS
+		float depth0 = texelFetch(shadowtex0, shadow_texel, 0).x;
+		float depth1 = texelFetch(shadowtex1, shadow_texel, 0).x;
+		vec3  color = clamp01(texelFetch(shadowcolor0, shadow_texel, 0).rgb * 4.0);
+		float color_weight = step(depth0, shadow_screen_pos.z) * step(eps, max_of(color));
+
+		color = color * color_weight + (1.0 - color_weight);
+
+		vec3 shadow = step(shadow_screen_pos.z, depth1) * color;
+		     shadow = (clamp01(shadow_screen_pos) == shadow_screen_pos) ? shadow : vec3(1.0);
+	#else
+		float depth1 = texelFetch(shadowtex1, shadow_texel, 0).x;
+		float shadow = step(float(clamp01(shadow_screen_pos) == shadow_screen_pos) * shadow_screen_pos.z, depth1);
+	#endif
+}
+#endif
+
 CloudsResult draw_cumulus_clouds(
 	vec3 air_viewer_pos,
 	vec3 ray_dir,
@@ -272,7 +384,9 @@ CloudsResult draw_cumulus_clouds(
 	vec3 ray_origin = air_viewer_pos + ray_dir * (dists.x + step_length * dither);
 
 	vec2 scattering = vec2(0.0); // x: direct light, y: skylight
+	vec3 lpv_scattering = vec3(0.0);
 	float transmittance = 1.0;
+	float lpv_transmittance = 1.0;
 
 	float distance_sum = 0.0;
 	float distance_weight_sum = 0.0;
@@ -342,7 +456,26 @@ CloudsResult draw_cumulus_clouds(
 			bounced_light
 		) * transmittance;
 
+#if defined COLORED_LIGHTS && defined COLORED_LIGHTS_CLOUDS 
+		float lpv_step_transmittance;
+		lpv_scattering += clouds_cumulus_lpv_scattering(
+			ray_pos,
+			air_viewer_pos,
+			ray_origin,
+			distance_to_terrain,
+			density,
+			step_length,
+			detail_weights,
+			edge_sharpening,
+			dynamic_thickness,
+			hash,
+			lighting_steps,
+			lpv_step_transmittance
+		) * transmittance;
+#endif
+
 		transmittance *= step_transmittance;
+		//lpv_transmittance *= lpv_step_transmittance;
 
 		// Update distance to cloud
 		distance_sum += distance_to_sample * density;
@@ -356,10 +489,13 @@ CloudsResult draw_cumulus_clouds(
 
 	// Remap the transmittance so that min_transmittance is 0
 	float clouds_transmittance = linear_step(min_transmittance, 1.0, transmittance);
+	//light_color *= (distance_to_terrain < 0.0) ? 1.0 : 1.0 - pow(clouds_transmittance, 0.2);
 
 	vec3 clouds_scattering = scattering.x * light_color + scattering.y * sky_color;
-	if (distance_to_terrain < 0.0) clouds_scattering = clouds_aerial_perspective(clouds_scattering, clouds_transmittance, air_viewer_pos, ray_origin, ray_dir, clear_sky);
+	/*if (distance_to_terrain < 0.0)*/ clouds_scattering = clouds_aerial_perspective(clouds_scattering, clouds_transmittance, distance_to_terrain, air_viewer_pos, ray_origin, ray_dir, clear_sky);
 	
+	clouds_scattering += lpv_scattering;
+
 	float apparent_distance = (distance_weight_sum == 0.0)
 		? 1e6
 		: (distance_sum / distance_weight_sum) + distance(air_viewer_pos, ray_origin);
@@ -406,8 +542,8 @@ float clouds_cumulus_congestus_altitude_shaping(float density, float altitude_fr
 }
 
 float clouds_cumulus_congestus_density(vec3 pos) {
-	const float wind_angle = CLOUDS_CUMULUS_WIND_ANGLE * degree;
-	const vec2 wind_velocity = CLOUDS_CUMULUS_WIND_SPEED * vec2(cos(wind_angle), sin(wind_angle));
+	const float wind_angle = CLOUDS_CUMULUS_CONGESTUS_WIND_ANGLE * degree;
+	const vec2 wind_velocity = CLOUDS_CUMULUS_CONGESTUS_WIND_SPEED * vec2(cos(wind_angle), sin(wind_angle));
 
 	float r = length(pos);
 	if (r < clouds_cumulus_congestus_radius || r > clouds_cumulus_congestus_top_radius) return 0.0;
@@ -628,7 +764,7 @@ CloudsResult draw_cumulus_congestus_clouds(
 
 	// Aerial perspective
 	vec3 clouds_scattering = scattering.x * light_color + scattering.y * sky_color;
-	if (distance_to_terrain < 0.0) clouds_scattering = clouds_aerial_perspective(clouds_scattering, clouds_transmittance, air_viewer_pos, ray_origin, ray_dir, clear_sky);
+	/*if (distance_to_terrain < 0.0)*/ clouds_scattering = clouds_aerial_perspective(clouds_scattering, clouds_transmittance, distance_to_terrain, air_viewer_pos, ray_origin, ray_dir, clear_sky);
 		
 	// Fade away at the horizon
 	float horizon_fade = mix(dampen(linear_step(0.0, 0.08, ray_dir.y)), 1.0, smoothstep(sqr(clouds_cumulus_congestus_radius), sqr(clouds_cumulus_congestus_radius + 0.1 * clouds_cumulus_congestus_thickness), length_squared(air_viewer_pos)));
@@ -751,18 +887,18 @@ float clouds_cumulonimbus_density(vec3 pos) {
 
 	if (density < eps) return 0.0;
 
-	#ifndef PROGRAM_PREPARE
-		// Curl noise used to warp the 3D noise into swirling shapes
+#ifndef PROGRAM_PREPARE
+	// Curl noise used to warp the 3D noise into swirling shapes
 	vec3 curl = (0.181 * CLOUDS_CUMULONIMBUS_CURL_STRENGTH) * texture(colortex7, 0.0002 * pos).xyz * smoothstep(0.4, 1.0, 1.0 - altitude_fraction);
 	vec3 wind = vec3(wind_velocity * world_age, 0.0).xzy;
 
 	// 3D worley noise for detail
 	float worley_0 = texture(colortex6, (pos + 0.2 * wind) * 0.00016 + curl * 1.0).x;
 	float worley_1 = texture(colortex6, (pos + 0.4 * wind) * 0.0010 + curl * 3.0).x;
-	#else
+#else
 	const float worley_0 = 0.5;
 	const float worley_1 = 0.5;
-	#endif
+#endif
 
 		float detail_fade = 0.20 * smoothstep(0.85, 1.0, 1.0 - altitude_fraction)
 	- 0.35 * smoothstep(0.05, 0.5, altitude_fraction) + 0.6;
@@ -954,7 +1090,7 @@ CloudsResult draw_cumulonimbus_clouds(
 
 	// Aerial perspective
 	vec3 clouds_scattering = scattering.x * light_color + scattering.y * sky_color;
-	if (distance_to_terrain < 0.0) clouds_scattering = clouds_aerial_perspective(clouds_scattering, clouds_transmittance, air_viewer_pos, ray_origin, ray_dir, clear_sky);
+	/*if (distance_to_terrain < 0.0)*/ clouds_scattering = clouds_aerial_perspective(clouds_scattering, clouds_transmittance, distance_to_terrain, air_viewer_pos, ray_origin, ray_dir, clear_sky);
 
 	float apparent_distance = (distance_weight_sum == 0.0)
 		? 1e6
@@ -1233,7 +1369,7 @@ CloudsResult draw_altocumulus_clouds(
 	float clouds_transmittance = linear_step(min_transmittance, 1.0, transmittance);
 
 	vec3 clouds_scattering = scattering.x * light_color + scattering.y * sky_color;
-	if (distance_to_terrain < 0.0) clouds_scattering = clouds_aerial_perspective(clouds_scattering, clouds_transmittance, air_viewer_pos, ray_origin, ray_dir, clear_sky);
+	/*if (distance_to_terrain < 0.0)*/ clouds_scattering = clouds_aerial_perspective(clouds_scattering, clouds_transmittance, distance_to_terrain, air_viewer_pos, ray_origin, ray_dir, clear_sky);
 
 	float apparent_distance = (distance_weight_sum == 0.0)
 		? 1e6
@@ -1485,7 +1621,7 @@ CloudsResult draw_cirrus_clouds(
 
 	// Remap the transmittance so that min_transmittance is 0
 	vec3 clouds_scattering = scattering.x * light_color + scattering.y * sky_color;
-	if (distance_to_terrain < 0.0) clouds_scattering = clouds_aerial_perspective(clouds_scattering, view_transmittance, air_viewer_pos, sphere_pos, ray_dir, clear_sky);
+	/*if (distance_to_terrain < 0.0)*/ clouds_scattering = clouds_aerial_perspective(clouds_scattering, view_transmittance, distance_to_terrain, air_viewer_pos, sphere_pos, ray_dir, clear_sky);
 
 	return CloudsResult(
 		clouds_scattering,
@@ -1698,7 +1834,7 @@ float render_cloud_shadow_map(vec2 uv) {
 	float cirrus, cirrocumulus;
 	t = intersect_sphere(ray_origin, light_dir,	clouds_cirrus_radius).y;
 	pos = ray_origin + light_dir * t;
-	density = clouds_cirrus_density(pos.xy, 0.5, cirrus, cirrocumulus);
+	density = clouds_cirrus_density(pos.xz, 0.5, cirrus, cirrocumulus);
 	shadow *= exp(-0.25 * clouds_cirrus_extinction_coeff * clouds_cirrus_thickness * rcp(abs(light_dir.y) + eps) * density) * 0.5 + 0.5;
 #endif
 

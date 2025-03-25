@@ -6,6 +6,10 @@
 #include "/include/utility/fast_math.glsl"
 #include "/include/utility/phase_functions.glsl"
 
+#if defined COLORED_LIGHTS && defined COLORED_LIGHTS_FOG
+#include "/include/light/lpv/blocklight.glsl"
+#endif
+
 float end_fog_density(vec3 world_pos) {
 	const float falloff_start     = 64.0;
 	const float falloff_half_life = 7.0;
@@ -141,6 +145,17 @@ mat2x3 raymarch_end_fog(
 		#define shadow 1.0
 #endif
 
+#if defined COLORED_LIGHTS && defined COLORED_LIGHTS_FOG
+		const float lpv_scattering_mult = 2.0 * (1.0 - exp2(-float(multiple_scattering_iterations)));;
+		vec3 lpv_color = get_lpv_basic(world_pos - cameraPosition) / lpv_scattering_mult;
+		lpv_color = max0(lpv_fog_curve(lpv_color) - 1.0);
+	#ifdef END_GLOW
+		lpv_color *= end_fog_noise(world_pos) * 1.2;
+	#endif
+#else
+		#define lpv_color 0.0
+#endif
+
 		float density = end_fog_density(world_pos) * step_length;
 
 		vec3 step_optical_depth = extinction_coeff * density;
@@ -159,6 +174,9 @@ mat2x3 raymarch_end_fog(
 
 			// Ambient light
 			scattering += density * ambient_color * isotropic_phase * visible_scattering * scattering_amount;
+
+			// Colored Lights
+			scattering += density * lpv_color * visible_scattering * scattering_amount;
 
 			anisotropy *= 0.5;
 			scattering_amount *= 0.5;

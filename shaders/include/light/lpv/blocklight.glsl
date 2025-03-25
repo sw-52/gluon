@@ -66,6 +66,14 @@ vec3 get_lpv_basic(vec3 scene_pos) {
 	}
 }
 
+vec3 lpv_fog_curve(vec3 lpv_blocklight) {
+	float lpv_max = max_of(lpv_blocklight) + 1e-3;
+	lpv_blocklight *= (pow(1.08, 4.0 * lpv_max) - 1.0) / lpv_max;
+	return lpv_blocklight * COLORED_LIGHT_I;
+}
+
+vec3 get_lpv_fog(vec3 scene_pos) { return lpv_fog_curve(get_lpv_basic(scene_pos)); }
+
 vec3 get_lpv_direction(vec3 scene_pos) {
 	const vec3 epsilon = vec3(0.1);
 
@@ -143,6 +151,43 @@ vec3 get_directional_lpv_mult(vec3 normal, vec3 scene_pos, vec3 lpv_blocklight) 
 	return blocklight_mul;  //clamp01(normalize(normal * blocklight_dir) + 0.8)
 }
 
+vec3 get_lpv_direction_fog(vec3 scene_pos) {
+	//dither = clamp(dither, 0.1, 1.0);
+	/*const vec3 epsilon = vec3(0.1);
+
+	//vec3 lpv_light1 = get_lpv_basic;clamp01(voxel_pos / vec3(voxel_volume_size));
+	//vec3 lpv_light2 = get_lpv_basic(scene_pos + epsilon);
+	vec3 lpv_light1 = get_lpv_linear(scene_pos - epsilon);
+	vec3 lpv_light2 = get_lpv_linear(scene_pos + epsilon);
+	vec3 light_dir = ((lpv_light2.x + lpv_light2.y + lpv_light2.z) - (lpv_light1.x + lpv_light1.y + lpv_light1.z)) / (epsilon * 2.0);*/
+	mat3 light_dir_rgb = get_lpv_gradient_rgb(scene_pos, 0.1);
+	light_dir_rgb = transpose(light_dir_rgb);
+	vec3 light_dir = light_dir_rgb[0] + light_dir_rgb[1] + light_dir_rgb[2];
+
+	return light_dir;
+}
+
+vec3 get_lpv_direction_clouds(vec3 scene_pos, vec2 dither) {
+	vec3 voxel_pos = scene_to_voxel_space(scene_pos);
+	//dither = clamp(dither, 0.1, 1.0);
+	const float epsilon = 1.0;
+
+	vec3 offset;
+	float sin_x = sin(dither.x);
+	offset.y = cos(dither.x);
+	offset.x = sin_x * cos(dither.y);
+	offset.z = sin_x * sin(dither.y);
+	//offset = normalize(offset) * epsilon;
+	offset *= epsilon;
+	//vec3 lpv_light1 = get_lpv_basic;clamp01(voxel_pos / vec3(voxel_volume_size));
+	//vec3 lpv_light2 = get_lpv_basic(scene_pos + offset);
+	vec3 lpv_light1 = get_lpv_linear_voxel(voxel_pos - offset);
+	vec3 lpv_light2 = get_lpv_linear_voxel(voxel_pos + offset);
+	vec3 light_dir = ((lpv_light2.x + lpv_light2.y + lpv_light2.z) - (lpv_light1.x + lpv_light1.y + lpv_light1.z)) / (offset * 2.0);
+
+	return light_dir;
+}
+
 #if !defined(PROGRAM_COMPOSITE0) && !defined(PROGRAM_DEFERRED0)
 
 vec3 get_lpv_blocklight(vec3 scene_pos, vec3 normal, vec3 flat_normal, vec3 mc_blocklight, float ao, Material material) {
@@ -206,6 +251,27 @@ vec3 get_lpv_blocklight(vec3 scene_pos, vec3 normal, vec3 flat_normal, vec3 mc_b
 		else 
 			lpv_blocklight += lpv_blocklight * lpv_blocklight_directional;
 #endif
+
+/*#ifdef DIRECTIONAL_LIGHTMAPS
+	vec3 world_dir = normalize(scene_pos - gbufferModelViewInverse[3].xyz);
+	float light_length = length_squared(lpv_blocklight);
+	vec2 light_gradient = vec2(dFdx(light_length), dFdy(light_length));
+
+	if (length_squared(light_gradient) > 1e-12) {
+		mat2x3 pos_gradient = mat2x3(dFdx(scene_pos), dFdy(scene_pos));
+		vec3 light_dir = pos_gradient * light_gradient;
+
+		float NoL = dot(normal, light_dir);
+		float NoV = clamp01(dot(normal, -world_dir));
+		float LoV = dot(light_dir, -world_dir);
+		float halfway_norm = inversesqrt(2.0 * LoV + 2.0);
+		float NoH = (NoL + NoV) * halfway_norm;
+		float LoH = LoV * halfway_norm + halfway_norm;
+
+		vec3 lpv_specular = get_specular_highlight(material, NoL, NoV, NoH, LoV, LoH);
+		lpv_blocklight += lpv_specular * lpv_blocklight;
+	}
+#endif*/
 
 #ifdef COLORED_LIGHTS_VANILLA_LIGHTMAP_CONTRIBUTION
 		float vanilla_lightmap_contribution = exp2(-4.0 * dot(lpv_blocklight, luminance_weights_rec2020));

@@ -184,6 +184,11 @@ uniform float time_noon;
 uniform float time_sunset;
 uniform float time_midnight;
 
+#ifdef COLORED_LIGHTS
+uniform sampler3D light_sampler_a;
+uniform sampler3D light_sampler_b;
+#endif
+
 // ------------
 //   Includes
 // ------------

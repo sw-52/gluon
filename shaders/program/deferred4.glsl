@@ -517,7 +517,7 @@ void main() {
 #endif
 
 #if defined POM && defined POM_SHADOW && (defined SPECULAR_MAPPING || defined NORMAL_MAPPING)
-		shadows *= float(!parallax_shadow);
+		shadows *= float(!parallax_shadow);// * clamp01(smoothstep(0.0, 0.1, NoL));
 #endif
 
 		// Diffuse lighting

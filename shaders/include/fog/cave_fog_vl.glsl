@@ -18,22 +18,23 @@
 	#define NOISE_3D colortex0
 #endif
 
-const uint  air_fog_min_step_count    = AIR_FOG_MIN_STEPS; // 25  8
-const uint  air_fog_max_step_count    = AIR_FOG_MAX_STEPS; // 50  25
-const float air_fog_step_count_growth = AIR_FOG_STEP_GROWTH; //  0.1
-const float air_fog_volume_top        = AIR_FOG_VOLUME_TOP; // 320.0
-const float air_fog_volume_bottom     = SEA_LEVEL - 24.0;
+const uint  air_fog_min_step_count    = 8;
+const uint  air_fog_max_step_count    = 25;
+const float air_fog_step_count_growth = 0.1;
+const float cave_fog_volume_top       = SEA_LEVEL;
+const float air_fog_volume_bottom     = SEA_LEVEL - 24.0 - 200.0;
 const vec2  air_fog_falloff_start     = vec2(AIR_FOG_RAYLEIGH_FALLOFF_START, AIR_FOG_MIE_FALLOFF_START) + SEA_LEVEL;
 const vec2  air_fog_falloff_half_life = vec2(AIR_FOG_RAYLEIGH_FALLOFF_HALF_LIFE, AIR_FOG_MIE_FALLOFF_HALF_LIFE);
 
-vec2 air_fog_density(vec3 world_pos) {
+vec2 cave_fog_density(vec3 world_pos) {
 	const vec2 mul = -rcp(air_fog_falloff_half_life);
 	const vec2 add = -mul * air_fog_falloff_start;
 
-	vec2 density = exp2(min(world_pos.y * mul + add, 0.0));
+	vec2 density = exp2(min(/*world_pos.y * mul +*/ add, 0.0));
+	//density = vec2(1.0);
 
 	// fade away below sea level
-	density *= linear_step(air_fog_volume_bottom, SEA_LEVEL, world_pos.y);
+	//density *= linear_step(air_fog_volume_bottom, SEA_LEVEL, world_pos.y);
 
 #ifdef AIR_FOG_CLOUDY_NOISE
 	const vec3 wind = 0.03 * vec3(1.0, 0.0, 0.7);
@@ -46,9 +47,7 @@ vec2 air_fog_density(vec3 world_pos) {
 	return density;
 }
 
-mat2x3 raymarch_air_fog(vec3 world_start_pos, vec3 world_end_pos, bool sky, float skylight, float dither) {
-	const uint air_fog_multiple_scattering_iterations = FOG_MULTIPLE_SCATTERING_ITERATIONS; // 4
-
+mat2x3 raymarch_cave_fog(vec3 world_start_pos, vec3 world_end_pos, bool sky, float skylight, float dither) {
 	vec3 world_dir = world_end_pos - world_start_pos;
 
 	float length_sq = length_squared(world_dir);
@@ -63,14 +62,14 @@ mat2x3 raymarch_air_fog(vec3 world_start_pos, vec3 world_end_pos, bool sky, floa
 	     shadow_dir = diagonal(shadowProjection).xyz * shadow_dir;
 
 	float distance_to_lower_plane = (air_fog_volume_bottom - eyeAltitude) / world_dir.y;
-	float distance_to_upper_plane = (air_fog_volume_top    - eyeAltitude) / world_dir.y;
+	float distance_to_upper_plane = (cave_fog_volume_top    - eyeAltitude) / world_dir.y;
 	float distance_to_volume_start, distance_to_volume_end;
 
 	if (eyeAltitude < air_fog_volume_bottom) {
 		// Below volume
 		distance_to_volume_start = distance_to_lower_plane;
 		distance_to_volume_end = world_dir.y < 0.0 ? -1.0 : distance_to_upper_plane;
-	} else if (eyeAltitude < air_fog_volume_top) {
+	} else if (eyeAltitude < cave_fog_volume_top) {
 		// Inside volume
 		distance_to_volume_start = 0.0;
 		distance_to_volume_end = world_dir.y < 0.0 ? distance_to_lower_plane : distance_to_upper_plane;
@@ -128,18 +127,12 @@ mat2x3 raymarch_air_fog(vec3 world_start_pos, vec3 world_end_pos, bool sky, floa
 		float depth1 = texelFetch(shadowtex1, shadow_texel, 0).x;
 		float shadow = step(float(clamp01(shadow_screen_pos) == shadow_screen_pos) * shadow_screen_pos.z, depth1);
 	#endif
-
-	#if defined CLOUD_SHADOWS && defined FOG_CLOUD_SHADOWS && defined WORLD_OVERWORLD
-		shadow *= get_cloud_shadows(colortex8, world_pos - cameraPosition);
-	#endif
-#elif defined CLOUD_SHADOWS && defined FOG_CLOUD_SHADOWS && defined WORLD_OVERWORLD
-	float shadow = get_cloud_shadows(colortex8, world_pos - cameraPosition);
 #else
 		#define shadow 1.0
 #endif
 
 #if defined COLORED_LIGHTS && defined COLORED_LIGHTS_FOG
-		vec3 lpv_color = get_lpv_linear(world_pos - cameraPosition) + 0.0;
+		vec3 lpv_color = sqr(get_lpv_basic(world_pos - cameraPosition)) + 0.0;
 		//lpv_color = lpv_color * exp2(lpv_color * 0.4) + 1.0;
 		//lpv_color = sqr(lpv_color) * rcp(0.2 * lpv_color + 1.0) + 1.0;
 		//lpv_color = exp2(min(lpv_color, 20000.0));
@@ -148,58 +141,6 @@ mat2x3 raymarch_air_fog(vec3 world_start_pos, vec3 world_end_pos, bool sky, floa
 		//const vec4 lpv_fog_params = vec4(-1.341e-2, 6.223e-1, 3.663e-2, -1.623e-1);
 
 		//lpv_color = pow(lpv_fog_params.x * lpv_color, vec3(3.0)) + sqr(lpv_fog_params.y * lpv_color) + lpv_fog_params.z * lpv_color + 1.0;
-	#ifdef AIR_FOG_CLOUDY_NOISE
-			const mat3 wind = mat3(
-				vec3(1.0, 0.0, 0.7) * 0.10,
-				vec3(0.4, 0.0, -0.6) * 0.10,
-				vec3(-0.8, 0.0, 0.1) * 0.10
-			);
-
-			float noise  = texture(NOISE_3D, 0.05 * world_pos + wind[0] * frameTimeCounter).x * 0.75;
-			      noise += texture(NOISE_3D, 0.075 * world_pos + wind[1] * frameTimeCounter).x * 0.75;
-				  noise -= texture(NOISE_3D, 0.075 * world_pos + wind[0] * frameTimeCounter + 1234.453).x * 0.75;
-				  noise += texture(NOISE_3D, 0.15 * world_pos + wind[2] * frameTimeCounter).x * 1.0;
-				  noise *= rcp(1.75);
-
-			//vec3 lpv_light_dir = normalize(get_lpv_direction_fog(world_pos - cameraPosition/*, hash2(fract(world_pos))*/));
-			mat3 lpv_gradient = get_lpv_gradient_rgb(world_pos - cameraPosition + vec3(0.0, 0.6, 0.0), 1.1);
-
-			// Fix opposite hues being treated as light sources
-			/*vec3 hsl = rgb_to_hsl(lpv_color);
-			vec3 primary_hues = vec3(
-				rgb_to_hsl(vec3(1.0, 0.0, 0.0)).x,
-				rgb_to_hsl(vec3(0.0, 1.0, 0.0)).x,
-				rgb_to_hsl(vec3(0.0, 0.0, 1.0)).x
-			);*/
-			/*vec3 hsl_weighted = vec3(
-				isolate_hue_norm(hsl, primary_hues.r, rcp(5.0)),
-				isolate_hue_norm(hsl, primary_hues.g, rcp(5.0)),
-				isolate_hue_norm(hsl, primary_hues.b, rcp(5.0))
-			);*/
-			/*vec3 hsl_weighted = vec3(
-				isolate_hue_norm(rgb_to_hsl(lpv_gradient[0]), hsl.x, rcp(5.0)),
-				isolate_hue_norm(rgb_to_hsl(lpv_gradient[1]), hsl.x, rcp(5.0)),
-				isolate_hue_norm(rgb_to_hsl(lpv_gradient[2]), hsl.x, rcp(5.0))
-			);
-			hsl_weighted = mix(vec3(1.0), hsl_weighted, hsl.y);
-			hsl_weighted *= clamp01(hsl.z * 2.0);*/
-
-			/*vec3 hue_gradient = vec3(
-				isolate_hue_norm(rgb_to_hsl(lpv_gradient[0]), hsl.x, 1.0),
-				isolate_hue_norm(rgb_to_hsl(lpv_gradient[1]), rgb_to_hsl(lpv_gradient[1]).x, 1.0),
-				isolate_hue_norm(rgb_to_hsl(lpv_gradient[2]), rgb_to_hsl(lpv_gradient[2]).x, 1.0)
-
-			);*/
-			//lpv_gradient = transpose(lpv_gradient);
-
-			vec3 lpv_light_dir = lpv_color * lpv_gradient;
-			lpv_light_dir = length(lpv_light_dir) >= eps ? normalize(lpv_light_dir) : vec3(0.0);
-
-			//lpv_color *= 25.0 /* pow((1.0 - noise), 3.0)*/ * pow(max0(dot(lpv_light_dir, vec3(0.0, -1.0, 0.0))), 4.0);
-			//lpv_color = pow(max0(dot((lpv_light_dir), vec3(0.0, -1.0, 0.0))), 3.0) * lpv_color * 5.0 /* sqr(noise)*/;
-			lpv_color = max0(lpv_color * sqr(noise) * 5.0);
-			//if (any(isnan(lpv_color))) lpv_color = vec3(0.0);
-	#endif
 #else
 		#define lpv_color 0.0
 #endif
@@ -220,22 +161,6 @@ mat2x3 raymarch_air_fog(vec3 world_start_pos, vec3 world_end_pos, bool sky, floa
 		light_lpv[1] += visible_scattering * density.y * lpv_color;
 
 		transmittance *= step_transmittance;
-
-#if defined COLORED_LIGHTS && defined COLORED_LIGHTS_FOG
-		/*vec3 lpv_light_dir = normalize(get_lpv_direction_clouds(world_pos - cameraPosition, hash2(fract(world_pos))));
-		float lpv_LoV = dot(world_dir, lpv_light_dir);
-		float lpv_mie_phase = 0.7 * henyey_greenstein_phase(lpv_LoV, 0.5) + 0.3 * henyey_greenstein_phase(lpv_LoV, -0.2);
-
-		float lpv_scatter_amount = 1.0;
-
-		for (int i = 0; i < air_fog_multiple_scattering_iterations; ++i) {
-			scattering += lpv_scatter_amount * (light_sun * vec2(isotropic_phase, mie_phase)) * light_color;
-			scattering += lpv_scatter_amount * (light_lpv * vec2(isotropic_phase, mie_phase));
-
-			scatter_amount *= 0.5;
-			mie_phase = mix(mie_phase, isotropic_phase, 0.3);
-		}*/
-#endif
 	}
 
 	light_sun[0] *= air_fog_coeff[0][0];
@@ -268,9 +193,8 @@ mat2x3 raymarch_air_fog(vec3 world_start_pos, vec3 world_end_pos, bool sky, floa
 #endif
 
 	scattering += light_sky * vec2(isotropic_phase) * ambient_color;
-	//scattering += light_lpv;
 
-	for (int i = 0; i < air_fog_multiple_scattering_iterations; ++i) {
+	for (int i = 0; i < 4; ++i) {
 		scattering += scatter_amount * (light_sun * vec2(isotropic_phase, mie_phase)) * light_color;
 		scattering += scatter_amount * (light_lpv * vec2(isotropic_phase, mie_phase));
 

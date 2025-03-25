@@ -280,6 +280,11 @@ uniform float time_midnight;
 uniform float biome_cave;
 uniform float biome_may_snow;
 
+#ifdef COLORED_LIGHTS
+uniform sampler3D light_sampler_a;
+uniform sampler3D light_sampler_b;
+#endif
+
 #ifdef BLOCKY_CLOUDS
 uniform sampler2D depthtex2; // minecraft cloud texture
 #endif

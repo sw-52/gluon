@@ -178,7 +178,8 @@ vec3 get_lpv_direction_clouds(vec3 scene_pos, vec2 dither) {
 	offset.x = sin_x * cos(dither.y);
 	offset.z = sin_x * sin(dither.y);
 	//offset = normalize(offset) * epsilon;
-	offset *= epsilon;
+	// offset *= epsilon; // Uncomment if epsilon != 1
+
 	//vec3 lpv_light1 = get_lpv_basic;clamp01(voxel_pos / vec3(voxel_volume_size));
 	//vec3 lpv_light2 = get_lpv_basic(scene_pos + offset);
 	vec3 lpv_light1 = get_lpv_linear_voxel(voxel_pos - offset);

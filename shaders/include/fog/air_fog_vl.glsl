@@ -162,7 +162,7 @@ mat2x3 raymarch_air_fog(vec3 world_start_pos, vec3 world_end_pos, bool sky, floa
 				  noise *= rcp(1.75);
 
 			//vec3 lpv_light_dir = normalize(get_lpv_direction_fog(world_pos - cameraPosition/*, hash2(fract(world_pos))*/));
-			mat3 lpv_gradient = get_lpv_gradient_rgb(world_pos - cameraPosition + vec3(0.0, 0.6, 0.0), 1.1);
+			// mat3 lpv_gradient = get_lpv_gradient_rgb(world_pos - cameraPosition + vec3(0.0, 0.6, 0.0), 1.1);
 
 			// Fix opposite hues being treated as light sources
 			/*vec3 hsl = rgb_to_hsl(lpv_color);
@@ -192,8 +192,8 @@ mat2x3 raymarch_air_fog(vec3 world_start_pos, vec3 world_end_pos, bool sky, floa
 			);*/
 			//lpv_gradient = transpose(lpv_gradient);
 
-			vec3 lpv_light_dir = lpv_color * lpv_gradient;
-			lpv_light_dir = length(lpv_light_dir) >= eps ? normalize(lpv_light_dir) : vec3(0.0);
+			// vec3 lpv_light_dir = lpv_color * lpv_gradient;
+			// lpv_light_dir = length(lpv_light_dir) >= eps ? normalize(lpv_light_dir) : vec3(0.0);
 
 			//lpv_color *= 25.0 /* pow((1.0 - noise), 3.0)*/ * pow(max0(dot(lpv_light_dir, vec3(0.0, -1.0, 0.0))), 4.0);
 			//lpv_color = pow(max0(dot((lpv_light_dir), vec3(0.0, -1.0, 0.0))), 3.0) * lpv_color * 5.0 /* sqr(noise)*/;

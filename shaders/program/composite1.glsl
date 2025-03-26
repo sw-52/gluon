@@ -480,7 +480,11 @@ void main() {
 #ifdef TRANSLUCENT_REFRACTION
 		vec3 tangent_normal = normal /*- flat_normal)*/ * tbn;
 		// light gray glass
+	#ifdef LIGHT_GRAY_GLASS_REFRACTION_BOOST
 		bool has_refraction_boost = material_mask == 179u;
+	#else
+		const bool has_refraction_boost = false;
+	#endif
 
 		//vec2 refracted_uv = uv + tangent_normal.xy * (1.0 + 1.0 - tangent_normal.z) * rcp(max(view_dist, 1.0)) * min(layer_dist, 8.0) * (0.1 * TRANSLUCENT_REFRACTION_INTENSITY);
 		//vec2 refracted_uv = tangent_normal.xy; /* (1.0 - tangent_normal.z + 1.0)*/ * rcp(clamp(pow(view_dist * 0.5, 1.5), 0.1, 1.0)) * clamp(layer_dist, 1.0, 8.0) * (0.02 * TRANSLUCENT_REFRACTION_INTENSITY)

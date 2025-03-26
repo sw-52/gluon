@@ -362,7 +362,11 @@ void main() {
 		vec3 tangent_normal = normal * tbn;
 
 		// light gray glass
+	#ifdef LIGHT_GRAY_GLASS_REFRACTION_BOOST
 		bool has_refraction_boost = material_mask == 179u;
+	#else
+		const bool has_refraction_boost = false;
+	#endif
 		refracted_uv = uv + tangent_normal.xy * rcp(clamp(pow(view_dist * 0.5, 1.5), 0.1, 1.0)) * clamp(layer_dist, 1.0, 8.0) * (0.02 * TRANSLUCENT_REFRACTION_INTENSITY)
 			 * (1.0 + float(has_refraction_boost) * 3.0) * (1.0 - float(material_mask == 62u) * 0.75);
 
@@ -427,7 +431,11 @@ void main() {
 		float layer_dist = abs(view_dist - length(view_back_pos));
 
 		// light gray glass
+	#ifdef LIGHT_GRAY_GLASS_REFRACTION_BOOST
 		bool has_refraction_boost = material_mask == 179u;
+	#else
+		const bool has_refraction_boost = false;
+	#endif
 		vec2 refracted_uv = uv;
 	#ifdef WATER_REFRACTION
 		if (is_water) {

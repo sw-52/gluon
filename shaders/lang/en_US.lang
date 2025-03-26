@@ -767,6 +767,7 @@ option.TRANSLUCENT_REFRACTION_INTENSITY = Refraction Intensity
 option.TRANSLUCENT_CAUSTICS             = Translucent Caustics
 option.TRANSLUCENT_CAUSTICS_INTENSITY   = Caustics Intensity
 option.CHROMATIC_DISPERSION             = Chromatic Dispersion
+option.LIGHT_GRAY_GLASS_REFRACTION_BOOST = Light Gray Glass Refraction Boost
 
 # Water settings
 

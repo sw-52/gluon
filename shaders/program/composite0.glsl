@@ -127,10 +127,6 @@ uniform sampler2D shadowcolor0;
 #endif
 #endif
 
-#ifdef DISTANT_HORIZONS
-uniform sampler2D dhDepthTex;
-#endif
-
 #ifdef CLOUD_SHADOWS
 uniform sampler2D colortex8; // cloud shadow map
 #endif
